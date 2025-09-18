@@ -1,0 +1,58 @@
+{
+  "malicious_ips": [
+    "185.220.100.240",
+    "185.220.100.241",
+    "185.220.100.242",
+    "198.96.155.3",
+    "162.247.74.27"
+  ],
+  "malicious_domains": [
+    "malware-example.com",
+    "phishing-site.net",
+    "fake-bank.org",
+    "suspicious-domain.info"
+  ],
+  "malicious_hashes": [
+    "5d41402abc4b2a76b9719d911017c592",
+    "aec070645fe53ee3b3763059376134f0",
+    "098f6bcd4621d373cade4e832627b4f6"
+  ],
+  "apt_groups": [
+    {
+      "name": "APT28",
+      "aliases": [
+        "Fancy Bear",
+        "Pawn Storm",
+        "Sofacy"
+      ],
+      "description": "Russian military intelligence cyberespionage group",
+      "techniques": [
+        "T1566.001",
+        "T1059.001",
+        "T1055"
+      ],
+      "indicators": [
+        "watering hole attacks",
+        "spear phishing"
+      ]
+    },
+    {
+      "name": "APT29",
+      "aliases": [
+        "Cozy Bear",
+        "The Dukes"
+      ],
+      "description": "Russian foreign intelligence cyberespionage group",
+      "techniques": [
+        "T1566.002",
+        "T1053.005",
+        "T1047"
+      ],
+      "indicators": [
+        "supply chain attacks",
+        "PowerShell usage"
+      ]
+    }
+  ],
+  "last_updated": "2025-09-18T09:25:45.193Z"
+}

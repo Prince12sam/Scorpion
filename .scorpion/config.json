@@ -1,0 +1,25 @@
+{
+  "scanner": {
+    "timeout": 5000,
+    "maxConcurrent": 100,
+    "defaultPorts": "1-1000"
+  },
+  "threatIntel": {
+    "updateInterval": 3600,
+    "feedSources": []
+  },
+  "fim": {
+    "excludePatterns": [
+      "*.log",
+      "*.tmp",
+      "*.swp",
+      ".git/**",
+      "node_modules/**",
+      "*.cache"
+    ]
+  },
+  "server": {
+    "port": 3001,
+    "host": "localhost"
+  }
+}

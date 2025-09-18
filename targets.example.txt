@@ -1,0 +1,13 @@
+# Sample targets for scanning
+# One target per line - can be IP addresses, domains, or IP ranges
+
+# Local network examples
+192.168.1.1
+localhost
+
+# Domain examples  
+# example.com
+# testphp.vulnweb.com
+
+# IP range examples (not implemented yet)
+# 192.168.1.0/24
