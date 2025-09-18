@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Network, Search, Play, Loader, Map, Globe, Fingerprint, Dns, Server } from 'lucide-react';
+import { Network, Search, Play, Loader, Map, Globe, Fingerprint, Database, Server } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 
