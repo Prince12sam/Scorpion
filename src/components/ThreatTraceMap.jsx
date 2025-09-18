@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, MapPin, AlertTriangle, ZoomIn, ZoomOut, LocateFixed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import apiClient from '@/lib/api-client';
 
 const ThreatTraceMap = () => {
   const [threats, setThreats] = useState([]);
@@ -14,41 +15,45 @@ const ThreatTraceMap = () => {
   });
 
   useEffect(() => {
-    const generateThreats = () => {
-      const locations = [
-        { country: 'United States', lat: 39.8, lng: -98.5, type: 'Malware C&C', ip: '172.217.14.238' },
-        { country: 'China', lat: 35.8, lng: 104.1, type: 'Phishing Host', ip: '202.108.22.5' },
-        { country: 'Russia', lat: 61.5, lng: 105.3, type: 'Botnet Controller', ip: '93.184.216.34' },
-        { country: 'Germany', lat: 51.1, lng: 10.4, type: 'Ransomware Node', ip: '193.99.144.85' },
-        { country: 'Brazil', lat: -14.2, lng: -51.9, type: 'DDoS Attacker', ip: '200.221.11.101' },
-        { country: 'Nigeria', lat: 9.0, lng: 8.6, type: 'Scam Operation', ip: '41.223.144.50' },
-      ];
+    fetchLiveThreatData();
 
-      return locations.map(location => ({
-        ...location,
-        id: Math.random().toString(36).substr(2, 9),
-        severity: ['high', 'critical'][Math.floor(Math.random() * 2)],
-        timestamp: new Date().toISOString(),
-      }));
+    // Set up live updates every 10 seconds
+    const interval = setInterval(fetchLiveThreatData, 10000);
+
+    return () => {
+      clearInterval(interval);
+      apiClient.cancelRequest('/threat-map');
     };
-
-    setThreats(generateThreats());
-
-    const interval = setInterval(() => {
-      setThreats(prevThreats => {
-        const newThreat = {
-          country: 'Netherlands', lat: 52.3, lng: 4.9, type: 'Exploit Kit Server', ip: '149.154.167.91',
-          id: Math.random().toString(36).substr(2, 9),
-          severity: 'critical',
-          timestamp: new Date().toISOString(),
-        };
-        const updatedThreats = [newThreat, ...prevThreats];
-        return updatedThreats.slice(0, 10);
-      });
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, []);
+
+  const fetchLiveThreatData = async () => {
+    try {
+      const data = await apiClient.get('/threat-map');
+      
+      if (data.threats) {
+        // Transform API data to component format
+        const transformedThreats = data.threats.map((threat, index) => ({
+          id: threat.ip || `threat-${index}`,
+          country: threat.country,
+          lat: threat.lat,
+          lng: threat.lng,
+          type: threat.type || 'Malicious Activity',
+          ip: threat.ip || 'Unknown',
+          severity: threat.severity || 'medium',
+          timestamp: new Date().toISOString(),
+          threats: threat.threats || 1
+        }));
+
+        setThreats(transformedThreats);
+      }
+    } catch (error) {
+      if (error.name !== 'AbortError') {
+        console.error('Failed to fetch live threat data:', error);
+        // Fall back to empty array on error
+        setThreats([]);
+      }
+    }
+  };
 
   const getSeverityColor = (severity) => {
     return severity === 'critical' ? 'bg-red-500' : 'bg-orange-500';

@@ -291,42 +291,124 @@ export class SecurityScanner {
   }
 
   async loadVulnerabilityDatabase() {
-    // This would normally load from a real vulnerability database
-    // For now, we'll use a sample database
+    // Enhanced vulnerability database with real CVE data
     return [
       {
-        id: 'VULN-001',
-        title: 'SSH Weak Encryption',
-        description: 'SSH server supports weak encryption algorithms',
+        id: 'CVE-2021-44228',
+        title: 'Apache Log4j2 Remote Code Execution',
+        description: 'Log4j2 versions prior to 2.15.0 are vulnerable to remote code execution via JNDI LDAP injection',
+        severity: 'Critical',
+        cvss: 10.0,
+        cve: 'CVE-2021-44228',
+        service: 'http',
+        version: '*',
+        remediation: 'Update Log4j2 to version 2.17.1 or later, or apply workarounds',
+        references: ['https://nvd.nist.gov/vuln/detail/CVE-2021-44228', 'https://logging.apache.org/log4j/2.x/security.html']
+      },
+      {
+        id: 'CVE-2022-0778',
+        title: 'OpenSSL Infinite Loop DoS',
+        description: 'OpenSSL versions 1.0.2, 1.1.1, and 3.0 are vulnerable to denial of service via infinite loop',
+        severity: 'High',
+        cvss: 7.5,
+        cve: 'CVE-2022-0778',
+        service: 'https',
+        version: '*',
+        remediation: 'Update OpenSSL to patched versions',
+        references: ['https://nvd.nist.gov/vuln/detail/CVE-2022-0778']
+      },
+      {
+        id: 'CVE-2016-0777',
+        title: 'OpenSSH Client Information Leak',
+        description: 'SSH client versions 5.4 to 7.1 leak private host keys',
         severity: 'Medium',
         cvss: 5.3,
         cve: 'CVE-2016-0777',
         service: 'ssh',
         version: '*',
-        remediation: 'Update SSH configuration to disable weak ciphers',
+        remediation: 'Update OpenSSH to version 7.1p2 or later',
         references: ['https://nvd.nist.gov/vuln/detail/CVE-2016-0777']
       },
       {
-        id: 'VULN-002',
-        title: 'HTTP Server Information Disclosure',
-        description: 'Web server reveals version information',
-        severity: 'Low',
-        cvss: 2.6,
-        service: 'http',
+        id: 'CVE-2021-34527',
+        title: 'Windows Print Spooler RCE (PrintNightmare)',
+        description: 'Windows Print Spooler service vulnerability allows remote code execution',
+        severity: 'Critical',
+        cvss: 8.8,
+        cve: 'CVE-2021-34527',
+        service: 'print-spooler',
         version: '*',
-        remediation: 'Configure server to hide version information',
-        references: ['https://owasp.org/www-project-top-ten/']
+        remediation: 'Apply Windows security updates and disable Print Spooler if not needed',
+        references: ['https://nvd.nist.gov/vuln/detail/CVE-2021-34527']
       },
       {
-        id: 'VULN-003',
-        title: 'FTP Anonymous Login',
-        description: 'FTP server allows anonymous login',
+        id: 'CVE-2019-0708',
+        title: 'Windows RDP BlueKeep RCE',
+        description: 'Remote Desktop Services vulnerability allows remote code execution',
+        severity: 'Critical',
+        cvss: 9.8,
+        cve: 'CVE-2019-0708',
+        service: 'rdp',
+        version: '*',
+        remediation: 'Apply Windows security updates and restrict RDP access',
+        references: ['https://nvd.nist.gov/vuln/detail/CVE-2019-0708']
+      },
+      {
+        id: 'CVE-2017-0144',
+        title: 'Windows SMB EternalBlue RCE',
+        description: 'SMBv1 vulnerability exploited by WannaCry ransomware',
+        severity: 'Critical',
+        cvss: 8.1,
+        cve: 'CVE-2017-0144',
+        service: 'smb',
+        version: '*',
+        remediation: 'Disable SMBv1 and apply Windows security updates',
+        references: ['https://nvd.nist.gov/vuln/detail/CVE-2017-0144']
+      },
+      {
+        id: 'CVE-2014-0160',
+        title: 'OpenSSL Heartbleed Information Disclosure',
+        description: 'OpenSSL heartbeat extension allows reading arbitrary memory',
+        severity: 'High',
+        cvss: 7.5,
+        cve: 'CVE-2014-0160',
+        service: 'https',
+        version: '*',
+        remediation: 'Update OpenSSL to version 1.0.1g or later',
+        references: ['https://nvd.nist.gov/vuln/detail/CVE-2014-0160', 'https://heartbleed.com/']
+      },
+      {
+        id: 'DEFAULT-CREDS-FTP',
+        title: 'FTP Anonymous Access',
+        description: 'FTP server allows anonymous login with read/write access',
         severity: 'High',
         cvss: 7.5,
         service: 'ftp',
         version: '*',
-        remediation: 'Disable anonymous FTP access',
+        remediation: 'Disable anonymous FTP access and require authentication',
         references: ['https://cwe.mitre.org/data/definitions/287.html']
+      },
+      {
+        id: 'WEAK-CIPHER-SSH',
+        title: 'SSH Weak Cipher Suites',
+        description: 'SSH server supports deprecated or weak encryption algorithms',
+        severity: 'Medium',
+        cvss: 5.3,
+        service: 'ssh',
+        version: '*',
+        remediation: 'Configure SSH to use only strong cipher suites (AES-256, ChaCha20)',
+        references: ['https://stribika.github.io/2015/01/04/secure-secure-shell.html']
+      },
+      {
+        id: 'HTTP-BANNER-DISCLOSURE',
+        title: 'HTTP Server Version Disclosure',
+        description: 'Web server reveals detailed version information in HTTP headers',
+        severity: 'Low',
+        cvss: 2.6,
+        service: 'http',
+        version: '*',
+        remediation: 'Configure web server to suppress version information in headers',
+        references: ['https://owasp.org/www-project-top-ten/2017/A06_2017-Security_Misconfiguration']
       }
     ];
   }
@@ -502,8 +584,48 @@ export class SecurityScanner {
     return Math.min(score, 100);
   }
 
+  async getLatestScanResults() {
+    try {
+      // Return the most recent scan from history
+      if (this.scanHistory.length > 0) {
+        const latest = this.scanHistory[this.scanHistory.length - 1];
+        return {
+          ...latest,
+          vulnerabilities: latest.vulnerabilities || [],
+          timestamp: latest.timestamp
+        };
+      }
+
+      // If no scan history, return empty results
+      return {
+        vulnerabilities: [],
+        openPorts: [],
+        services: [],
+        timestamp: null,
+        summary: { totalVulnerabilities: 0, criticalVulnerabilities: 0 }
+      };
+    } catch (error) {
+      console.error('Error getting latest scan results:', error);
+      return {
+        vulnerabilities: [],
+        openPorts: [],
+        services: [],
+        timestamp: null,
+        summary: { totalVulnerabilities: 0, criticalVulnerabilities: 0 }
+      };
+    }
+  }
+
   async saveScanResults(results) {
     try {
+      // Add to scan history
+      this.scanHistory.push(results);
+      
+      // Keep only last 10 scans in memory
+      if (this.scanHistory.length > 10) {
+        this.scanHistory = this.scanHistory.slice(-10);
+      }
+
       const resultsDir = path.join(__dirname, '..', 'results');
       await fs.mkdir(resultsDir, { recursive: true });
       

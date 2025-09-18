@@ -685,6 +685,110 @@ export class ThreatIntel {
     };
   }
 
+  async getThreatStats() {
+    try {
+      const stats = {
+        maliciousIPs: this.threatFeeds.malicious_ips || [],
+        maliciousDomains: this.threatFeeds.malicious_domains || [],
+        maliciousHashes: this.threatFeeds.malicious_hashes || [],
+        aptGroups: this.threatFeeds.apt_groups || [],
+        totalThreats: 0,
+        lastUpdated: this.threatFeeds.last_updated || new Date().toISOString()
+      };
+
+      stats.totalThreats = stats.maliciousIPs.length + 
+                          stats.maliciousDomains.length + 
+                          stats.maliciousHashes.length;
+
+      return stats;
+    } catch (error) {
+      console.error('Error getting threat stats:', error);
+      return {
+        maliciousIPs: [],
+        maliciousDomains: [],
+        maliciousHashes: [],
+        aptGroups: [],
+        totalThreats: 0,
+        lastUpdated: new Date().toISOString()
+      };
+    }
+  }
+
+  async getIOCs() {
+    try {
+      const iocs = {
+        indicators: [],
+        categories: {
+          malicious_ips: this.threatFeeds.malicious_ips || [],
+          malicious_domains: this.threatFeeds.malicious_domains || [],
+          malicious_hashes: this.threatFeeds.malicious_hashes || [],
+          apt_groups: this.threatFeeds.apt_groups || []
+        },
+        summary: {
+          totalIOCs: 0,
+          newToday: 0,
+          highConfidence: 0
+        },
+        lastUpdated: this.threatFeeds.last_updated || new Date().toISOString()
+      };
+
+      // Process IPs into IOC format
+      iocs.categories.malicious_ips.forEach(ip => {
+        iocs.indicators.push({
+          type: 'ip',
+          value: ip,
+          confidence: 'high',
+          description: 'Malicious IP address from threat feed',
+          firstSeen: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          tags: ['malware', 'c2']
+        });
+      });
+
+      // Process domains into IOC format
+      iocs.categories.malicious_domains.forEach(domain => {
+        iocs.indicators.push({
+          type: 'domain',
+          value: domain,
+          confidence: 'high',
+          description: 'Malicious domain from threat feed',
+          firstSeen: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          tags: ['phishing', 'malware']
+        });
+      });
+
+      // Process hashes into IOC format
+      iocs.categories.malicious_hashes.forEach(hash => {
+        iocs.indicators.push({
+          type: 'hash',
+          value: hash,
+          confidence: 'high',
+          description: 'Malicious file hash from threat feed',
+          firstSeen: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+          tags: ['malware']
+        });
+      });
+
+      // Calculate summary stats
+      iocs.summary.totalIOCs = iocs.indicators.length;
+      iocs.summary.highConfidence = iocs.indicators.filter(i => i.confidence === 'high').length;
+      iocs.summary.newToday = iocs.indicators.filter(i => {
+        const today = new Date();
+        const indicatorDate = new Date(i.firstSeen);
+        return indicatorDate.toDateString() === today.toDateString();
+      }).length;
+
+      return iocs;
+    } catch (error) {
+      console.error('Error getting IOCs:', error);
+      return {
+        indicators: [],
+        categories: { malicious_ips: [], malicious_domains: [], malicious_hashes: [], apt_groups: [] },
+        summary: { totalIOCs: 0, newToday: 0, highConfidence: 0 },
+        lastUpdated: new Date().toISOString()
+      };
+    }
+  }
+
   async saveThreatFeeds() {
     try {
       const dataDir = path.join(__dirname, '..', 'data');

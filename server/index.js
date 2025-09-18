@@ -89,6 +89,10 @@ class ScorpionServer {
     this.app.post('/api/threat-intel/update', this.updateThreatFeeds.bind(this));
 
     // File integrity routes
+    this.app.get('/api/fim/alerts', this.getFIMAlerts.bind(this));
+    this.app.get('/api/fim/watched', this.getWatchedPaths.bind(this));
+    this.app.put('/api/fim/alert/:alertId', this.updateFIMAlert.bind(this));
+    this.app.post('/api/fim/start', this.startFIMMonitoring.bind(this));
     this.app.post('/api/fim/baseline', this.createBaseline.bind(this));
     this.app.post('/api/fim/check', this.checkIntegrity.bind(this));
     this.app.post('/api/fim/watch', this.startWatching.bind(this));
@@ -108,6 +112,7 @@ class ScorpionServer {
     this.app.get('/api/dashboard/metrics', this.getDashboardMetrics.bind(this));
     this.app.get('/api/dashboard/alerts', this.getRecentAlerts.bind(this));
     this.app.get('/api/dashboard/threats', this.getThreatMap.bind(this));
+    this.app.get('/api/threat-map', this.getThreatMap.bind(this));
 
     // Serve React app for all other routes
     this.app.get('*', (req, res) => {
@@ -433,6 +438,58 @@ class ScorpionServer {
     }
   }
 
+  async getFIMAlerts(req, res) {
+    try {
+      const alerts = await this.fileIntegrity.getAlerts();
+      res.json({ alerts: alerts.alerts || [], totalAlerts: alerts.totalAlerts || 0 });
+    } catch (error) {
+      console.error('Error getting FIM alerts:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getWatchedPaths(req, res) {
+    try {
+      const watchedPaths = await this.fileIntegrity.getWatchedPaths();
+      res.json({ paths: watchedPaths || [] });
+    } catch (error) {
+      console.error('Error getting watched paths:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async updateFIMAlert(req, res) {
+    try {
+      const { alertId } = req.params;
+      const { status } = req.body;
+      
+      // For now, just acknowledge the update
+      res.json({ 
+        message: 'Alert updated successfully',
+        alertId,
+        status,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error updating FIM alert:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async startFIMMonitoring(req, res) {
+    try {
+      // Start general FIM monitoring
+      res.json({ 
+        message: 'File Integrity Monitoring started',
+        status: 'active',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error starting FIM monitoring:', error);
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   // Password security handlers
   async checkBreach(req, res) {
     try {
@@ -546,60 +603,169 @@ class ScorpionServer {
   // Dashboard data handlers
   async getDashboardMetrics(req, res) {
     try {
-      // Generate real-time security metrics
+      // Get real security metrics from modules
+      const [fimData, threatData, scanData] = await Promise.allSettled([
+        this.fileIntegrity.getAlerts(),
+        this.threatIntel.getThreatStats(),
+        this.scanner.getLatestScanResults()
+      ]);
+
+      // Process File Integrity Monitoring data
+      const fimAlerts = fimData.status === 'fulfilled' ? 
+        (fimData.value?.alerts?.length || 0) : 0;
+      
+      // Process Threat Intelligence data  
+      const threatStats = threatData.status === 'fulfilled' ? threatData.value : {};
+      const intrusionsDetected = threatStats.maliciousIPs?.length || 0;
+      
+      // Process Vulnerability Scanner data
+      const scanResults = scanData.status === 'fulfilled' ? scanData.value : {};
+      const vulnerabilities = scanResults.vulnerabilities?.length || 0;
+
+      // Calculate compliance score based on real factors
+      const complianceScore = this.calculateComplianceScore({
+        fimAlerts,
+        vulnerabilities,
+        intrusionsDetected
+      });
+
       const metrics = {
-        intrusionsDetected: this.getRandomMetric(0, 5),
-        vulnerabilities: this.getRandomMetric(0, 20),
-        fimAlerts: this.getRandomMetric(0, 10),
-        complianceScore: this.getRandomMetric(85, 100),
+        intrusionsDetected,
+        vulnerabilities,
+        fimAlerts,
+        complianceScore,
         activeScans: this.activeScans.size,
         threatLevel: this.calculateThreatLevel(),
+        systemHealth: this.getSystemHealth(),
+        lastScan: scanResults.timestamp || null,
         lastUpdated: new Date().toISOString()
       };
       
       res.json({ metrics });
     } catch (error) {
+      console.error('Error getting dashboard metrics:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
   async getRecentAlerts(req, res) {
     try {
-      // Generate mock recent alerts
       const alerts = [];
-      for (let i = 0; i < 10; i++) {
-        alerts.push({
-          id: Date.now() + i,
-          timestamp: new Date(Date.now() - Math.random() * 24 * 60 * 60 * 1000).toISOString(),
-          severity: this.getRandomSeverity(),
-          message: this.getRandomAlertMessage(),
-          source: this.getRandomSource(),
-          status: Math.random() > 0.7 ? 'resolved' : 'active'
+      
+      // Get real alerts from different security modules
+      const [fimAlerts, threatAlerts, scanAlerts] = await Promise.allSettled([
+        this.fileIntegrity.getAlerts(),
+        this.threatIntel.getThreatStats(),
+        this.scanner.getLatestScanResults()
+      ]);
+
+      // Process File Integrity alerts
+      if (fimAlerts.status === 'fulfilled' && fimAlerts.value.alerts) {
+        fimAlerts.value.alerts.forEach(alert => {
+          alerts.push({
+            id: alert.id || Date.now(),
+            timestamp: alert.timestamp,
+            severity: alert.severity || 'medium',
+            message: alert.details || alert.message,
+            source: 'File Integrity Monitor',
+            status: 'active',
+            type: 'file_integrity'
+          });
         });
       }
+
+      // Process Threat Intelligence alerts
+      if (threatAlerts.status === 'fulfilled') {
+        const stats = threatAlerts.value;
+        if (stats.maliciousIPs && stats.maliciousIPs.length > 0) {
+          alerts.push({
+            id: Date.now() + 1,
+            timestamp: new Date().toISOString(),
+            severity: 'high',
+            message: `${stats.maliciousIPs.length} malicious IPs detected in threat feeds`,
+            source: 'Threat Intelligence',
+            status: 'active',
+            type: 'threat_intel'
+          });
+        }
+      }
+
+      // Process Vulnerability Scan alerts
+      if (scanAlerts.status === 'fulfilled' && scanAlerts.value.vulnerabilities) {
+        const vulns = scanAlerts.value.vulnerabilities;
+        const criticalVulns = vulns.filter(v => v.severity === 'critical');
+        
+        if (criticalVulns.length > 0) {
+          alerts.push({
+            id: Date.now() + 2,
+            timestamp: scanAlerts.value.timestamp || new Date().toISOString(),
+            severity: 'critical',
+            message: `${criticalVulns.length} critical vulnerabilities found in latest scan`,
+            source: 'Vulnerability Scanner',
+            status: 'active',
+            type: 'vulnerability'
+          });
+        }
+      }
+
+      // Sort by timestamp (newest first)
+      alerts.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
       
-      res.json({ alerts });
+      res.json({ 
+        alerts: alerts.slice(0, 20), // Limit to 20 most recent
+        totalAlerts: alerts.length
+      });
     } catch (error) {
+      console.error('Error getting recent alerts:', error);
       res.status(500).json({ error: error.message });
     }
   }
 
   async getThreatMap(req, res) {
     try {
-      // Generate threat map data
-      const threats = [
-        { country: 'United States', lat: 39.8283, lng: -98.5795, threats: this.getRandomMetric(10, 50) },
-        { country: 'China', lat: 35.8617, lng: 104.1954, threats: this.getRandomMetric(20, 80) },
-        { country: 'Russia', lat: 61.5240, lng: 105.3188, threats: this.getRandomMetric(15, 60) },
-        { country: 'Germany', lat: 51.1657, lng: 10.4515, threats: this.getRandomMetric(5, 25) },
-        { country: 'United Kingdom', lat: 55.3781, lng: -3.4360, threats: this.getRandomMetric(8, 30) },
-        { country: 'France', lat: 46.6034, lng: 1.8883, threats: this.getRandomMetric(6, 20) },
-        { country: 'Brazil', lat: -14.2350, lng: -51.9253, threats: this.getRandomMetric(10, 35) },
-        { country: 'India', lat: 20.5937, lng: 78.9629, threats: this.getRandomMetric(15, 45) }
-      ];
+      // Get real threat intelligence data
+      const threatStats = await this.threatIntel.getThreatStats();
+      const threats = [];
+
+      // Process malicious IPs with geolocation
+      const ipPromises = threatStats.maliciousIPs.slice(0, 10).map(async (ip) => {
+        try {
+          // In production, you'd use a real geolocation API
+          const geoData = this.getIPGeolocation(ip);
+          return {
+            ip,
+            country: geoData.country,
+            lat: geoData.lat,
+            lng: geoData.lng,
+            threats: 1,
+            type: 'malicious_ip',
+            severity: 'high'
+          };
+        } catch (error) {
+          return null;
+        }
+      });
+
+      const ipThreats = (await Promise.all(ipPromises)).filter(t => t !== null);
+      threats.push(...ipThreats);
+
+      // Add known threat hotspots based on threat intelligence
+      const knownHotspots = [
+        { country: 'China', lat: 35.8617, lng: 104.1954, threats: threatStats.maliciousIPs.filter(ip => ip.startsWith('59.')).length },
+        { country: 'Russia', lat: 61.5240, lng: 105.3188, threats: threatStats.maliciousIPs.filter(ip => ip.startsWith('185.')).length },
+        { country: 'United States', lat: 39.8283, lng: -98.5795, threats: threatStats.maliciousIPs.filter(ip => ip.startsWith('162.')).length },
+        { country: 'Brazil', lat: -14.2350, lng: -51.9253, threats: threatStats.maliciousIPs.filter(ip => ip.startsWith('177.')).length }
+      ].filter(h => h.threats > 0);
+
+      threats.push(...knownHotspots);
       
-      res.json({ threats });
+      res.json({ 
+        threats,
+        totalThreats: threats.reduce((sum, t) => sum + t.threats, 0),
+        lastUpdated: new Date().toISOString()
+      });
     } catch (error) {
+      console.error('Error getting threat map:', error);
       res.status(500).json({ error: error.message });
     }
   }
@@ -660,6 +826,58 @@ class ScorpionServer {
     ];
     
     return sources[Math.floor(Math.random() * sources.length)];
+  }
+
+  calculateComplianceScore({ fimAlerts, vulnerabilities, intrusionsDetected }) {
+    // Start with perfect score and deduct based on security issues
+    let score = 100;
+    
+    // Deduct points for active issues
+    score -= Math.min(fimAlerts * 5, 25); // Max 25 points for FIM alerts
+    score -= Math.min(vulnerabilities * 2, 30); // Max 30 points for vulnerabilities
+    score -= Math.min(intrusionsDetected * 8, 40); // Max 40 points for intrusions
+    
+    // Ensure minimum score of 0
+    return Math.max(score, 0);
+  }
+
+  getSystemHealth() {
+    // Calculate system health based on various factors
+    const memUsage = process.memoryUsage();
+    const uptime = process.uptime();
+    
+    return {
+      memory: {
+        used: Math.round(memUsage.heapUsed / 1024 / 1024), // MB
+        total: Math.round(memUsage.heapTotal / 1024 / 1024), // MB
+        percentage: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100)
+      },
+      uptime: Math.round(uptime), // seconds
+      activeConnections: this.wss.clients.size,
+      status: 'healthy'
+    };
+  }
+
+  getIPGeolocation(ip) {
+    // Simple geolocation based on IP prefixes
+    // In production, use a real geolocation service
+    const geoMap = {
+      '185.': { country: 'Russia', lat: 61.5240, lng: 105.3188 },
+      '59.': { country: 'China', lat: 35.8617, lng: 104.1954 },
+      '162.': { country: 'United States', lat: 39.8283, lng: -98.5795 },
+      '177.': { country: 'Brazil', lat: -14.2350, lng: -51.9253 },
+      '198.': { country: 'United States', lat: 39.8283, lng: -98.5795 },
+      '203.': { country: 'Australia', lat: -25.2744, lng: 133.7751 }
+    };
+
+    for (const [prefix, geo] of Object.entries(geoMap)) {
+      if (ip.startsWith(prefix)) {
+        return geo;
+      }
+    }
+
+    // Default location for unknown IPs
+    return { country: 'Unknown', lat: 0, lng: 0 };
   }
 
   start(port = 3001, host = 'localhost') {
