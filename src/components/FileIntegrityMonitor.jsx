@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { FileCheck2, AlertTriangle, CheckCircle, Clock, Filter, RefreshCw, Eye, FolderPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+import apiClient from '@/lib/api-client';
 
 const FileIntegrityMonitor = () => {
   const [fimAlerts, setFimAlerts] = useState([]);
@@ -18,33 +17,37 @@ const FileIntegrityMonitor = () => {
     fetchFIMAlerts();
     fetchWatchedPaths();
     
+    let interval;
     if (autoRefresh) {
-      const interval = setInterval(fetchFIMAlerts, 5000);
-      return () => clearInterval(interval);
+      interval = setInterval(fetchFIMAlerts, 5000);
     }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+      apiClient.cancelRequest('/fim/alerts');
+      apiClient.cancelRequest('/fim/watched');
+    };
   }, [autoRefresh]);
 
   const fetchFIMAlerts = async () => {
     try {
-      const response = await fetch(`${API_BASE}/fim/alerts`);
-      if (response.ok) {
-        const data = await response.json();
-        setFimAlerts(data.alerts || []);
-      }
+      const data = await apiClient.get('/fim/alerts');
+      setFimAlerts(data.alerts || []);
     } catch (error) {
-      console.error('Error fetching FIM alerts:', error);
+      if (error.name !== 'AbortError') {
+        console.error('Error fetching FIM alerts:', error);
+      }
     }
   };
 
   const fetchWatchedPaths = async () => {
     try {
-      const response = await fetch(`${API_BASE}/fim/watched`);
-      if (response.ok) {
-        const data = await response.json();
-        setWatchedPaths(data.paths || []);
-      }
+      const data = await apiClient.get('/fim/watched');
+      setWatchedPaths(data.paths || []);
     } catch (error) {
-      console.error('Error fetching watched paths:', error);
+      if (error.name !== 'AbortError') {
+        console.error('Error fetching watched paths:', error);
+      }
     }
   };
 

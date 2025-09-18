@@ -17,6 +17,7 @@ import ThreatTraceMap from '@/components/ThreatTraceMap';
 import RecentAlerts from '@/components/RecentAlerts';
 import SystemHealth from '@/components/SystemHealth';
 import { toast } from '@/components/ui/use-toast';
+import apiClient from '@/lib/api-client';
 
 const Dashboard = () => {
   const [realTimeData, setRealTimeData] = useState({
@@ -30,9 +31,6 @@ const Dashboard = () => {
   const [isScanning, setIsScanning] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // API Base URL - use environment variable or default to localhost
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
-
   // Fetch dashboard metrics on component mount
   useEffect(() => {
     fetchDashboardMetrics();
@@ -40,23 +38,27 @@ const Dashboard = () => {
     // Set up periodic updates every 30 seconds
     const interval = setInterval(fetchDashboardMetrics, 30000);
     
-    return () => clearInterval(interval);
+    // Cleanup: cancel pending requests and clear interval
+    return () => {
+      clearInterval(interval);
+      apiClient.cancelRequest('/dashboard/metrics');
+    };
   }, []);
 
   const fetchDashboardMetrics = async () => {
     try {
-      const response = await fetch(`${API_BASE}/dashboard/metrics`);
-      if (response.ok) {
-        const data = await response.json();
-        setRealTimeData(data.metrics);
-      }
+      const data = await apiClient.get('/dashboard/metrics');
+      setRealTimeData(data.metrics);
     } catch (error) {
-      console.error('Failed to fetch dashboard metrics:', error);
-      toast({
-        title: "Connection Error",
-        description: "Unable to fetch real-time metrics. Using offline mode.",
-        variant: "destructive"
-      });
+      // Don't show error for cancelled requests
+      if (error.name !== 'AbortError') {
+        console.error('Failed to fetch dashboard metrics:', error);
+        toast({
+          title: "Connection Error",
+          description: "Unable to fetch real-time metrics. Using offline mode.",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -68,75 +70,60 @@ const Dashboard = () => {
     
     try {
       // Start scan via API
-      const response = await fetch(`${API_BASE}/scan`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          target: 'localhost',
-          type: 'quick',
-          ports: '1-1000'
-        })
+      const { scanId } = await apiClient.post('/scan', {
+        target: 'localhost',
+        type: 'quick',
+        ports: '1-1000'
       });
-
-      if (response.ok) {
-        const { scanId } = await response.json();
-        
-        // Poll for scan progress
-        const progressInterval = setInterval(async () => {
-          try {
-            const progressResponse = await fetch(`${API_BASE}/scan/${scanId}`);
-            if (progressResponse.ok) {
-              const scanData = await progressResponse.json();
-              
-              if (scanData.status === 'completed') {
-                clearInterval(progressInterval);
-                setIsScanning(false);
-                setScanProgress(100);
-                
-                const vulnCount = scanData.results?.vulnerabilities?.length || 0;
-                toast({
-                  title: "Quick Scan Complete",
-                  description: `Found ${vulnCount} vulnerabilities`,
-                });
-                
-                // Update metrics after scan
-                fetchDashboardMetrics();
-              } else if (scanData.status === 'failed') {
-                clearInterval(progressInterval);
-                setIsScanning(false);
-                toast({
-                  title: "Scan Failed",
-                  description: scanData.error || "Unknown error occurred",
-                  variant: "destructive"
-                });
-              } else {
-                // Update progress (simulate for now)
-                setScanProgress(prev => Math.min(prev + Math.random() * 10, 95));
-              }
-            }
-          } catch (error) {
-            console.error('Failed to get scan progress:', error);
-          }
-        }, 1000);
-        
-        // Cleanup interval after 5 minutes
-        setTimeout(() => {
-          clearInterval(progressInterval);
-          if (isScanning) {
+      
+      // Poll for scan progress
+      const progressInterval = setInterval(async () => {
+        try {
+          const scanData = await apiClient.get(`/scan/${scanId}`);
+          
+          if (scanData.status === 'completed') {
+            clearInterval(progressInterval);
+            setIsScanning(false);
+            setScanProgress(100);
+            
+            const vulnCount = scanData.results?.vulnerabilities?.length || 0;
+            toast({
+              title: "Quick Scan Complete",
+              description: `Found ${vulnCount} vulnerabilities`,
+            });
+            
+            // Update metrics after scan
+            fetchDashboardMetrics();
+          } else if (scanData.status === 'failed') {
+            clearInterval(progressInterval);
             setIsScanning(false);
             toast({
-              title: "Scan Timeout",
-              description: "Scan took too long to complete",
+              title: "Scan Failed",
+              description: scanData.error || "Unknown error occurred",
               variant: "destructive"
             });
+          } else {
+            // Update progress (simulate for now)
+            setScanProgress(prev => Math.min(prev + Math.random() * 10, 95));
           }
-        }, 300000);
-        
-      } else {
-        throw new Error('Failed to start scan');
-      }
+        } catch (error) {
+          console.error('Failed to get scan progress:', error);
+        }
+      }, 1000);
+      
+      // Cleanup interval after 5 minutes
+      setTimeout(() => {
+        clearInterval(progressInterval);
+        if (isScanning) {
+          setIsScanning(false);
+          toast({
+            title: "Scan Timeout",
+            description: "Scan took too long to complete",
+            variant: "destructive"
+          });
+        }
+      }, 300000);
+      
     } catch (error) {
       console.error('Failed to start scan:', error);
       setIsScanning(false);
