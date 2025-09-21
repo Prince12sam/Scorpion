@@ -6,6 +6,32 @@ import { toast } from '@/components/ui/use-toast';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch users from API
+  React.useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await fetch('/api/users');
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data.users || []);
+        } else {
+          // If API fails, show empty state
+          setUsers([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+        setUsers([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
 
   const roles = [
     {
@@ -17,10 +43,76 @@ const UserManagement = () => {
     { name: 'Viewer', description: 'Read-only access to dashboards and reports', color: 'bg-green-500' }
   ];
 
-  const handleUserAction = (action, userId) => {
-    toast({
-      title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
-    });
+  const handleUserAction = async (action, userId) => {
+    try {
+      switch (action) {
+        case 'edit':
+          setSelectedUser(users.find(u => u.id === userId));
+          toast({
+            title: "Edit User",
+            description: "User edit functionality would open here",
+          });
+          break;
+        case 'delete':
+          const deleteResponse = await fetch(`/api/users/${userId}`, {
+            method: 'DELETE'
+          });
+          if (deleteResponse.ok) {
+            setUsers(users.filter(u => u.id !== userId));
+            toast({
+              title: "User Deleted",
+              description: "User has been removed from the system",
+            });
+          } else {
+            throw new Error('Failed to delete user');
+          }
+          break;
+        case 'toggleStatus':
+          const user = users.find(u => u.id === userId);
+          const newStatus = user.status === 'active' ? 'inactive' : 'active';
+          const statusResponse = await fetch(`/api/users/${userId}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+          if (statusResponse.ok) {
+            setUsers(users.map(u => u.id === userId ? 
+              {...u, status: newStatus} : u
+            ));
+            toast({
+              title: "Status Updated",
+              description: `User ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`,
+            });
+          } else {
+            throw new Error('Failed to update user status');
+          }
+          break;
+        default:
+          toast({
+            title: "Action completed",
+            description: `${action} performed successfully`,
+          });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to perform action",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const getRoleColor = (role) => {
+    switch (role) {
+      case 'Administrator': return 'text-red-400 bg-red-900/20';
+      case 'Security Analyst': return 'text-blue-400 bg-blue-900/20';
+      case 'Viewer': return 'text-green-400 bg-green-900/20';
+      default: return 'text-slate-400 bg-slate-900/20';
+    }
+  };
+
+  const getStatusColor = (status) => {
+    return status === 'active' ? 'text-green-400' : 'text-red-400';
   };
 
   return (
@@ -74,10 +166,24 @@ const UserManagement = () => {
           All Users ({users.length})
         </h2>
         
-        {users.length === 0 ? (
+        {loading ? (
           <div className="text-center py-8 text-slate-400">
-            <p>No users found.</p>
-            <p className="text-sm">Click "Add New User" to create a user.</p>
+            <div className="w-8 h-8 border-2 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p>Loading users...</p>
+          </div>
+        ) : users.length === 0 ? (
+          <div className="text-center py-8 text-slate-400">
+            <Users className="w-16 h-16 mx-auto mb-4 text-slate-500" />
+            <h3 className="text-lg font-medium text-white mb-2">No Users Found</h3>
+            <p>No users are currently configured in the system.</p>
+            <p className="text-sm mt-2">Users will appear here when they are added through the API or admin panel.</p>
+            <Button 
+              onClick={() => setShowAddUser(true)} 
+              className="mt-4 bg-blue-600 hover:bg-blue-700"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add First User
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">

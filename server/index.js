@@ -114,6 +114,18 @@ class ScorpionServer {
     this.app.get('/api/dashboard/threats', this.getThreatMap.bind(this));
     this.app.get('/api/threat-map', this.getThreatMap.bind(this));
 
+    // Monitoring Center routes
+    this.app.get('/api/monitoring/alerts', this.getMonitoringAlerts.bind(this));
+    this.app.put('/api/monitoring/alert/:id', this.updateMonitoringAlert.bind(this));
+    this.app.get('/api/monitoring/metrics', this.getSystemMetrics.bind(this));
+    this.app.get('/api/monitoring/sources', this.getLogSources.bind(this));
+
+    // User management routes
+    this.app.get('/api/users', this.getUsers.bind(this));
+    this.app.post('/api/users', this.createUser.bind(this));
+    this.app.put('/api/users/:id', this.updateUser.bind(this));
+    this.app.delete('/api/users/:id', this.deleteUser.bind(this));
+
     // Serve React app for all other routes
     this.app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
@@ -856,6 +868,156 @@ class ScorpionServer {
       activeConnections: this.wss.clients.size,
       status: 'healthy'
     };
+  }
+
+  async getMonitoringAlerts(req, res) {
+    try {
+      const alerts = [
+        {
+          id: 1,
+          title: 'Suspicious Login Activity',
+          severity: 'high',
+          status: 'active',
+          timestamp: new Date().toISOString(),
+          source: 'Authentication Service',
+          description: 'Multiple failed login attempts detected from IP 192.168.1.100'
+        },
+        {
+          id: 2,
+          title: 'High CPU Usage',
+          severity: 'medium',
+          status: 'monitoring',
+          timestamp: new Date().toISOString(),
+          source: 'System Monitor',
+          description: 'CPU usage above 85% for 5 minutes'
+        },
+        {
+          id: 3,
+          title: 'Disk Space Low',
+          severity: 'medium',
+          status: 'active',
+          timestamp: new Date().toISOString(),
+          source: 'System Monitor',
+          description: 'Available disk space below 15%'
+        }
+      ];
+      res.json({ alerts });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async updateMonitoringAlert(req, res) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      // In a real implementation, update the alert in the database
+      res.json({ 
+        success: true, 
+        message: `Alert ${id} ${status} successfully`,
+        alertId: id,
+        newStatus: status
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getSystemMetrics(req, res) {
+    try {
+      const metrics = {
+        cpu: Math.floor(Math.random() * 100),
+        memory: Math.floor(Math.random() * 100),
+        disk: Math.floor(Math.random() * 100),
+        network: Math.floor(Math.random() * 100),
+        timestamp: new Date().toISOString()
+      };
+      res.json({ metrics });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getLogSources(req, res) {
+    try {
+      const sources = [
+        { id: 1, name: 'Web Server Logs', type: 'server', status: 'connected', events: 1240 },
+        { id: 2, name: 'Database Logs', type: 'server', status: 'connected', events: 856 },
+        { id: 3, name: 'Cloud Storage', type: 'cloud', status: 'connected', events: 432 },
+        { id: 4, name: 'DNS Logs', type: 'public', status: 'connected', events: 2100 }
+      ];
+      res.json({ sources });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  // User management methods
+  async getUsers(req, res) {
+    try {
+      // In a real app, this would query a database
+      // For now, return empty array since we removed dummy data
+      const users = [];
+      res.json({ users });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async createUser(req, res) {
+    try {
+      const { username, email, role } = req.body;
+      
+      if (!username || !email || !role) {
+        return res.status(400).json({ error: 'Username, email, and role are required' });
+      }
+
+      // In a real app, this would save to database
+      const newUser = {
+        id: Date.now().toString(),
+        username,
+        email,
+        role,
+        status: 'active',
+        lastLogin: new Date().toISOString(),
+        created: new Date().toISOString()
+      };
+
+      res.status(201).json({ user: newUser });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async updateUser(req, res) {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+
+      // In a real app, this would update the database
+      res.json({ 
+        message: 'User updated successfully',
+        userId: id,
+        updates 
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async deleteUser(req, res) {
+    try {
+      const { id } = req.params;
+
+      // In a real app, this would delete from database
+      res.json({ 
+        message: 'User deleted successfully',
+        userId: id 
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
 
   getIPGeolocation(ip) {

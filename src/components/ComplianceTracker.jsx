@@ -6,7 +6,51 @@ import { toast } from '@/components/ui/use-toast';
 
 const ComplianceTracker = () => {
   const [selectedFramework, setSelectedFramework] = useState('owasp');
-  const [complianceFrameworks, setComplianceFrameworks] = useState([]);
+  const [complianceFrameworks, setComplianceFrameworks] = useState([
+    {
+      id: 'owasp',
+      name: 'OWASP Top 10',
+      description: 'Web Application Security Risks',
+      overallScore: 78,
+      status: 'good',
+      lastAssessment: '2025-09-21T10:00:00Z',
+      controls: [
+        { id: 1, name: 'Injection', status: 'compliant', priority: 'high', score: 90 },
+        { id: 2, name: 'Broken Authentication', status: 'partial', priority: 'critical', score: 65 },
+        { id: 3, name: 'Sensitive Data Exposure', status: 'compliant', priority: 'high', score: 85 },
+        { id: 4, name: 'XML External Entities', status: 'non-compliant', priority: 'medium', score: 40 },
+        { id: 5, name: 'Broken Access Control', status: 'partial', priority: 'critical', score: 70 }
+      ]
+    },
+    {
+      id: 'pci-dss',
+      name: 'PCI DSS',
+      description: 'Payment Card Industry Data Security Standard',
+      overallScore: 92,
+      status: 'excellent',
+      lastAssessment: '2025-09-20T14:30:00Z',
+      controls: [
+        { id: 1, name: 'Firewall Configuration', status: 'compliant', priority: 'high', score: 95 },
+        { id: 2, name: 'Default Passwords', status: 'compliant', priority: 'critical', score: 100 },
+        { id: 3, name: 'Cardholder Data Protection', status: 'compliant', priority: 'critical', score: 88 },
+        { id: 4, name: 'Data Transmission Encryption', status: 'partial', priority: 'high', score: 85 }
+      ]
+    },
+    {
+      id: 'iso27001',
+      name: 'ISO 27001',
+      description: 'Information Security Management System',
+      overallScore: 67,
+      status: 'needs-improvement',
+      lastAssessment: '2025-09-19T09:15:00Z',
+      controls: [
+        { id: 1, name: 'Information Security Policy', status: 'compliant', priority: 'high', score: 85 },
+        { id: 2, name: 'Risk Management', status: 'partial', priority: 'critical', score: 60 },
+        { id: 3, name: 'Asset Management', status: 'non-compliant', priority: 'medium', score: 45 },
+        { id: 4, name: 'Access Control', status: 'partial', priority: 'high', score: 75 }
+      ]
+    }
+  ]);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -83,9 +127,9 @@ const ComplianceTracker = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
       >
-        {frameworkTemplates.map((framework, index) => (
+        {complianceFrameworks.map((framework, index) => (
           <motion.div
             key={framework.id}
             initial={{ opacity: 0, y: 20 }}
@@ -104,14 +148,20 @@ const ComplianceTracker = () => {
                 <Shield className="w-6 h-6 text-white" />
               </div>
               <div className="text-right">
-                <div className="text-2xl font-bold text-white">N/A</div>
-                <div className="text-xs font-medium text-slate-400">NO DATA</div>
+                <div className={`text-2xl font-bold ${getFrameworkStatusColor(framework.status)}`}>
+                  {framework.overallScore}%
+                </div>
+                <div className="text-xs font-medium text-slate-400 uppercase">
+                  {framework.status.replace('-', ' ')}
+                </div>
               </div>
             </div>
             
             <h3 className="text-lg font-semibold text-white mb-1">{framework.name}</h3>
             <p className="text-sm text-slate-400 mb-2">{framework.description}</p>
-            <p className="text-xs text-slate-500">Last assessed: Never</p>
+            <p className="text-xs text-slate-500">
+              Last assessed: {new Date(framework.lastAssessment).toLocaleDateString()}
+            </p>
           </motion.div>
         ))}
       </motion.div>

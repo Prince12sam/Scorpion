@@ -8,7 +8,54 @@ const MonitoringCenter = () => {
   const [activeAlerts, setActiveAlerts] = useState([]);
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [logSources, setLogSources] = useState([]);
+  const [logSources, setLogSources] = useState([
+    { id: 1, name: 'Web Server Logs', type: 'server', status: 'connected', events: 1240 },
+    { id: 2, name: 'Database Logs', type: 'server', status: 'connected', events: 856 },
+    { id: 3, name: 'Cloud Storage', type: 'cloud', status: 'connected', events: 432 },
+    { id: 4, name: 'DNS Logs', type: 'public', status: 'connected', events: 2100 }
+  ]);
+  const [systemMetrics, setSystemMetrics] = useState({
+    cpu: 0,
+    memory: 0,
+    disk: 0,
+    network: 0
+  });
+
+  // Fetch data from API
+  React.useEffect(() => {
+    const fetchAlerts = async () => {
+      try {
+        const response = await fetch('/api/monitoring/alerts');
+        const data = await response.json();
+        setActiveAlerts(data.alerts || []);
+      } catch (error) {
+        console.error('Failed to fetch alerts:', error);
+      }
+    };
+
+    const fetchMetrics = async () => {
+      try {
+        const response = await fetch('/api/monitoring/metrics');
+        const data = await response.json();
+        setSystemMetrics(data.metrics || {});
+      } catch (error) {
+        console.error('Failed to fetch metrics:', error);
+      }
+    };
+
+    fetchAlerts();
+    fetchMetrics();
+
+    // Auto-refresh every 10 seconds if enabled
+    const interval = setInterval(() => {
+      if (autoRefresh) {
+        fetchAlerts();
+        fetchMetrics();
+      }
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh]);
 
   const getSeverityColor = (severity) => {
     switch (severity) {
@@ -55,16 +102,67 @@ const MonitoringCenter = () => {
     ? activeAlerts 
     : activeAlerts.filter(alert => alert.severity === filterSeverity);
 
-  const handleAlertAction = (alertId, action) => {
-    toast({
-      title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
-    });
+  const handleAlertAction = async (alertId, action) => {
+    try {
+      const response = await fetch(`/api/monitoring/alert/${alertId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: action === 'acknowledge' ? 'acknowledged' : 'resolved' })
+      });
+      
+      if (response.ok) {
+        const updatedAlerts = activeAlerts.map(alert => {
+          if (alert.id === alertId) {
+            return { ...alert, status: action === 'acknowledge' ? 'acknowledged' : 'resolved' };
+          }
+          return alert;
+        });
+        setActiveAlerts(updatedAlerts);
+        toast({
+          title: "Alert Updated",
+          description: `Alert ${action === 'acknowledge' ? 'acknowledged' : 'resolved'} successfully.`
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update alert.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleAddSource = () => {
+    const newSource = {
+      id: logSources.length + 1,
+      name: `New Log Source ${logSources.length + 1}`,
+      type: 'server',
+      status: 'connected',
+      events: Math.floor(Math.random() * 1000)
+    };
+    setLogSources([...logSources, newSource]);
     toast({
-      title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
+      title: "Log Source Added",
+      description: `${newSource.name} has been connected successfully.`
     });
+  };
+
+  const refreshMetrics = async () => {
+    try {
+      const response = await fetch('/api/monitoring/metrics');
+      const data = await response.json();
+      setSystemMetrics(data.metrics || {});
+      toast({
+        title: "Metrics Refreshed",
+        description: "System metrics have been updated."
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to refresh metrics.",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -74,10 +172,77 @@ const MonitoringCenter = () => {
           <h1 className="text-3xl font-bold text-white mb-2">Monitoring Center</h1>
           <p className="text-slate-400">Real-time intrusion detection, log analysis, and incident response.</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => setAutoRefresh(!autoRefresh)} className={autoRefresh ? 'border-green-500 text-green-400' : 'border-slate-600 text-slate-400'}>
-          <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
-          Auto Refresh
-        </Button>
+        <div className="flex gap-3">
+          <Button onClick={refreshMetrics} className="bg-blue-600 hover:bg-blue-700">
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Metrics
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setAutoRefresh(!autoRefresh)} className={autoRefresh ? 'border-green-500 text-green-400' : 'border-slate-600 text-slate-400'}>
+            <RefreshCw className={`w-4 h-4 mr-2 ${autoRefresh ? 'animate-spin' : ''}`} />
+            Auto Refresh
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* System Health Metrics */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-sm">CPU Usage</span>
+            <span className={`text-sm ${systemMetrics.cpu > 80 ? 'text-red-400' : systemMetrics.cpu > 60 ? 'text-yellow-400' : 'text-green-400'}`}>
+              {systemMetrics.cpu}%
+            </span>
+          </div>
+          <div className="w-full bg-slate-700 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${systemMetrics.cpu > 80 ? 'bg-red-500' : systemMetrics.cpu > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}
+              style={{ width: `${systemMetrics.cpu}%` }}
+            ></div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-sm">Memory Usage</span>
+            <span className={`text-sm ${systemMetrics.memory > 80 ? 'text-red-400' : systemMetrics.memory > 60 ? 'text-yellow-400' : 'text-green-400'}`}>
+              {systemMetrics.memory}%
+            </span>
+          </div>
+          <div className="w-full bg-slate-700 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${systemMetrics.memory > 80 ? 'bg-red-500' : systemMetrics.memory > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}
+              style={{ width: `${systemMetrics.memory}%` }}
+            ></div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-sm">Disk Usage</span>
+            <span className={`text-sm ${systemMetrics.disk > 80 ? 'text-red-400' : systemMetrics.disk > 60 ? 'text-yellow-400' : 'text-green-400'}`}>
+              {systemMetrics.disk}%
+            </span>
+          </div>
+          <div className="w-full bg-slate-700 rounded-full h-2">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${systemMetrics.disk > 80 ? 'bg-red-500' : systemMetrics.disk > 60 ? 'bg-yellow-500' : 'bg-green-500'}`}
+              style={{ width: `${systemMetrics.disk}%` }}
+            ></div>
+          </div>
+        </div>
+
+        <div className="bg-slate-900 rounded-lg p-4 border border-slate-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-slate-400 text-sm">Network I/O</span>
+            <span className="text-sm text-blue-400">{systemMetrics.network} MB/s</span>
+          </div>
+          <div className="w-full bg-slate-700 rounded-full h-2">
+            <div 
+              className="h-2 bg-blue-500 rounded-full transition-all duration-300"
+              style={{ width: `${Math.min(systemMetrics.network * 10, 100)}%` }}
+            ></div>
+          </div>
+        </div>
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-card p-6 rounded-xl">

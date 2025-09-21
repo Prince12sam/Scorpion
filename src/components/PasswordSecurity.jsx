@@ -81,7 +81,7 @@ const PasswordSecurity = () => {
         toast({
           title: data.breached ? "Password Compromised!" : "Password Safe",
           description: data.breached 
-            ? `Found in ${data.count} breaches` 
+            ? `Found in ${data.breaches?.length || data.count} breaches` 
             : "No breaches found for this password",
           variant: data.breached ? "destructive" : "default"
         });
@@ -98,6 +98,8 @@ const PasswordSecurity = () => {
       setIsLoading(false);
     }
   };
+
+
 
   const generateSecurePassword = async () => {
     try {
