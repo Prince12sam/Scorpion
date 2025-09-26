@@ -12,6 +12,10 @@ import { FileIntegrity } from './lib/file-integrity.js';
 import { PasswordSecurity } from './lib/password-security.js';
 import { ExploitFramework } from './lib/exploit-framework.js';
 import { generateReport } from './lib/reporter.js';
+import { NetworkDiscovery } from './lib/network-discovery.js';
+import { EnterpriseVulnScanner } from './lib/enterprise-vuln-scanner.js';
+import { InternalNetworkTester } from './lib/internal-network-tester.js';
+import { AdvancedReportingEngine } from './lib/advanced-reporting.js';
 
 // Load environment variables
 dotenv.config();
@@ -1138,6 +1142,251 @@ ${chalk.cyan('EXAMPLES:')}
   ${chalk.gray('# Brute force SSH service')}
   scorpion brute-force --target 10.0.0.1 --service ssh --threads 10
     `);
+  });
+
+// ====== ENTERPRISE SECURITY COMMANDS ======
+
+// Network Discovery Command
+program
+  .command('network-discovery')
+  .description('🌐 Advanced network discovery and mapping')
+  .option('-t, --target <target>', 'Target network or IP range')
+  .option('--internal', 'Scan internal networks', true)  
+  .option('--external', 'Scan external networks', true)
+  .option('--deep', 'Enable deep discovery mode')
+  .option('--threads <number>', 'Number of concurrent threads', '50')
+  .option('--timeout <ms>', 'Connection timeout in milliseconds', '3000')
+  .option('-o, --output <file>', 'Output file for results')
+  .action(async (options) => {
+    if (!options.target) {
+      console.error(chalk.red('❌ Target is required. Use --target <ip/network>'));
+      process.exit(1);
+    }
+
+    console.log(chalk.blue('🌐 Starting Advanced Network Discovery'));
+    const spinner = ora('Discovering network topology...').start();
+
+    try {
+      const discovery = new NetworkDiscovery();
+      const results = await discovery.discoverNetwork(options.target, {
+        internal: options.internal,
+        external: options.external,
+        deep: options.deep,
+        threads: parseInt(options.threads),
+        timeout: parseInt(options.timeout)
+      });
+
+      spinner.succeed('Network discovery completed');
+
+      console.log(chalk.green(`\n✅ Discovery Results:`));
+      console.log(chalk.cyan(`  Networks Found: ${results.internal_networks.length + results.external_networks.length}`));
+      console.log(chalk.cyan(`  Live Hosts: ${results.discovered_hosts.length}`));
+      console.log(chalk.cyan(`  VLANs Discovered: ${results.vlan_discovery.length}`));
+      console.log(chalk.cyan(`  Wireless Networks: ${results.wireless_networks.length}`));
+
+      if (options.output) {
+        await fs.writeFile(options.output, JSON.stringify(results, null, 2));
+        console.log(chalk.blue(`📄 Results saved to: ${options.output}`));
+      }
+
+    } catch (error) {
+      spinner.fail('Network discovery failed');
+      console.error(chalk.red(`❌ Error: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+// Enterprise Vulnerability Assessment Command
+program
+  .command('enterprise-scan')
+  .description('🏢 Comprehensive enterprise vulnerability assessment')
+  .option('-t, --targets <targets...>', 'Target systems (IPs, ranges, or file)')
+  .option('--internal', 'Include internal network scanning', true)
+  .option('--external', 'Include external network scanning', true)
+  .option('--deep', 'Enable deep vulnerability analysis')
+  .option('--authenticated', 'Enable authenticated scanning')
+  .option('--compliance <frameworks...>', 'Compliance frameworks to assess')
+  .option('--credentials <file>', 'Credentials file for authenticated scans')
+  .option('--threads <number>', 'Number of concurrent threads', '100')
+  .option('--safe', 'Safe mode (no exploits)', true)
+  .option('-o, --output <file>', 'Output file for results')
+  .option('--format <format>', 'Report format (html, pdf, json)', 'html')
+  .action(async (options) => {
+    if (!options.targets || options.targets.length === 0) {
+      console.error(chalk.red('❌ At least one target is required. Use --targets <ip/network>'));
+      process.exit(1);
+    }
+
+    console.log(chalk.blue('🏢 Starting Enterprise Vulnerability Assessment'));
+    const spinner = ora('Initializing enterprise scanner...').start();
+
+    try {
+      const scanner = new EnterpriseVulnScanner();
+      
+      // Load credentials if provided
+      let credentials = {};
+      if (options.credentials) {
+        const credData = await fs.readFile(options.credentials, 'utf8');
+        credentials = JSON.parse(credData);
+      }
+
+      const assessment = await scanner.assessmentScan(options.targets, {
+        internal: options.internal,
+        external: options.external,
+        deep: options.deep,
+        compliance: options.compliance || [],
+        authenticated: options.authenticated,
+        credentials,
+        safe: options.safe,
+        threads: parseInt(options.threads)
+      });
+
+      spinner.succeed('Enterprise assessment completed');
+
+      console.log(chalk.green(`\n🎯 Assessment Summary:`));
+      console.log(chalk.red(`  Critical: ${assessment.statistics.critical_count}`));
+      console.log(chalk.yellow(`  High: ${assessment.statistics.high_count}`));
+      console.log(chalk.blue(`  Medium: ${assessment.statistics.medium_count}`));
+      console.log(chalk.gray(`  Low: ${assessment.statistics.low_count}`));
+      console.log(chalk.cyan(`  Total Vulnerabilities: ${assessment.statistics.total_vulnerabilities}`));
+
+      if (options.output) {
+        // Generate professional report
+        const reporting = new AdvancedReportingEngine();
+        const report = await reporting.generateSecurityReport(assessment, {
+          format: options.format,
+          template: 'professional',
+          includeCharts: true,
+          includeDetails: true,
+          includeRemediation: true
+        });
+
+        console.log(chalk.blue(`📊 Professional report generated: ${report.filename}`));
+      }
+
+    } catch (error) {
+      spinner.fail('Enterprise assessment failed');
+      console.error(chalk.red(`❌ Error: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+// Internal Network Testing Command
+program
+  .command('internal-test')
+  .description('🏠 Internal network security assessment')
+  .option('--scope <scope>', 'Assessment scope (full, targeted, stealth)', 'full')
+  .option('--targets <targets...>', 'Specific targets (optional - auto-discover if not provided)')
+  .option('--depth <depth>', 'Assessment depth (surface, normal, deep)', 'deep') 
+  .option('--compliance <frameworks...>', 'Compliance frameworks to assess')
+  .option('--authenticated', 'Use authenticated testing')
+  .option('--credentials <file>', 'Credentials file')
+  .option('--evasion', 'Enable evasion techniques')
+  .option('--threads <number>', 'Concurrent operations', '50')
+  .option('-o, --output <file>', 'Output file for results')
+  .action(async (options) => {
+    console.log(chalk.blue('🏠 Starting Internal Network Security Assessment'));
+    const spinner = ora('Mapping internal network...').start();
+
+    try {
+      const tester = new InternalNetworkTester();
+      
+      // Load credentials if provided
+      let credentials = {};
+      if (options.credentials) {
+        const credData = await fs.readFile(options.credentials, 'utf8');
+        credentials = JSON.parse(credData);
+      }
+
+      const assessment = await tester.assessInternalSecurity({
+        scope: options.scope,
+        targets: options.targets || [],
+        depth: options.depth,
+        compliance: options.compliance || [],
+        authenticated: options.authenticated,
+        credentials,
+        evasion: options.evasion,
+        threads: parseInt(options.threads)
+      });
+
+      spinner.succeed('Internal assessment completed');
+
+      console.log(chalk.green(`\n🔍 Internal Assessment Results:`));
+      console.log(chalk.cyan(`  Assets Discovered: ${assessment.discovered_assets.length}`));
+      console.log(chalk.cyan(`  Attack Paths Found: ${assessment.attack_paths.length}`));
+      
+      const totalFindings = Object.values(assessment.security_findings).reduce((sum, findings) => sum + findings.length, 0);
+      console.log(chalk.yellow(`  Security Findings: ${totalFindings}`));
+
+      if (assessment.compliance_gaps.length > 0) {
+        console.log(chalk.red(`  Compliance Gaps: ${assessment.compliance_gaps.length}`));
+      }
+
+      if (options.output) {
+        await fs.writeFile(options.output, JSON.stringify(assessment, null, 2));
+        console.log(chalk.blue(`📄 Results saved to: ${options.output}`));
+      }
+
+    } catch (error) {
+      spinner.fail('Internal assessment failed');
+      console.error(chalk.red(`❌ Error: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+// Advanced Reporting Command
+program
+  .command('generate-report')
+  .description('📊 Generate professional security reports')
+  .option('-i, --input <file>', 'Input assessment file (JSON)')
+  .option('--format <format>', 'Report format (html, pdf, json, xml, docx)', 'html')
+  .option('--template <template>', 'Report template (professional, executive, technical)', 'professional')
+  .option('--audience <audience>', 'Target audience (executive, technical, mixed)', 'mixed')
+  .option('--charts', 'Include charts and visualizations', true)
+  .option('--details', 'Include detailed findings', true)  
+  .option('--remediation', 'Include remediation guidance', true)
+  .option('--confidential', 'Mark as confidential', true)
+  .option('-o, --output <file>', 'Output directory for report')
+  .action(async (options) => {
+    if (!options.input) {
+      console.error(chalk.red('❌ Input assessment file is required. Use --input <file>'));
+      process.exit(1);
+    }
+
+    console.log(chalk.blue('📊 Generating Professional Security Report'));
+    const spinner = ora('Loading assessment data...').start();
+
+    try {
+      // Load assessment data
+      const assessmentData = await fs.readFile(options.input, 'utf8');
+      const assessment = JSON.parse(assessmentData);
+
+      spinner.text = 'Generating report...';
+
+      const reporting = new AdvancedReportingEngine();
+      const report = await reporting.generateSecurityReport(assessment, {
+        format: options.format,
+        template: options.template,
+        audience: options.audience,
+        includeCharts: options.charts,
+        includeDetails: options.details,
+        includeRemediation: options.remediation,
+        confidential: options.confidential
+      });
+
+      spinner.succeed('Report generated successfully');
+
+      console.log(chalk.green(`\n📋 Report Details:`));
+      console.log(chalk.cyan(`  Format: ${report.format.toUpperCase()}`));
+      console.log(chalk.cyan(`  File: ${report.filename}`));
+      console.log(chalk.cyan(`  Size: ${(report.size / 1024).toFixed(2)} KB`));
+      console.log(chalk.blue(`  Location: ${report.path}`));
+
+    } catch (error) {
+      spinner.fail('Report generation failed');
+      console.error(chalk.red(`❌ Error: ${error.message}`));
+      process.exit(1);
+    }
   });
 
 program.parse();
