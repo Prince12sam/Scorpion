@@ -1,6 +1,8 @@
-# 🦂 Scorpion - Global Threat-Hunting Platform
+# Scorpion Security Platform 🦂
 
-A comprehensive cybersecurity platform that works both as a **Command Line Interface (CLI)** and **Web Application**. Scorpion provides professional-grade security testing, vulnerability scanning, threat intelligence, and network reconnaissance capabilities.
+**Global Threat-Hunting Platform with Advanced Vulnerability Assessment**
+
+Scorpion is a comprehensive security platform that combines automated vulnerability scanning, intelligent payload selection, and mass exploitation capabilities across Windows, macOS, and Linux systems.
 
 ## ✨ Features
 
