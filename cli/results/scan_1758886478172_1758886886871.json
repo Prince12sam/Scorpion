@@ -1,0 +1,1362 @@
+{
+  "scanId": "1758886478172",
+  "target": "afrimarkethub.store",
+  "timestamp": "2025-09-26T11:34:38.172Z",
+  "type": "normal",
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2020-15778",
+      "severity": "Medium",
+      "description": "OpenSSH command injection"
+    },
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://afrimarkethub.store:80",
+      "description": "Missing Content Security Policy header",
+      "recommendation": "Add content-security-policy header to improve security"
+    },
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://afrimarkethub.store:80",
+      "description": "Missing HTTP Strict Transport Security header",
+      "recommendation": "Add strict-transport-security header to improve security"
+    }
+  ],
+  "openPorts": [
+    {
+      "port": 20,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 21,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 22,
+      "status": "open|filtered",
+      "technique": "fin-scan",
+      "note": "No RST response to FIN packet"
+    },
+    {
+      "port": 23,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 24,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 25,
+      "status": "open|filtered",
+      "technique": "fin-scan",
+      "note": "No RST response to FIN packet"
+    },
+    {
+      "port": 26,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 27,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 28,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 29,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 30,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 31,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 32,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 33,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 34,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 35,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 36,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 37,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 38,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 39,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 40,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 41,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 42,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 43,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 44,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 45,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 46,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 47,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 48,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 49,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 50,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 51,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 52,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 53,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 54,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 55,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 56,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 57,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 58,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 59,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 60,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 61,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 62,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 63,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 64,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 65,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 66,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 67,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 68,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 69,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 70,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 71,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 72,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 73,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 74,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 75,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 76,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 77,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 78,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 79,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 80,
+      "status": "open|filtered",
+      "technique": "fin-scan",
+      "note": "No RST response to FIN packet"
+    },
+    {
+      "port": 81,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 82,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 83,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 84,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 85,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 86,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 87,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 88,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 89,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 90,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 91,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 92,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 93,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 94,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 95,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 96,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 97,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 98,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 99,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    },
+    {
+      "port": 100,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)"
+    }
+  ],
+  "services": [
+    {
+      "port": 20,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 21,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "FTP",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 22,
+      "status": "open|filtered",
+      "technique": "fin-scan",
+      "note": "No RST response to FIN packet",
+      "name": "SSH",
+      "version": "2.0",
+      "banner": "SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.14\r\n\u0000\u0000\u0004\\\u0007\u0014�<QvtT\u0003��:�(C���\u0000\u0000\u00011sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,ext-info-s,kex-strict-s-v00@openssh.com\u0000\u0000\u00009rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256,ssh-ed25519\u0000\u0000\u0000lchacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com\u0000\u0000\u0000lchacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com\u0000\u0000\u0000�umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1\u0000\u0000\u0000�umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1\u0000\u0000\u0000\u0015none,zlib@openssh.com\u0000\u0000\u0000\u0015none,zlib@openssh.com\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "product": "OpenSSH_9.6p1",
+      "extraInfo": [],
+      "vulnerabilities": [
+        {
+          "cve": "CVE-2020-15778",
+          "severity": "Medium",
+          "description": "OpenSSH command injection"
+        }
+      ],
+      "exploits": []
+    },
+    {
+      "port": 23,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Telnet",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 24,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 25,
+      "status": "open|filtered",
+      "technique": "fin-scan",
+      "note": "No RST response to FIN packet",
+      "name": "SMTP",
+      "version": "unknown",
+      "banner": "452 syntax error (connecting)",
+      "product": null,
+      "extraInfo": [],
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 26,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 27,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 28,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 29,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 30,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 31,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 32,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 33,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 34,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 35,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 36,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 37,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 38,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 39,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 40,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 41,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 42,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 43,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 44,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 45,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 46,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 47,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 48,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 49,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 50,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 51,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 52,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 53,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "DNS",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 54,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 55,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 56,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 57,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 58,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 59,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 60,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 61,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 62,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 63,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 64,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 65,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 66,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 67,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 68,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 69,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 70,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 71,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 72,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 73,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 74,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 75,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 76,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 77,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 78,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 79,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 80,
+      "status": "open|filtered",
+      "technique": "fin-scan",
+      "note": "No RST response to FIN packet",
+      "name": "HTTP",
+      "version": "unknown",
+      "banner": "HTTP/1.1 301 Moved Permanently\r\nServer: nginx\r\nDate: Fri, 26 Sep 2025 11:39:39 GMT\r\nContent-Type: text/html\r\nContent-Length: 162\r\nConnection: keep-alive\r\nLocation: https://afrimarkethub.store/\r\nX-Frame-Options: SAMEORIGIN\r\nX-Content-Type-Options: nosniff\r\nX-XSS-Protection: 1; mode=block\r\nX-Permitted-Cross-Domain-Policies: master-only\r\nReferrer-Policy: same-origin\r\nalt-svc: h3=\":443\"; ma=86400\r\n\r\n<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>",
+      "product": "nginx",
+      "extraInfo": [
+        "Server: nginx"
+      ],
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 81,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 82,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 83,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 84,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 85,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 86,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 87,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 88,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 89,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 90,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 91,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 92,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 93,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 94,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 95,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 96,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 97,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 98,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 99,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 100,
+      "status": "open|filtered",
+      "note": "No response (likely open or filtered)",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    }
+  ],
+  "summary": {
+    "totalVulnerabilities": 3,
+    "criticalVulns": 0,
+    "highVulns": 0,
+    "mediumVulns": 3,
+    "lowVulns": 0,
+    "openPorts": 81,
+    "services": 81,
+    "riskScore": 12
+  },
+  "osFingerprint": {
+    "detectedOS": "Linux",
+    "confidence": 66.66666666666666,
+    "evidence": [
+      "22/tcp service detected",
+      "80/tcp service detected"
+    ]
+  }
+}

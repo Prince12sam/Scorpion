@@ -1,0 +1,114 @@
+{
+  "scanId": "1758887265746",
+  "target": "afrimarkethub.store",
+  "timestamp": "2025-09-26T11:47:45.746Z",
+  "type": "normal",
+  "vulnerabilities": [
+    {
+      "cve": "CVE-2020-15778",
+      "severity": "Medium",
+      "description": "OpenSSH command injection"
+    },
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://afrimarkethub.store:80",
+      "description": "Missing Content Security Policy header",
+      "recommendation": "Add content-security-policy header to improve security"
+    },
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://afrimarkethub.store:80",
+      "description": "Missing HTTP Strict Transport Security header",
+      "recommendation": "Add strict-transport-security header to improve security"
+    }
+  ],
+  "openPorts": [
+    {
+      "port": 22,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "216ms"
+    },
+    {
+      "port": 25,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "38ms"
+    },
+    {
+      "port": 80,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "140ms"
+    }
+  ],
+  "services": [
+    {
+      "port": 22,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "216ms",
+      "name": "SSH",
+      "version": "2.0",
+      "banner": "SSH-2.0-OpenSSH_9.6p1 Ubuntu-3ubuntu13.14\r\n\u0000\u0000\u0004\\\u0007\u0014\tL�G}��B(b뮍\u0000\u0000\u00011sntrup761x25519-sha512@openssh.com,curve25519-sha256,curve25519-sha256@libssh.org,ecdh-sha2-nistp256,ecdh-sha2-nistp384,ecdh-sha2-nistp521,diffie-hellman-group-exchange-sha256,diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,diffie-hellman-group14-sha256,ext-info-s,kex-strict-s-v00@openssh.com\u0000\u0000\u00009rsa-sha2-512,rsa-sha2-256,ecdsa-sha2-nistp256,ssh-ed25519\u0000\u0000\u0000lchacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com\u0000\u0000\u0000lchacha20-poly1305@openssh.com,aes128-ctr,aes192-ctr,aes256-ctr,aes128-gcm@openssh.com,aes256-gcm@openssh.com\u0000\u0000\u0000�umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1\u0000\u0000\u0000�umac-64-etm@openssh.com,umac-128-etm@openssh.com,hmac-sha2-256-etm@openssh.com,hmac-sha2-512-etm@openssh.com,hmac-sha1-etm@openssh.com,umac-64@openssh.com,umac-128@openssh.com,hmac-sha2-256,hmac-sha2-512,hmac-sha1\u0000\u0000\u0000\u0015none,zlib@openssh.com\u0000\u0000\u0000\u0015none,zlib@openssh.com\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000\u0000",
+      "product": "OpenSSH_9.6p1",
+      "extraInfo": [],
+      "vulnerabilities": [
+        {
+          "cve": "CVE-2020-15778",
+          "severity": "Medium",
+          "description": "OpenSSH command injection"
+        }
+      ],
+      "exploits": []
+    },
+    {
+      "port": 25,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "38ms",
+      "name": "SMTP",
+      "version": "unknown",
+      "banner": "452 syntax error (connecting)",
+      "product": null,
+      "extraInfo": [],
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 80,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "140ms",
+      "name": "HTTP",
+      "version": "unknown",
+      "banner": "HTTP/1.1 301 Moved Permanently\r\nServer: nginx\r\nDate: Fri, 26 Sep 2025 11:47:53 GMT\r\nContent-Type: text/html\r\nContent-Length: 162\r\nConnection: keep-alive\r\nLocation: https://afrimarkethub.store/\r\nX-Frame-Options: SAMEORIGIN\r\nX-Content-Type-Options: nosniff\r\nX-XSS-Protection: 1; mode=block\r\nX-Permitted-Cross-Domain-Policies: master-only\r\nReferrer-Policy: same-origin\r\nalt-svc: h3=\":443\"; ma=86400\r\n\r\n<html>\r\n<head><title>301 Moved Permanently</title></head>\r\n<body>\r\n<center><h1>301 Moved Permanently</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>",
+      "product": "nginx",
+      "extraInfo": [
+        "Server: nginx"
+      ],
+      "vulnerabilities": [],
+      "exploits": []
+    }
+  ],
+  "summary": {
+    "totalVulnerabilities": 3,
+    "criticalVulns": 0,
+    "highVulns": 0,
+    "mediumVulns": 3,
+    "lowVulns": 0,
+    "openPorts": 3,
+    "services": 3,
+    "riskScore": 12
+  },
+  "osFingerprint": {
+    "detectedOS": "Linux",
+    "confidence": 66.66666666666666,
+    "evidence": [
+      "22/tcp service detected",
+      "80/tcp service detected"
+    ]
+  }
+}

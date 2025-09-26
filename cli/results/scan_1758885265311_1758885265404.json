@@ -1,0 +1,19 @@
+{
+  "scanId": "1758885265311",
+  "target": "localhost",
+  "timestamp": "2025-09-26T11:14:25.311Z",
+  "type": "normal",
+  "vulnerabilities": [],
+  "openPorts": [],
+  "services": [],
+  "summary": {
+    "totalVulnerabilities": 0,
+    "criticalVulns": 0,
+    "highVulns": 0,
+    "mediumVulns": 0,
+    "lowVulns": 0,
+    "openPorts": 0,
+    "services": 0,
+    "riskScore": 0
+  }
+}
