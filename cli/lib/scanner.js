@@ -93,9 +93,81 @@ export class SecurityScanner {
         results.vulnerabilities.push(...sslVulns);
       }
 
-      // Exploit testing mode (if enabled)
+      // ====== INTELLIGENT PAYLOAD SELECTION & MASS EXPLOITATION ======
+      if (results.vulnerabilities.length > 0) {
+        console.log(`🧠 Analyzing ${results.vulnerabilities.length} vulnerabilities for optimal exploitation...`);
+        
+        // Import the exploit framework for advanced capabilities
+        const { ExploitFramework } = await import('./exploit-framework.js');
+        const exploitFramework = new ExploitFramework();
+        
+        // Auto-select payloads based on discovered vulnerabilities
+        const payloadPlan = await exploitFramework.autoSelectPayloads(results.vulnerabilities, target, options);
+        results.payloadRecommendations = payloadPlan;
+        
+        console.log(`🎯 Generated exploitation plan:`);
+        console.log(`   Critical vulnerabilities: ${chalk.red(payloadPlan.criticalFirst.length)}`);
+        console.log(`   Quick win opportunities: ${chalk.yellow(payloadPlan.quickWins.length)}`);
+        console.log(`   Persistent access vectors: ${chalk.blue(payloadPlan.persistentAccess.length)}`);
+        console.log(`   Total payloads ready: ${payloadPlan.massExploitPlan.totalPayloads}`);
+        console.log(`   Estimated duration: ${payloadPlan.massExploitPlan.estimatedDuration}`);
+        console.log(`   Risk level: ${chalk.red(payloadPlan.massExploitPlan.riskLevel)}`);
+        
+        // Display payload recommendations for each vulnerability
+        if (payloadPlan.recommendations.length > 0) {
+          console.log(`\n🎯 PAYLOAD RECOMMENDATIONS:`);
+          payloadPlan.recommendations.forEach((rec, index) => {
+            console.log(`${index + 1}. ${chalk.cyan(rec.vulnerability.toUpperCase())} vulnerability on port ${rec.port}`);
+            console.log(`   Success Rate: ${chalk.green(rec.successRate + '%')}`);
+            console.log(`   Impact: ${rec.impact}`);
+            console.log(`   Shell Potential: ${rec.shellPotential ? chalk.red('HIGH') : chalk.green('LOW')}`);
+            console.log(`   Data Exfiltration: ${rec.dataExfiltration ? chalk.red('POSSIBLE') : chalk.green('UNLIKELY')}`);
+            console.log(`   Recommended Payloads: ${rec.payloads.length} available`);
+            
+            // Show top 3 payloads for each vulnerability
+            if (rec.payloads.length > 0) {
+              console.log(`   Top Payloads:`);
+              rec.payloads.slice(0, 3).forEach((payload, pIndex) => {
+                const truncated = payload.length > 80 ? payload.substring(0, 80) + '...' : payload;
+                console.log(`     ${pIndex + 1}. ${chalk.yellow(truncated)}`);
+              });
+            }
+            console.log('');
+          });
+        }
+        
+        // Ask user for exploitation preference
+        if (options.exploit && options.massHacking !== false) {
+          console.log(chalk.red('\n🚨 MASS EXPLOITATION OPTIONS AVAILABLE:'));
+          console.log(`1. ${chalk.yellow('Test Individual Payloads')} - Manual payload testing`);
+          console.log(`2. ${chalk.red('MASS EXPLOITATION')} - Automated multi-stage attack`);
+          console.log(`3. ${chalk.blue('Critical Only')} - Focus on critical vulnerabilities`);
+          console.log(`4. ${chalk.green('Reconnaissance Mode')} - Gather intel without exploitation`);
+          
+          // For demo purposes, if massHacking is enabled, perform mass exploitation
+          if (options.massHacking === true || options.payloadMode === 'nuclear') {
+            console.log(chalk.red('\n� INITIATING MASS EXPLOITATION SEQUENCE...'));
+            results.massExploitResults = await exploitFramework.performMassExploitation(target, payloadPlan, {
+              aggressive: options.payloadMode === 'nuclear',
+              stealth: options.payloadMode === 'safe',
+              persistent: options.persistent !== false
+            });
+            
+            console.log(`\n�💥 MASS EXPLOITATION COMPLETED:`);
+            console.log(`   Duration: ${Math.round(results.massExploitResults.duration / 1000)} seconds`);
+            console.log(`   Attempts: ${results.massExploitResults.exploitAttempts}`);
+            console.log(`   Successful: ${chalk.red(results.massExploitResults.successfulExploits)}`);
+            console.log(`   Success Rate: ${results.massExploitResults.successRate.toFixed(1)}%`);
+            console.log(`   Shells Obtained: ${chalk.red(results.massExploitResults.shellsObtained)}`);
+            console.log(`   Data Exfiltrated: ${results.massExploitResults.dataExfiltrated}`);
+            console.log(`   Backdoors Installed: ${chalk.red(results.massExploitResults.backdoorsInstalled)}`);
+          }
+        }
+      }
+
+      // Legacy exploit testing mode (if enabled)
       if (options.exploit && results.openPorts.length > 0) {
-        console.log('💥 EXPLOIT MODE ACTIVATED - Testing payloads...');
+        console.log('💥 LEGACY EXPLOIT MODE - Testing individual payloads...');
         console.log(chalk.red('⚠️  WARNING: Only use on authorized targets!'));
         
         const exploiter = new (await import('./exploit-framework.js')).ExploitFramework();
@@ -127,7 +199,14 @@ export class SecurityScanner {
 
   async portScan(target, portRange = '1-1000', technique = 'tcp-connect') {
     console.log(`🔍 Using ${technique} scan technique on ${target}`);
-    const [startPort, endPort] = portRange.split('-').map(p => parseInt(p));
+    
+    let startPort, endPort;
+    if (portRange.includes('-')) {
+      [startPort, endPort] = portRange.split('-').map(p => parseInt(p));
+    } else {
+      // Single port specified
+      startPort = endPort = parseInt(portRange);
+    }
     
     // Use appropriate scanning technique
     const scanFunction = this.scanTechniques[technique] || this.tcpConnectScan;

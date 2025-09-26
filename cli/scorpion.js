@@ -50,6 +50,10 @@ program
   .option('--technique <technique>', 'Scan technique: tcp-connect, syn-scan, udp-scan, stealth, fin-scan, null-scan, xmas-scan, ack-scan', 'tcp-connect')
   .option('--exploit', 'Enable exploit payload testing (DANGEROUS - Use only on authorized targets!)')
   .option('--payload-mode <mode>', 'Payload testing mode: safe, aggressive, nuclear', 'safe')
+  .option('--mass-hacking', 'Enable mass exploitation after vulnerability discovery (WEAPON-GRADE)')
+  .option('--auto-payloads', 'Automatically select optimal payloads for discovered vulnerabilities')
+  .option('--persistent', 'Create persistent backdoor access when possible')
+  .option('--critical-only', 'Focus exploitation only on critical vulnerabilities')
   .option('-o, --output <file>', 'Output file')
   .option('--format <format>', 'Output format: json, xml, csv', 'json')
   .action(async (options) => {
@@ -67,7 +71,11 @@ program
         type: options.type,
         technique: options.technique,
         exploit: options.exploit,
-        payloadMode: options.payloadMode
+        payloadMode: options.payloadMode,
+        massHacking: options.massHacking,
+        autoPayloads: options.autoPayloads,
+        persistent: options.persistent,
+        criticalOnly: options.criticalOnly
       });
 
       spinner.succeed(`Scan completed! Found ${results.openPorts?.length || 0} open ports and ${results.vulnerabilities.length} vulnerabilities`);
@@ -174,6 +182,51 @@ program
               console.log(`  ${index + 1}. ${rec}`);
             });
           }
+        }
+      }
+
+      // Display Mass Exploitation Results
+      if (results.massExploitResults) {
+        console.log(chalk.red('\n💀 MASS EXPLOITATION SUMMARY:'));
+        console.log(`Duration: ${Math.round(results.massExploitResults.duration / 1000)} seconds`);
+        console.log(`Total Attempts: ${results.massExploitResults.exploitAttempts}`);
+        console.log(`Successful Exploits: ${chalk.red(results.massExploitResults.successfulExploits)}`);
+        console.log(`Success Rate: ${results.massExploitResults.successRate.toFixed(1)}%`);
+        console.log(`Shells Obtained: ${chalk.red(results.massExploitResults.shellsObtained)}`);
+        console.log(`Backdoors Installed: ${chalk.red(results.massExploitResults.backdoorsInstalled)}`);
+        
+        if (results.massExploitResults.exploitDetails.length > 0) {
+          console.log(chalk.red('\n🚨 SUCCESSFUL EXPLOITS:'));
+          results.massExploitResults.exploitDetails
+            .filter(detail => detail.success)
+            .forEach((detail, index) => {
+              console.log(`${index + 1}. ${chalk.red(detail.vulnerability.toUpperCase())} on ${detail.target}:${detail.port}`);
+              console.log(`   Phase: ${detail.phase}`);
+              console.log(`   Shell Access: ${detail.shellAccess ? chalk.red('YES') : 'NO'}`);
+              console.log(`   Data Extracted: ${detail.dataExtracted ? chalk.red('YES') : 'NO'}`);
+            });
+        }
+        
+        if (results.massExploitResults.timeline.length > 0) {
+          console.log(chalk.cyan('\n⏱️  EXPLOITATION TIMELINE:'));
+          results.massExploitResults.timeline.forEach((event, index) => {
+            const timeStr = event.time.toLocaleTimeString();
+            console.log(`${timeStr} - ${event.phase}: ${event.action} - ${event.result}`);
+          });
+        }
+      }
+
+      // Display Payload Recommendations
+      if (results.payloadRecommendations && !results.massExploitResults) {
+        console.log(chalk.cyan('\n🎯 PAYLOAD RECOMMENDATIONS SUMMARY:'));
+        console.log(`Total Vulnerabilities: ${results.payloadRecommendations.vulnerabilities}`);
+        console.log(`Critical First: ${chalk.red(results.payloadRecommendations.criticalFirst.length)}`);
+        console.log(`Quick Wins: ${chalk.yellow(results.payloadRecommendations.quickWins.length)}`);
+        console.log(`Persistent Access: ${chalk.blue(results.payloadRecommendations.persistentAccess.length)}`);
+        console.log(`Risk Level: ${chalk.red(results.payloadRecommendations.massExploitPlan.riskLevel)}`);
+        
+        if (options.autoPayloads && !options.massHacking) {
+          console.log(chalk.yellow('\n💡 TIP: Add --mass-hacking flag to execute automated exploitation'));
         }
       }
 
@@ -362,16 +415,89 @@ program
 // Exploit Payload Testing Command
 program
   .command('exploit')
-  .description('🔥 Advanced payload testing and exploitation (AUTHORIZED TARGETS ONLY!)')
+  .description('🔥 Advanced OWASP Top 10 2021 payload testing and exploitation (AUTHORIZED TARGETS ONLY!)')
   .option('-t, --target <target>', 'Target IP, domain, or URL')
   .option('-p, --port <port>', 'Specific port to test')
   .option('--service <service>', 'Target service (ssh, http, ftp, smtp, etc.)')
   .option('--vuln <cve>', 'Target specific vulnerability (CVE-YYYY-NNNN)')
-  .option('--payload <type>', 'Payload type: buffer-overflow, sql-injection, xss, rce, dos, all', 'all')
+  .option('--payload <type>', 'Payload type: owasp-top10, broken-access-control, sql-injection, xss, ssrf, cloud, aws, azure, gcp, all', 'all')
   .option('--mode <mode>', 'Exploitation mode: reconnaissance, proof-of-concept, weaponized', 'reconnaissance')
   .option('--threads <num>', 'Number of concurrent threads', '5')
   .option('--delay <ms>', 'Delay between attempts (ms)', '1000')
   .option('--output <file>', 'Save exploitation results')
+  .on('--help', () => {
+    console.log(`
+${chalk.cyan('🦂 Scorpion Advanced Exploit Framework - OWASP Top 10 2021 Edition')}
+${chalk.gray('═══════════════════════════════════════════════════════════════════')}
+
+${chalk.yellow('OWASP TOP 10 2021 PAYLOAD TYPES:')}
+  ${chalk.green('owasp-top10')}            - All OWASP Top 10 2021 vulnerabilities
+  ${chalk.green('broken-access-control')}  - A01:2021 - Path traversal, privilege escalation  
+  ${chalk.green('cryptographic-failure')}  - A02:2021 - Weak encryption, SSL/TLS issues
+  ${chalk.green('sql-injection')}          - A03:2021 - SQL injection (MySQL, PostgreSQL, MSSQL)
+  ${chalk.green('xss')}                    - A03:2021 - Cross-site scripting attacks
+  ${chalk.green('nosql-injection')}        - A03:2021 - NoSQL injection (MongoDB, etc.)
+  ${chalk.green('ldap-injection')}         - A03:2021 - LDAP injection attacks
+  ${chalk.green('insecure-design')}        - A04:2021 - Business logic flaws
+  ${chalk.green('security-misconfiguration')} - A05:2021 - Default configs, exposed services
+  ${chalk.green('vulnerable-components')}  - A06:2021 - CVE exploitation (Log4Shell, etc.)
+  ${chalk.green('authentication-failure')} - A07:2021 - Weak credentials, session flaws
+  ${chalk.green('integrity-failure')}      - A08:2021 - Deserialization attacks
+  ${chalk.green('logging-failure')}        - A09:2021 - Log injection, monitoring bypass
+  ${chalk.green('ssrf')}                   - A10:2021 - Server-side request forgery
+
+${chalk.yellow('CLOUD PLATFORM PAYLOADS:')}
+  ${chalk.green('cloud')}              - All cloud platform exploits
+  ${chalk.green('aws')}                - AWS-specific metadata and IAM exploitation
+  ${chalk.green('azure')}              - Azure metadata and access token extraction
+  ${chalk.green('gcp')}                - Google Cloud Platform service account tokens
+
+${chalk.yellow('TRADITIONAL PAYLOAD TYPES:')}
+  ${chalk.green('all')}                - All available payloads (OWASP + Traditional)
+  ${chalk.green('buffer-overflow')}    - Memory corruption exploits
+  ${chalk.green('rce')}                - Remote code execution
+  ${chalk.green('dos')}                - Denial of service attacks
+
+${chalk.yellow('EXPLOIT MODES:')}
+  ${chalk.green('reconnaissance')}     - Safe discovery and enumeration
+  ${chalk.green('proof-of-concept')}   - Demonstrate vulnerabilities
+  ${chalk.green('weaponized')}         - Full exploitation (use with extreme caution)
+
+${chalk.yellow('EXAMPLES:')}
+  ${chalk.cyan('OWASP Top 10 Testing:')}
+  scorpion exploit -t 192.168.1.100 --payload owasp-top10 --mode reconnaissance
+  scorpion exploit -t example.com --payload broken-access-control --mode proof-of-concept
+  scorpion exploit -t api.company.com --payload sql-injection --mode weaponized
+  
+  ${chalk.cyan('Cloud Security Testing:')}
+  scorpion exploit -t aws-server.com --payload aws --mode proof-of-concept
+  scorpion exploit -t azure-app.com --payload ssrf --mode reconnaissance
+  scorpion exploit -t gcp-instance.com --payload cloud --mode weaponized
+  
+  ${chalk.cyan('Traditional Penetration Testing:')}
+  scorpion exploit -t 10.0.0.1 --payload buffer-overflow --mode weaponized --threads 5
+  scorpion exploit -t target.com -p 443 --payload all --mode proof-of-concept
+
+${chalk.yellow('SUPPORTED PLATFORMS:')}
+  • On-premises servers and applications
+  • AWS (EC2, Lambda, RDS, S3, IAM)
+  • Microsoft Azure (VMs, App Service, AD, Key Vault)
+  • Google Cloud Platform (Compute Engine, Cloud Functions)
+  • Kubernetes and container environments
+  • Web applications, APIs, and microservices
+
+${chalk.red('⚠️  CRITICAL WARNING:')} 
+${chalk.red('This is a weapon-grade penetration testing tool capable of:')}
+${chalk.red('• Compromising systems and extracting sensitive data')}
+${chalk.red('• Accessing cloud metadata and service credentials')}
+${chalk.red('• Executing arbitrary code on vulnerable systems')}
+${chalk.red('• Causing service disruption and data corruption')}
+${chalk.red('')}
+${chalk.red('ONLY use this tool on systems you own or have explicit written authorization to test.')}
+${chalk.red('Unauthorized use is illegal and punishable by law.')}
+${chalk.red('The authors assume no responsibility for misuse of this tool.')}
+    `);
+  })
   .action(async (options) => {
     if (!options.target) {
       console.log(chalk.red('❌ Error: Target is required'));
@@ -738,5 +864,280 @@ async function getSystemHealth(target, options) {
     ] : []
   };
 }
+
+// ====== ADVANCED SHELL ACCESS COMMANDS ======
+
+// Shell Detection Command
+program
+  .command('shell-detect')
+  .description('🔍 Detect existing shell access on target')
+  .option('-t, --target <target>', 'Target IP or domain')
+  .option('--timeout <ms>', 'Connection timeout in milliseconds', 5000)
+  .action(async (options) => {
+    if (!options.target) {
+      console.log(chalk.red('❌ Error: Target is required'));
+      process.exit(1);
+    }
+
+    console.log(chalk.red('⚠️  WARNING: This is a weapon-grade feature. Use only on authorized targets!'));
+    const spinner = ora(`Scanning ${options.target} for existing shell access...`).start();
+    
+    try {
+      const exploitFramework = new ExploitFramework();
+      const results = await exploitFramework.detectExistingShells(options.target, {
+        timeout: parseInt(options.timeout)
+      });
+
+      spinner.succeed(`Shell detection completed on ${options.target}`);
+      
+      console.log(chalk.cyan('\n🔍 Shell Detection Results:'));
+      console.log(`Target: ${results.target}`);
+      console.log(`Shell Accessible: ${results.shellAccessible ? chalk.red('YES') : chalk.green('NO')}`);
+      console.log(`Open Shells Found: ${results.openShells.length}`);
+      console.log(`Web Shells Found: ${results.webShells.length}`);
+      
+      if (results.openShells.length > 0) {
+        console.log(chalk.red('\n🚨 OPEN SHELLS DETECTED:'));
+        results.openShells.forEach((shell, index) => {
+          console.log(`${index + 1}. Port ${shell.port} - ${shell.type}`);
+          console.log(`   Authenticated: ${shell.authenticated ? chalk.red('YES') : 'NO'}`);
+          console.log(`   Shell Access: ${shell.shellAccess ? chalk.red('CONFIRMED') : 'NO'}`);
+          if (shell.banner) {
+            console.log(`   Banner: ${shell.banner.substring(0, 100)}...`);
+          }
+        });
+      }
+      
+      if (results.webShells.length > 0) {
+        console.log(chalk.red('\n🕷️  WEB SHELLS DETECTED:'));
+        results.webShells.forEach((shell, index) => {
+          console.log(`${index + 1}. ${shell.path} - ${shell.type}`);
+          console.log(`   Accessible: ${shell.accessible ? chalk.red('YES') : 'NO'}`);
+          console.log(`   Size: ${shell.size} bytes`);
+        });
+      }
+      
+    } catch (error) {
+      spinner.fail(`Shell detection failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// Shell Injection Command
+program
+  .command('shell-inject')
+  .description('💉 Inject shell payloads into vulnerable services')
+  .option('-t, --target <target>', 'Target IP or domain')
+  .option('-p, --port <port>', 'Target port')
+  .option('--vuln-type <type>', 'Vulnerability type: sqli, rce, cmd-injection', 'rce')
+  .option('--platform <platform>', 'Target platform: linux, windows', 'linux')
+  .option('--callback-ip <ip>', 'Callback IP for reverse shell', '127.0.0.1')
+  .option('--callback-port <port>', 'Callback port for reverse shell', 4444)
+  .option('--persistent', 'Create persistent backdoor access')
+  .action(async (options) => {
+    if (!options.target || !options.port) {
+      console.log(chalk.red('❌ Error: Target and port are required'));
+      process.exit(1);
+    }
+
+    console.log(chalk.red('⚠️  WEAPON-GRADE OPERATION: Shell payload injection authorized'));
+    const spinner = ora(`Injecting shell payload into ${options.target}:${options.port}...`).start();
+    
+    try {
+      const exploitFramework = new ExploitFramework();
+      const vulnerability = { type: options.vulnType };
+      const results = await exploitFramework.injectShellPayload(options.target, options.port, vulnerability, {
+        platform: options.platform,
+        callbackIP: options.callbackIp,
+        callbackPort: parseInt(options.callbackPort),
+        persistent: options.persistent
+      });
+
+      spinner.succeed(`Shell injection completed on ${options.target}:${options.port}`);
+      
+      console.log(chalk.cyan('\n💉 Shell Injection Results:'));
+      console.log(`Target: ${results.target}:${results.port}`);
+      console.log(`Vulnerability: ${results.vulnerability}`);
+      console.log(`Shell Established: ${results.shellEstablished ? chalk.red('SUCCESS') : chalk.green('FAILED')}`);
+      console.log(`Access Level: ${results.accessLevel}`);
+      console.log(`Shell Type: ${results.shellType || 'N/A'}`);
+      console.log(`Backdoor Created: ${results.backdoorCreated ? chalk.red('YES') : 'NO'}`);
+      
+      if (results.sessionId) {
+        console.log(`Session ID: ${chalk.yellow(results.sessionId)}`);
+      }
+      
+    } catch (error) {
+      spinner.fail(`Shell injection failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// API Vulnerability Testing Command
+program
+  .command('api-test')
+  .description('🔌 Test API endpoints for vulnerabilities')
+  .option('-t, --target <target>', 'Target domain or IP')
+  .option('--endpoint <path>', 'Specific API endpoint to test')
+  .option('--exploit', 'Attempt to exploit discovered vulnerabilities')
+  .action(async (options) => {
+    if (!options.target) {
+      console.log(chalk.red('❌ Error: Target is required'));
+      process.exit(1);
+    }
+
+    console.log(chalk.red('⚠️  API vulnerability testing - Use only on authorized targets!'));
+    const spinner = ora(`Testing API vulnerabilities on ${options.target}...`).start();
+    
+    try {
+      const exploitFramework = new ExploitFramework();
+      const results = await exploitFramework.testAPIVulnerabilities(options.target, {
+        endpoint: options.endpoint,
+        exploit: options.exploit
+      });
+
+      spinner.succeed(`API testing completed on ${options.target}`);
+      
+      console.log(chalk.cyan('\n🔌 API Vulnerability Results:'));
+      console.log(`Target: ${results.target}`);
+      console.log(`Endpoints Found: ${results.endpoints.length}`);
+      console.log(`Vulnerabilities: ${results.vulnerabilities.length}`);
+      console.log(`Exploitable: ${results.exploitable.length}`);
+      console.log(`Shell Access: ${results.shellAccess ? chalk.red('CONFIRMED') : chalk.green('NO')}`);
+      
+      if (results.endpoints.length > 0) {
+        console.log(chalk.cyan('\n📡 API Endpoints:'));
+        results.endpoints.forEach((endpoint, index) => {
+          console.log(`${index + 1}. ${endpoint.method} ${endpoint.path} (${endpoint.status})`);
+        });
+      }
+      
+      if (results.vulnerabilities.length > 0) {
+        console.log(chalk.red('\n🚨 VULNERABILITIES FOUND:'));
+        results.vulnerabilities.forEach((vuln, index) => {
+          console.log(`${index + 1}. ${vuln.type.toUpperCase()} - ${vuln.endpoint}`);
+          console.log(`   Severity: ${chalk.red(vuln.severity.toUpperCase())}`);
+          console.log(`   Exploitable: ${vuln.exploitable ? chalk.red('YES') : 'NO'}`);
+          if (vuln.shellAccess) {
+            console.log(`   Shell Access: ${chalk.red('POSSIBLE')}`);
+          }
+        });
+      }
+      
+    } catch (error) {
+      spinner.fail(`API testing failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// Brute Force Attack Command
+program
+  .command('brute-force')
+  .description('🔨 Perform brute force attacks on authentication')
+  .option('-t, --target <target>', 'Target IP or domain')
+  .option('-s, --service <service>', 'Service to attack: http, ssh, ftp, telnet', 'http')
+  .option('--userlist <file>', 'Custom username list file')
+  .option('--passlist <file>', 'Custom password list file')
+  .option('--threads <count>', 'Number of threads', 5)
+  .option('--delay <ms>', 'Delay between attempts in milliseconds', 1000)
+  .action(async (options) => {
+    if (!options.target) {
+      console.log(chalk.red('❌ Error: Target is required'));
+      process.exit(1);
+    }
+
+    console.log(chalk.red('⚠️  BRUTE FORCE ATTACK - High impact operation!'));
+    const spinner = ora(`Starting brute force attack on ${options.target}...`).start();
+    
+    try {
+      const exploitFramework = new ExploitFramework();
+      const results = await exploitFramework.performBruteForceAttack(options.target, {
+        service: options.service,
+        userlist: options.userlist,
+        passlist: options.passlist,
+        threads: parseInt(options.threads),
+        delay: parseInt(options.delay)
+      });
+
+      spinner.succeed(`Brute force attack completed on ${options.target}`);
+      
+      console.log(chalk.cyan('\n🔨 Brute Force Results:'));
+      console.log(`Target: ${results.target}`);
+      console.log(`Service: ${results.service}`);
+      console.log(`Attempts Made: ${results.attemptsMade}`);
+      console.log(`Credentials Found: ${results.foundCredentials.length}`);
+      console.log(`Shell Access: ${results.shellAccess ? chalk.red('CONFIRMED') : chalk.green('NO')}`);
+      
+      if (results.foundCredentials.length > 0) {
+        console.log(chalk.red('\n🚨 VALID CREDENTIALS FOUND:'));
+        results.foundCredentials.forEach((cred, index) => {
+          console.log(`${index + 1}. ${chalk.red(cred.username)}:${chalk.red(cred.password)}`);
+          console.log(`   Access Level: ${cred.accessLevel}`);
+          console.log(`   Shell Access: ${cred.shellAccess ? chalk.red('YES') : 'NO'}`);
+        });
+      }
+      
+    } catch (error) {
+      spinner.fail(`Brute force attack failed: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// Enhanced Help Command
+program
+  .command('help-advanced')
+  .description('🔥 Show advanced exploitation capabilities')
+  .action(() => {
+    console.log(`
+${chalk.red('💀 SCORPION ADVANCED EXPLOITATION FRAMEWORK 💀')}
+${chalk.red('⚠️  WEAPON-GRADE CAPABILITIES - AUTHORIZED USE ONLY ⚠️')}
+
+${chalk.cyan('SHELL ACCESS & BACKDOOR OPERATIONS:')}
+  ${chalk.yellow('shell-detect')}     - Detect existing shell access on target systems
+  ${chalk.yellow('shell-inject')}     - Inject shell payloads into vulnerable services  
+  ${chalk.yellow('backdoor')}         - Create persistent backdoor access mechanisms
+
+${chalk.cyan('API WARFARE CAPABILITIES:')}
+  ${chalk.yellow('api-test')}         - Comprehensive API vulnerability assessment
+  ${chalk.yellow('api-exploit')}      - Exploit discovered API vulnerabilities for access
+
+${chalk.cyan('CREDENTIAL WARFARE:')}
+  ${chalk.yellow('brute-force')}      - Multi-threaded credential stuffing attacks
+  ${chalk.yellow('password-spray')}   - Password spraying against user accounts
+
+${chalk.cyan('PAYLOAD CATEGORIES:')}
+  • Shell Injection Payloads (Bash, PowerShell, Python)
+  • SQL Injection to Shell Escalation
+  • Command Injection Exploitation
+  • API Authentication Bypass
+  • Persistent Backdoor Creation
+
+${chalk.cyan('SUPPORTED ATTACK VECTORS:')}
+  • Linux/Unix Shell Access
+  • Windows PowerShell Access  
+  • Web Shell Deployment
+  • SSH Key Backdoors
+  • Cron Job Persistence
+  • API Token Extraction
+
+${chalk.red('LEGAL DISCLAIMER:')}
+These capabilities are provided for authorized security testing only.
+Unauthorized use against systems you do not own is illegal.
+Always obtain proper authorization before testing.
+
+${chalk.cyan('EXAMPLES:')}
+  ${chalk.gray('# Detect existing shells')}
+  scorpion shell-detect --target 192.168.1.100
+
+  ${chalk.gray('# Inject reverse shell payload')}
+  scorpion shell-inject --target vulnerable.com --port 80 --vuln-type rce --persistent
+
+  ${chalk.gray('# Test API for vulnerabilities')}
+  scorpion api-test --target api.example.com --exploit
+
+  ${chalk.gray('# Brute force SSH service')}
+  scorpion brute-force --target 10.0.0.1 --service ssh --threads 10
+    `);
+  });
 
 program.parse();

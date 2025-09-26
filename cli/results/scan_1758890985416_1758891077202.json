@@ -1,0 +1,176 @@
+{
+  "scanId": "1758890985416",
+  "target": "httpbin.org",
+  "timestamp": "2025-09-26T12:49:45.416Z",
+  "type": "normal",
+  "vulnerabilities": [
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://httpbin.org:80",
+      "description": "Missing Content Security Policy header",
+      "recommendation": "Add content-security-policy header to improve security"
+    },
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://httpbin.org:80",
+      "description": "Missing X-Frame-Options header",
+      "recommendation": "Add x-frame-options header to improve security"
+    },
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://httpbin.org:80",
+      "description": "Missing X-Content-Type-Options header",
+      "recommendation": "Add x-content-type-options header to improve security"
+    },
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://httpbin.org:80",
+      "description": "Missing HTTP Strict Transport Security header",
+      "recommendation": "Add strict-transport-security header to improve security"
+    },
+    {
+      "type": "Missing Security Header",
+      "severity": "Medium",
+      "location": "http://httpbin.org:80",
+      "description": "Missing XSS Protection header",
+      "recommendation": "Add x-xss-protection header to improve security"
+    },
+    {
+      "type": "Information Disclosure",
+      "severity": "Low",
+      "location": "http://httpbin.org:80",
+      "description": "Server version disclosed: awselb/2.0",
+      "recommendation": "Configure server to hide version information"
+    }
+  ],
+  "openPorts": [
+    {
+      "port": 80,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "289ms"
+    }
+  ],
+  "services": [
+    {
+      "port": 80,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "289ms",
+      "name": "HTTP",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    }
+  ],
+  "summary": {
+    "totalVulnerabilities": 6,
+    "criticalVulns": 0,
+    "highVulns": 0,
+    "mediumVulns": 5,
+    "lowVulns": 1,
+    "openPorts": 1,
+    "services": 1,
+    "riskScore": 21
+  },
+  "osFingerprint": {
+    "detectedOS": "Linux",
+    "confidence": 33.33333333333333,
+    "evidence": [
+      "80/tcp service detected"
+    ]
+  },
+  "payloadRecommendations": {
+    "target": "httpbin.org",
+    "vulnerabilities": 6,
+    "recommendations": [
+      {
+        "vulnerability": "Missing Security Header",
+        "target": "httpbin.org",
+        "payloads": [],
+        "successRate": 60,
+        "impact": "MEDIUM - Potential security impact",
+        "difficulty": "MEDIUM",
+        "shellPotential": false,
+        "dataExfiltration": false
+      },
+      {
+        "vulnerability": "Missing Security Header",
+        "target": "httpbin.org",
+        "payloads": [],
+        "successRate": 60,
+        "impact": "MEDIUM - Potential security impact",
+        "difficulty": "MEDIUM",
+        "shellPotential": false,
+        "dataExfiltration": false
+      },
+      {
+        "vulnerability": "Missing Security Header",
+        "target": "httpbin.org",
+        "payloads": [],
+        "successRate": 60,
+        "impact": "MEDIUM - Potential security impact",
+        "difficulty": "MEDIUM",
+        "shellPotential": false,
+        "dataExfiltration": false
+      },
+      {
+        "vulnerability": "Missing Security Header",
+        "target": "httpbin.org",
+        "payloads": [],
+        "successRate": 60,
+        "impact": "MEDIUM - Potential security impact",
+        "difficulty": "MEDIUM",
+        "shellPotential": false,
+        "dataExfiltration": false
+      },
+      {
+        "vulnerability": "Missing Security Header",
+        "target": "httpbin.org",
+        "payloads": [],
+        "successRate": 60,
+        "impact": "MEDIUM - Potential security impact",
+        "difficulty": "MEDIUM",
+        "shellPotential": false,
+        "dataExfiltration": false
+      },
+      {
+        "vulnerability": "Information Disclosure",
+        "target": "httpbin.org",
+        "payloads": [],
+        "successRate": 60,
+        "impact": "MEDIUM - Potential security impact",
+        "difficulty": "MEDIUM",
+        "shellPotential": false,
+        "dataExfiltration": false
+      }
+    ],
+    "massExploitPlan": {
+      "phase1_critical": [],
+      "phase2_quickwins": [],
+      "phase3_persistence": [],
+      "totalPayloads": 0,
+      "estimatedDuration": "0 minutes",
+      "riskLevel": "LOW"
+    },
+    "criticalFirst": [],
+    "quickWins": [],
+    "persistentAccess": []
+  },
+  "exploitResults": {
+    "target": "httpbin.org",
+    "timestamp": "2025-09-26T12:50:33.328Z",
+    "totalPayloads": 0,
+    "successful": 0,
+    "failed": 0,
+    "critical": 0,
+    "exploits": [],
+    "recommendations": []
+  }
+}
