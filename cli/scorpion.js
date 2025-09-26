@@ -16,6 +16,7 @@ import { NetworkDiscovery } from './lib/network-discovery.js';
 import { EnterpriseVulnScanner } from './lib/enterprise-vuln-scanner.js';
 import { InternalNetworkTester } from './lib/internal-network-tester.js';
 import { AdvancedReportingEngine } from './lib/advanced-reporting.js';
+import { AutonomousPenTester } from './lib/ai-autonomous-pentester.js';
 
 // Load environment variables
 dotenv.config();
@@ -1385,6 +1386,135 @@ program
     } catch (error) {
       spinner.fail('Report generation failed');
       console.error(chalk.red(`❌ Error: ${error.message}`));
+      process.exit(1);
+    }
+  });
+
+// 🤖 AI AUTONOMOUS PENETRATION TESTING COMMAND
+program
+  .command('ai-pentest')
+  .description('🤖 AI-powered autonomous penetration testing')
+  .requiredOption('-t, --target <target>', 'Target for AI penetration test')
+  .option('--primary-goal <goal>', 'Primary objective (comprehensive_assessment, privilege_escalation, data_access)', 'comprehensive_assessment')
+  .option('--secondary-goals <goals>', 'Secondary goals (comma-separated)', 'privilege_escalation,data_access,persistence')
+  .option('--time-limit <minutes>', 'Time limit in minutes', '120')
+  .option('--stealth-level <level>', 'Stealth level (low, moderate, high)', 'moderate')
+  .option('--autonomy <level>', 'Autonomy level (supervised, semi-autonomous, fully-autonomous)', 'supervised')
+  .option('--risk-tolerance <level>', 'Risk tolerance (low, medium, high)', 'medium')
+  .option('--max-depth <depth>', 'Maximum exploitation depth', '5')
+  .option('--ai-model <model>', 'AI model to use (gpt-4, gpt-3.5-turbo)', 'gpt-4')
+  .option('--openai-key <key>', 'OpenAI API key (or set OPENAI_API_KEY env var)')
+  .option('--learning', 'Enable machine learning from results', true)
+  .option('--compliance <frameworks>', 'Compliance frameworks to consider (comma-separated)')
+  .option('-o, --output <file>', 'Output file for AI assessment results')
+  .action(async (options) => {
+    const spinner = ora('🤖 Initializing AI Autonomous Penetration Tester...').start();
+
+    try {
+      // Initialize AI PenTester
+      const aiConfig = {
+        aiModel: options.aiModel,
+        openaiApiKey: options.openaiKey || process.env.OPENAI_API_KEY,
+        autonomyLevel: options.autonomy,
+        riskTolerance: options.riskTolerance,
+        maxDepth: parseInt(options.maxDepth),
+        learningEnabled: options.learning
+      };
+
+      if (!aiConfig.openaiApiKey) {
+        spinner.fail('OpenAI API key required');
+        console.error(chalk.red('❌ Please provide OpenAI API key via --openai-key or OPENAI_API_KEY environment variable'));
+        process.exit(1);
+      }
+
+      const aiPenTester = new AutonomousPenTester(aiConfig);
+      spinner.succeed('AI Autonomous Penetration Tester initialized');
+
+      // Parse objectives
+      const objectives = {
+        primaryGoal: options.primaryGoal,
+        secondaryGoals: options.secondaryGoals.split(',').map(g => g.trim()),
+        timeLimit: parseInt(options.timeLimit) * 60, // Convert to seconds
+        stealthLevel: options.stealthLevel,
+        compliance: options.compliance ? options.compliance.split(',').map(c => c.trim()) : []
+      };
+
+      console.log(chalk.blue(`\n🎯 AI Penetration Test Configuration:`));
+      console.log(chalk.cyan(`  Target: ${options.target}`));
+      console.log(chalk.cyan(`  Primary Goal: ${objectives.primaryGoal}`));
+      console.log(chalk.cyan(`  Secondary Goals: ${objectives.secondaryGoals.join(', ')}`));
+      console.log(chalk.cyan(`  Autonomy Level: ${options.autonomy.toUpperCase()}`));
+      console.log(chalk.cyan(`  Risk Tolerance: ${options.riskTolerance.toUpperCase()}`));
+      console.log(chalk.cyan(`  AI Model: ${options.aiModel}`));
+      console.log(chalk.cyan(`  Time Limit: ${options.timeLimit} minutes`));
+
+      // Confirm autonomous operation
+      if (options.autonomy === 'fully-autonomous') {
+        console.log(chalk.yellow('\n⚠️  FULLY AUTONOMOUS MODE ENABLED'));
+        console.log(chalk.yellow('   AI will make all decisions without human approval'));
+        console.log(chalk.yellow('   Use only on authorized test systems'));
+      }
+
+      const startTime = new Date();
+      console.log(chalk.blue(`\n🚀 Starting AI Autonomous Penetration Test at ${startTime.toLocaleTimeString()}`));
+
+      // Conduct AI Penetration Test
+      const penTestResults = await aiPenTester.conductFullPenTest(options.target, objectives);
+
+      // Display Results Summary
+      console.log(chalk.green(`\n✅ AI Autonomous Penetration Test Completed!`));
+      console.log(chalk.cyan(`📊 Session ID: ${penTestResults.session_id}`));
+      console.log(chalk.cyan(`⏱️  Duration: ${penTestResults.duration}`));
+      console.log(chalk.cyan(`🎯 Phase: ${penTestResults.phase.toUpperCase()}`));
+      console.log(chalk.cyan(`🔍 Vulnerabilities Found: ${penTestResults.vulnerabilities?.length || 0}`));
+      console.log(chalk.cyan(`⚡ Exploitation Attempts: ${penTestResults.exploitation_results?.length || 0}`));
+      console.log(chalk.cyan(`✅ Successful Exploits: ${penTestResults.exploitation_results?.filter(r => r.success).length || 0}`));
+      console.log(chalk.cyan(`🧠 AI Decisions Made: ${penTestResults.ai_decisions?.length || 0}`));
+
+      // Risk Assessment
+      if (penTestResults.ai_report) {
+        console.log(chalk.blue(`\n🎯 AI Risk Assessment:`));
+        console.log(chalk.yellow(`  Overall Risk: ${penTestResults.ai_report.risk_assessment?.overall_risk || 'UNKNOWN'}`));
+        console.log(chalk.yellow(`  Critical Issues: ${penTestResults.ai_report.risk_assessment?.critical_issues || 0}`));
+        console.log(chalk.yellow(`  Business Impact: ${penTestResults.ai_report.risk_assessment?.business_impact || 'Unknown'}`));
+      }
+
+      // AI Recommendations
+      if (penTestResults.ai_report?.recommendations) {
+        console.log(chalk.blue(`\n💡 AI Recommendations:`));
+        penTestResults.ai_report.recommendations.slice(0, 3).forEach((rec, index) => {
+          console.log(chalk.green(`  ${index + 1}. ${rec}`));
+        });
+      }
+
+      // Machine Learning Insights
+      if (penTestResults.learning_data?.length > 0) {
+        console.log(chalk.blue(`\n🧠 Machine Learning Insights:`));
+        console.log(chalk.cyan(`  Learning Data Points: ${penTestResults.learning_data.length}`));
+        console.log(chalk.cyan(`  Model Updated: ${options.learning ? 'Yes' : 'No'}`));
+      }
+
+      // Save results if output specified
+      if (options.output) {
+        const outputPath = options.output.endsWith('.json') ? options.output : `${options.output}.json`;
+        await fs.writeFile(outputPath, JSON.stringify(penTestResults, null, 2));
+        console.log(chalk.blue(`\n💾 Results saved to: ${outputPath}`));
+      }
+
+      // Executive Summary Preview
+      if (penTestResults.ai_report?.executive_summary) {
+        console.log(chalk.blue(`\n📋 AI Executive Summary Preview:`));
+        const summary = penTestResults.ai_report.executive_summary;
+        const preview = summary.length > 300 ? summary.substring(0, 300) + '...' : summary;
+        console.log(chalk.gray(`${preview}`));
+      }
+
+    } catch (error) {
+      spinner.fail('AI Autonomous Penetration Test failed');
+      console.error(chalk.red(`❌ Error: ${error.message}`));
+      if (error.message.includes('API key')) {
+        console.log(chalk.yellow('\n💡 Tip: Get your OpenAI API key from https://platform.openai.com/api-keys'));
+      }
       process.exit(1);
     }
   });
