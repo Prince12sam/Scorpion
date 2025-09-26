@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
+import { CrossPlatformManager } from './cross-platform-manager.js';
 
 const execAsync = promisify(exec);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -19,6 +20,10 @@ export class SecurityScanner {
     this.serviceSignatures = new Map();
     this.webTemplates = new Map();
     this.exploitDatabase = new Map();
+    
+    // Cross-platform support
+    this.platformManager = new CrossPlatformManager();
+    this.currentPlatform = this.platformManager.getCurrentPlatformInfo();
     
     this.scanTechniques = {
       'tcp-connect': this.tcpConnectScan,

@@ -18,7 +18,17 @@
     "setup": "node setup.js",
     "postinstall": "npm run setup",
     "start": "npm run server",
-    "test": "echo \"Security tests not implemented yet\" && exit 0"
+    "test": "echo \"Security tests not implemented yet\" && exit 0",
+    "test:platform": "node test-cross-platform.js",
+    "scan": "node cli/scorpion.js scan",
+    "exploit": "node cli/scorpion.js exploit",
+    "shell-detect": "node cli/scorpion.js shell-detect",
+    "api-test": "node cli/scorpion.js api-test",
+    "brute-force": "node cli/scorpion.js brute-force",
+    "help:advanced": "node cli/scorpion.js help-advanced",
+    "install:windows": "npm install && npm run setup && echo 'Scorpion installed successfully on Windows!'",
+    "install:macos": "npm install && npm run setup && echo 'Scorpion installed successfully on macOS!'",
+    "install:linux": "npm install && npm run setup && echo 'Scorpion installed successfully on Linux!'"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.0.5",
