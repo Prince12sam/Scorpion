@@ -53,8 +53,8 @@ function App() {
   return (
     <>
       <Helmet>
-        <title>Scorpion - Global Threat-Hunting Platform</title>
-        <meta name="description" content="Scorpion: Global threat-hunting platform with real-time intelligence, suspect profiling, and advanced cybersecurity tools." />
+        <title>🦂 Scorpion Security Platform | Advanced Cybersecurity Suite</title>
+        <meta name="description" content="Scorpion Security Platform: Advanced cybersecurity suite with vulnerability scanning, threat intelligence, file integrity monitoring, and comprehensive security tools." />
       </Helmet>
       
       <div className="min-h-screen bg-slate-950 text-white cyber-grid">
