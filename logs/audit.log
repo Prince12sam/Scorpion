@@ -1,0 +1,24 @@
+2025-09-28T17:40:21.794Z [WARN]: JWT_SECRET generated - store securely for production 
+2025-09-28T17:40:21.796Z [WARN]: SESSION_SECRET generated - store securely for production 
+2025-09-28T17:40:21.797Z [INFO]: 🛡️ Enterprise security initialization complete 
+2025-09-28T17:40:21.808Z [INFO]: 
+🦂 ====================================================
+   SCORPION SECURITY PLATFORM - ENTERPRISE EDITION
+   ====================================================
+   🚀 Server: http://localhost:3001
+   🛡️ Security Level: MAXIMUM ENTERPRISE
+   🔐 Features: Advanced Auth, 2FA, RBAC, Rate Limiting
+   📊 Monitoring: Real-time Security Dashboard
+   🚨 Protection: Multi-layer Enterprise Defense
+   ⚡ Status: ENTERPRISE PRODUCTION READY
+   ====================================================
+       
+2025-09-28T17:40:21.809Z [INFO]: 🛡️ Enterprise Security Features Active: {"authentication":"JWT with Device Fingerprinting","authorization":"Role-Based Access Control","rateLimiting":"Multi-layer Enterprise Protection","sessionManagement":"Secure Session Handling","inputValidation":"Enterprise-grade Sanitization","securityHeaders":"Advanced Helmet Protection","auditLogging":"Comprehensive Security Logging","websocketSecurity":"Token-based WS Authentication","securityLevel":"ENTERPRISE MAXIMUM"}
+2025-09-28T17:40:21.961Z [INFO]: 🔍 GET /api/threat-map {"requestId":"b0cf881a-f1b1-410b-a000-8db1ee208168","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
+2025-09-28T17:40:23.283Z [INFO]: 🔍 GET /api/dashboard/metrics {"requestId":"d0e76a1f-4019-4752-b179-3f8d0d54c818","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
+2025-09-28T17:40:23.284Z [WARN]: 🚨 Security Event: 401 {"requestId":"d0e76a1f-4019-4752-b179-3f8d0d54c818","method":"GET","path":"/api/dashboard/metrics","responseTime":1,"statusCode":401,"ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
+2025-09-28T17:40:23.289Z [INFO]: 🔍 GET /api/monitoring/alerts {"requestId":"4bc9ddc7-10bf-4c79-a2d8-b09d7d710004","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
+2025-09-28T17:40:23.292Z [INFO]: 🔍 GET /api/system/health {"requestId":"ae81a289-568a-4c3b-8c00-35a0af178142","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
+2025-09-28T17:40:23.293Z [WARN]: 🚨 Security Event: 401 {"requestId":"ae81a289-568a-4c3b-8c00-35a0af178142","method":"GET","path":"/api/system/health","responseTime":1,"statusCode":401,"ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
+2025-09-28T17:40:23.296Z [INFO]: 🔍 GET /api/scan {"requestId":"c65207a1-e71b-4b0a-bf1b-bb6815c1d79b","ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
+2025-09-28T17:40:30.445Z [INFO]: 🔍 GET /api/threat-map {"requestId":"76b898c4-e35e-47fd-a32b-ea84005f08e9","ip":"::ffff:127.0.0.1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"4e9dad1bab221e604bb031d9df30b8e5"}

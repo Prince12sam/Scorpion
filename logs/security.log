@@ -1,0 +1,4 @@
+2025-09-28T17:40:21.794Z [WARN]: JWT_SECRET generated - store securely for production 
+2025-09-28T17:40:21.796Z [WARN]: SESSION_SECRET generated - store securely for production 
+2025-09-28T17:40:23.284Z [WARN]: 🚨 Security Event: 401 {"requestId":"d0e76a1f-4019-4752-b179-3f8d0d54c818","method":"GET","path":"/api/dashboard/metrics","responseTime":1,"statusCode":401,"ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
+2025-09-28T17:40:23.293Z [WARN]: 🚨 Security Event: 401 {"requestId":"ae81a289-568a-4c3b-8c00-35a0af178142","method":"GET","path":"/api/system/health","responseTime":1,"statusCode":401,"ip":"::1","userAgent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36","deviceFingerprint":"37588b9f2293ae89e011ec4e24f52308"}
