@@ -268,7 +268,7 @@ const MonitoringCenter = () => {
                     <span className={`w-2 h-2 rounded-full ${source.status === 'connected' ? 'bg-green-500 security-pulse' : 'bg-red-500'}`}></span>
                     <span>{source.status === 'connected' ? 'Connected' : 'Disconnected'}</span>
                   </span>
-                  <span className="text-slate-400">{source.logs.toLocaleString()} logs</span>
+                  <span className="text-slate-400">{source.events?.toLocaleString() || '0'} events</span>
                 </div>
               </div>
             ))}

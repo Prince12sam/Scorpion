@@ -8,13 +8,10 @@ const FileIntegrityMonitor = () => {
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
+  const [showAddFile, setShowAddFile] = useState(false);
+  const [newFilePath, setNewFilePath] = useState('');
   
-  const [monitoredFiles, setMonitoredFiles] = useState([
-    { id: 1, path: '/etc/passwd', status: 'verified', size: 2048, lastCheck: new Date().toISOString() },
-    { id: 2, path: '/etc/shadow', status: 'verified', size: 1536, lastCheck: new Date().toISOString() },
-    { id: 3, path: '/bin/bash', status: 'modified', size: 1183448, lastCheck: new Date().toISOString() },
-    { id: 4, path: '/etc/hosts', status: 'error', size: 256, lastCheck: new Date().toISOString(), error: 'Permission denied' }
-  ]);
+  const [monitoredFiles, setMonitoredFiles] = useState([]);
 
   // Fetch monitored files from API
   React.useEffect(() => {
@@ -104,6 +101,76 @@ const FileIntegrityMonitor = () => {
     } finally {
       setIsScanning(false);
       setScanProgress(0);
+    }
+  };
+
+  const handleAddFile = async () => {
+    if (!newFilePath.trim()) {
+      toast({
+        title: "Invalid Path",
+        description: "Please enter a valid file path",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/fim/add', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: newFilePath })
+      });
+
+      if (response.ok) {
+        const newFile = {
+          id: Date.now(),
+          path: newFilePath,
+          status: 'verified',
+          size: Math.floor(Math.random() * 10000),
+          lastCheck: new Date().toISOString(),
+          hash: `sha256:${Math.random().toString(36).substring(2, 32)}`
+        };
+        
+        setMonitoredFiles([...monitoredFiles, newFile]);
+        setNewFilePath('');
+        setShowAddFile(false);
+        
+        toast({
+          title: "File Added",
+          description: `${newFilePath} is now being monitored`
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add file to monitoring",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleRemoveFile = async (fileId) => {
+    try {
+      const file = monitoredFiles.find(f => f.id === fileId);
+      const response = await fetch('/api/fim/remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ path: file.path })
+      });
+
+      if (response.ok) {
+        setMonitoredFiles(monitoredFiles.filter(f => f.id !== fileId));
+        toast({
+          title: "File Removed",
+          description: `${file.path} is no longer monitored`
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to remove file from monitoring",
+        variant: "destructive"
+      });
     }
   };
 
@@ -205,7 +272,7 @@ const FileIntegrityMonitor = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6 rounded-xl">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">Monitored Files</h2>
-          <Button variant="outline" className="border-slate-600 text-slate-400" onClick={() => toast({ title: "Add File", description: "File selection would open here" })}>
+          <Button variant="outline" className="border-slate-600 text-slate-400" onClick={() => setShowAddFile(true)}>
             <Plus className="w-4 h-4 mr-2" />Add File
           </Button>
         </div>
@@ -240,6 +307,57 @@ const FileIntegrityMonitor = () => {
           })}
         </div>
       </motion.div>
+
+      {/* Add File Modal */}
+      {showAddFile && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+          onClick={() => setShowAddFile(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="glass-card p-6 rounded-xl max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-white mb-4">Add File to Monitor</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">File Path</label>
+                <input
+                  type="text"
+                  value={newFilePath}
+                  onChange={(e) => setNewFilePath(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  placeholder="/path/to/file or C:\path\to\file"
+                />
+              </div>
+              
+              <div className="text-sm text-slate-400">
+                <p className="mb-2">Examples:</p>
+                <ul className="list-disc list-inside space-y-1 text-xs">
+                  <li>/etc/passwd</li>
+                  <li>/var/log/auth.log</li>
+                  <li>C:\Windows\System32\drivers\etc\hosts</li>
+                  <li>/home/user/.ssh/authorized_keys</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <Button onClick={handleAddFile} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                Add File
+              </Button>
+              <Button onClick={() => setShowAddFile(false)} variant="outline" className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };

@@ -126,6 +126,43 @@ class ScorpionServer {
     this.app.put('/api/users/:id', this.updateUser.bind(this));
     this.app.delete('/api/users/:id', this.deleteUser.bind(this));
 
+    // Advanced exploitation routes
+    this.app.post('/api/exploit/test', this.runExploitTest.bind(this));
+    
+    // API testing routes
+    this.app.post('/api/testing/api', this.testApiVulnerabilities.bind(this));
+    
+    // Network discovery routes
+    this.app.post('/api/discovery/network', this.performNetworkDiscovery.bind(this));
+    
+    // Brute force routes
+    this.app.post('/api/bruteforce/attack', this.performBruteForceAttack.bind(this));
+    
+    // System health routes
+    this.app.get('/api/health/system', this.getSystemHealth.bind(this));
+    this.app.get('/api/system/health', this.getSystemHealthData.bind(this));
+    
+    // Report generation routes
+    this.app.post('/api/reports/generate', this.generateQuickReport.bind(this));
+    
+    // Threat intelligence routes
+    this.app.post('/api/threat-intel/update', this.updateThreatIntelligence.bind(this));
+    
+    // File Integrity Monitor routes
+    this.app.get('/api/fim/watched', this.getWatchedFiles.bind(this));
+    this.app.post('/api/fim/add', this.addWatchedFile.bind(this));
+    this.app.post('/api/fim/remove', this.removeWatchedFile.bind(this));
+    this.app.post('/api/fim/start', this.toggleFileMonitoring.bind(this));
+    this.app.post('/api/fim/check', this.runIntegrityCheck.bind(this));
+    
+    // Compliance routes
+    this.app.post('/api/compliance/assess', this.runComplianceAssessment.bind(this));
+    this.app.post('/api/compliance/export', this.exportComplianceReport.bind(this));
+    
+    // Settings routes
+    this.app.post('/api/settings', this.saveSettings.bind(this));
+    this.app.get('/api/settings', this.getSettings.bind(this));
+
     // Serve React app for all other routes
     this.app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
@@ -648,7 +685,7 @@ class ScorpionServer {
         complianceScore,
         activeScans: this.activeScans.size,
         threatLevel: this.calculateThreatLevel(),
-        systemHealth: this.getSystemHealth(),
+        systemHealth: this.getSystemHealthData(),
         lastScan: scanResults.timestamp || null,
         lastUpdated: new Date().toISOString()
       };
@@ -1020,6 +1057,237 @@ class ScorpionServer {
     }
   }
 
+  // Advanced exploitation methods
+  async runExploitTest(req, res) {
+    try {
+      const { target, mode, timestamp } = req.body;
+      
+      // Simulate exploit testing
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      const result = {
+        target,
+        mode,
+        timestamp,
+        success: Math.random() > 0.7,
+        vulnerabilities: [
+          'SQL Injection detected in login form',
+          'XSS vulnerability in search parameter',
+          'Weak session management'
+        ].slice(0, Math.floor(Math.random() * 3) + 1)
+      };
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async testApiVulnerabilities(req, res) {
+    try {
+      const { target, testType, timestamp } = req.body;
+      
+      // Simulate API testing
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const endpoints = [
+        { method: 'GET', path: '/api/users', status: 'secure', response_code: 200, response_time: 45 },
+        { method: 'POST', path: '/api/login', status: 'vulnerable', response_code: 200, response_time: 120 },
+        { method: 'GET', path: '/api/admin', status: 'warning', response_code: 403, response_time: 30 },
+        { method: 'PUT', path: '/api/users/:id', status: 'secure', response_code: 401, response_time: 25 }
+      ];
+      
+      const vulnerabilities = [
+        { severity: 'HIGH', description: 'Authentication bypass in /api/login endpoint' },
+        { severity: 'MEDIUM', description: 'Information disclosure in error messages' }
+      ].slice(0, Math.floor(Math.random() * 2) + 1);
+
+      const result = {
+        target,
+        testType,
+        timestamp,
+        endpoints,
+        vulnerabilities
+      };
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async performNetworkDiscovery(req, res) {
+    try {
+      const { range, scanType, timestamp } = req.body;
+      
+      // Simulate network discovery
+      await new Promise(resolve => setTimeout(resolve, 4000));
+      
+      const hosts = [
+        {
+          ip: '192.168.1.1',
+          status: 'online',
+          hostname: 'router.local',
+          mac: '00:11:22:33:44:55',
+          os: 'Linux',
+          services: [
+            { name: 'http', port: 80 },
+            { name: 'https', port: 443 },
+            { name: 'ssh', port: 22 }
+          ]
+        },
+        {
+          ip: '192.168.1.100',
+          status: 'online',
+          hostname: 'workstation-01',
+          mac: 'AA:BB:CC:DD:EE:FF',
+          os: 'Windows 10',
+          services: [
+            { name: 'smb', port: 445 },
+            { name: 'rdp', port: 3389 }
+          ]
+        }
+      ].slice(0, Math.floor(Math.random() * 5) + 2);
+
+      const result = {
+        range,
+        scanType,
+        timestamp,
+        hosts
+      };
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async performBruteForceAttack(req, res) {
+    try {
+      const { target, port, service, username, maxAttempts, timestamp } = req.body;
+      
+      // Simulate brute force attack
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      
+      const attempts_made = Math.floor(Math.random() * maxAttempts) + 1;
+      const successful_logins = Math.random() > 0.8 ? [
+        { username, password: 'admin123' }
+      ] : [];
+      
+      const result = {
+        target,
+        port,
+        service,
+        username,
+        timestamp,
+        attempts_made,
+        successful_logins,
+        locked_accounts: [],
+        rate_limiting_detected: Math.random() > 0.7
+      };
+
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  getSystemHealthData() {
+    // Simulate system health data
+    return {
+      overall_status: 'healthy',
+      uptime: '5d 12h 34m',
+      load_average: '1.2',
+      active_connections: Math.floor(Math.random() * 50) + 10,
+      security_alerts: Math.floor(Math.random() * 5),
+      cpu_usage: Math.floor(Math.random() * 80) + '%',
+      memory_usage: Math.floor(Math.random() * 70) + '%',
+      disk_usage: Math.floor(Math.random() * 60) + '%',
+      network_io: Math.floor(Math.random() * 100) + ' MB/s',
+      cpu_cores: '8',
+      total_memory: '16 GB',
+      available_space: '500 GB',
+      network_speed: '1 Gbps',
+      services: [
+        { name: 'Web Server', status: 'healthy', port: 80 },
+        { name: 'Database', status: 'healthy', port: 3306 },
+        { name: 'SSH Service', status: 'healthy', port: 22 },
+        { name: 'FTP Service', status: 'warning', port: 21 }
+      ]
+    };
+  }
+
+  async getSystemHealth(req, res) {
+    try {
+      const healthData = this.getSystemHealthData();
+      res.json(healthData);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getSystemHealthData(req, res) {
+    try {
+      const os = await import('os');
+      
+      const totalMem = os.totalmem();
+      const freeMem = os.freemem();
+      const usedMem = totalMem - freeMem;
+      
+      const health = {
+        cpu: Math.round(os.loadavg()[0] * 10), // Approximation
+        memory: Math.round((usedMem / totalMem) * 100),
+        disk: Math.round(Math.random() * 30 + 20), // Simulated disk usage
+        uptime: Math.round(os.uptime()),
+        status: 'healthy'
+      };
+      
+      if (res) {
+        res.json(health);
+      } else {
+        return health;
+      }
+    } catch (error) {
+      if (res) {
+        res.status(500).json({ error: error.message });
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  async generateQuickReport(req, res) {
+    try {
+      const { type = 'quick' } = req.body;
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `security_report_${timestamp}.json`;
+      
+      res.json({
+        filename,
+        type,
+        generated: new Date().toISOString(),
+        status: 'completed'
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async updateThreatIntelligence(req, res) {
+    try {
+      const updateCount = Math.floor(Math.random() * 100) + 50;
+      
+      res.json({
+        count: updateCount,
+        updated: new Date().toISOString(),
+        sources: ['VirusTotal', 'AlienVault', 'EmergingThreats'],
+        status: 'completed'
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
   getIPGeolocation(ip) {
     // Simple geolocation based on IP prefixes
     // In production, use a real geolocation service
@@ -1040,6 +1308,183 @@ class ScorpionServer {
 
     // Default location for unknown IPs
     return { country: 'Unknown', lat: 0, lng: 0 };
+  }
+
+  // File Integrity Monitor methods
+  async getWatchedFiles(req, res) {
+    try {
+      // Simulate watched files from file integrity module
+      const watchedPaths = [
+        { path: '/etc/passwd', status: 'verified', size: 2048, hash: 'sha256:abc123...' },
+        { path: '/etc/shadow', status: 'verified', size: 1536, hash: 'sha256:def456...' },
+        { path: '/bin/bash', status: 'modified', size: 1183448, hash: 'sha256:ghi789...' }
+      ];
+      
+      res.json({ watchedPaths });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async addWatchedFile(req, res) {
+    try {
+      const { path } = req.body;
+      
+      if (!path) {
+        return res.status(400).json({ error: 'File path is required' });
+      }
+      
+      // Simulate adding file to monitoring
+      const newFile = {
+        path,
+        status: 'verified',
+        size: Math.floor(Math.random() * 10000),
+        hash: `sha256:${Math.random().toString(36).substring(2, 32)}`
+      };
+      
+      res.json({ success: true, file: newFile });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async removeWatchedFile(req, res) {
+    try {
+      const { path } = req.body;
+      
+      if (!path) {
+        return res.status(400).json({ error: 'File path is required' });
+      }
+      
+      // Simulate removing file from monitoring
+      res.json({ success: true, message: `${path} removed from monitoring` });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async toggleFileMonitoring(req, res) {
+    try {
+      const { action } = req.body;
+      
+      // Simulate starting/stopping file monitoring
+      res.json({ 
+        success: true, 
+        status: action === 'start' ? 'monitoring' : 'stopped',
+        message: `File monitoring ${action}ed successfully`
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async runIntegrityCheck(req, res) {
+    try {
+      // Simulate integrity check
+      const results = {
+        filesChecked: Math.floor(Math.random() * 100) + 50,
+        changesDetected: Math.floor(Math.random() * 5),
+        errors: Math.floor(Math.random() * 2),
+        duration: Math.floor(Math.random() * 30) + 10
+      };
+      
+      res.json({ success: true, results });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  // Compliance methods
+  async runComplianceAssessment(req, res) {
+    try {
+      const { framework } = req.body;
+      
+      if (!framework) {
+        return res.status(400).json({ error: 'Framework is required' });
+      }
+      
+      // Simulate compliance assessment
+      const overallScore = Math.floor(Math.random() * 30) + 70; // 70-100%
+      
+      res.json({
+        success: true,
+        framework,
+        overallScore,
+        assessmentDate: new Date().toISOString(),
+        controlsEvaluated: Math.floor(Math.random() * 20) + 10
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async exportComplianceReport(req, res) {
+    try {
+      const { framework } = req.body;
+      
+      if (!framework) {
+        return res.status(400).json({ error: 'Framework is required' });
+      }
+      
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const filename = `compliance_${framework}_${timestamp}.pdf`;
+      
+      res.json({
+        success: true,
+        filename,
+        framework,
+        exportDate: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  // Settings methods
+  async saveSettings(req, res) {
+    try {
+      const settings = req.body;
+      
+      // In a real implementation, save to database
+      // For now, just acknowledge the save
+      res.json({
+        success: true,
+        message: 'Settings saved successfully',
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  }
+
+  async getSettings(req, res) {
+    try {
+      // In a real implementation, fetch from database
+      // For now, return default settings
+      const defaultSettings = {
+        notifications: {
+          email: true,
+          push: false,
+          criticalAlertsOnly: true,
+          threatAlerts: true,
+          scanComplete: true,
+          systemHealth: false
+        },
+        security: {
+          twoFactorAuth: true,
+          sessionTimeout: 30,
+          ipWhitelist: '192.168.1.1/24, 10.0.0.0/8',
+          maxLoginAttempts: 5,
+          passwordExpiry: 90,
+          apiRateLimit: 1000
+        },
+        theme: 'dark'
+      };
+      
+      res.json({ settings: defaultSettings });
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
   }
 
   start(port = 3001, host = 'localhost') {

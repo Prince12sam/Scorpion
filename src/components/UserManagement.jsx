@@ -9,6 +9,12 @@ const UserManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showAddUser, setShowAddUser] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'Viewer',
+    phone: ''
+  });
 
   // Fetch users from API
   React.useEffect(() => {
@@ -48,10 +54,6 @@ const UserManagement = () => {
       switch (action) {
         case 'edit':
           setSelectedUser(users.find(u => u.id === userId));
-          toast({
-            title: "Edit User",
-            description: "User edit functionality would open here",
-          });
           break;
         case 'delete':
           const deleteResponse = await fetch(`/api/users/${userId}`, {
@@ -102,6 +104,35 @@ const UserManagement = () => {
     }
   };
 
+  const handleAddUser = async () => {
+    try {
+      const response = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser)
+      });
+      
+      if (response.ok) {
+        const createdUser = await response.json();
+        setUsers([...users, createdUser]);
+        setNewUser({ name: '', email: '', role: 'Viewer', phone: '' });
+        setShowAddUser(false);
+        toast({
+          title: "User Created",
+          description: `${newUser.name} has been added to the system`,
+        });
+      } else {
+        throw new Error('Failed to create user');
+      }
+    } catch (error) {
+      toast({
+        title: "Creation Failed",
+        description: error.message || "Unable to create user",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getRoleColor = (role) => {
     switch (role) {
       case 'Administrator': return 'text-red-400 bg-red-900/20';
@@ -127,7 +158,7 @@ const UserManagement = () => {
           <p className="text-slate-400">Manage users, roles, and permissions</p>
         </div>
         
-        <Button onClick={() => handleUserAction('add')} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setShowAddUser(true)} className="bg-blue-600 hover:bg-blue-700">
           <UserPlus className="w-4 h-4 mr-2" />
           Add New User
         </Button>
@@ -241,6 +272,82 @@ const UserManagement = () => {
           </div>
         )}
       </motion.div>
+
+      {/* Add User Modal */}
+      {showAddUser && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black/80 flex items-center justify-center z-50"
+          onClick={() => setShowAddUser(false)}
+        >
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="glass-card p-6 rounded-xl max-w-md w-full mx-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-xl font-bold text-white mb-4">Add New User</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Name</label>
+                <input
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) => setNewUser({...newUser, name: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  placeholder="Enter full name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) => setNewUser({...newUser, email: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  placeholder="Enter email address"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Role</label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) => setNewUser({...newUser, role: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                >
+                  {roles.map(role => (
+                    <option key={role.name} value={role.name}>{role.name}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-slate-400 mb-2">Phone</label>
+                <input
+                  type="tel"
+                  value={newUser.phone}
+                  onChange={(e) => setNewUser({...newUser, phone: e.target.value})}
+                  className="w-full px-3 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  placeholder="Enter phone number"
+                />
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <Button onClick={handleAddUser} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                Create User
+              </Button>
+              <Button onClick={() => setShowAddUser(false)} variant="outline" className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
     </div>
   );
 };

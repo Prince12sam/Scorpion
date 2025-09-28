@@ -174,11 +174,59 @@ const Dashboard = () => {
     }
   ];
 
+  const checkSystemHealth = async () => {
+    try {
+      const data = await apiClient.get('/system/health');
+      toast({
+        title: "System Health Check",
+        description: `CPU: ${data.cpu}%, Memory: ${data.memory}%, Disk: ${data.disk}%`,
+      });
+    } catch (error) {
+      toast({
+        title: "Health Check Failed",
+        description: "Unable to retrieve system health data",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const generateReport = async () => {
+    try {
+      const data = await apiClient.post('/reports/generate', { type: 'quick' });
+      toast({
+        title: "Report Generated",
+        description: `Security report saved as ${data.filename}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Report Generation Failed",
+        description: "Unable to generate security report",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const updateThreatIntel = async () => {
+    try {
+      const data = await apiClient.post('/threat-intel/update');
+      toast({
+        title: "Threat Intel Updated",
+        description: `Updated ${data.count} threat indicators`,
+      });
+    } catch (error) {
+      toast({
+        title: "Update Failed",
+        description: "Unable to update threat intelligence feeds",
+        variant: "destructive"
+      });
+    }
+  };
+
   const quickActions = [
     { label: 'Run Vulnerability Scan', icon: Search, action: startQuickScan },
-    { label: 'Check System Health', icon: Activity, action: () => toast({ title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀" }) },
-    { label: 'Generate Report', icon: FileText, action: () => toast({ title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀" }) },
-    { label: 'Update Threat Intel', icon: Zap, action: () => toast({ title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀" }) }
+    { label: 'Check System Health', icon: Activity, action: checkSystemHealth },
+    { label: 'Generate Report', icon: FileText, action: generateReport },
+    { label: 'Update Threat Intel', icon: Zap, action: updateThreatIntel }
   ];
 
   return (

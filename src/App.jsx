@@ -15,6 +15,10 @@ import FileIntegrityMonitor from '@/components/FileIntegrityMonitor';
 import GlobalThreatHunting from '@/components/GlobalThreatHunting';
 import ReconDiscovery from '@/components/ReconDiscovery';
 import PasswordSecurity from '@/components/PasswordSecurity';
+import AdvancedExploitation from '@/components/AdvancedExploitation';
+import ApiTesting from '@/components/ApiTesting';
+import NetworkDiscovery from '@/components/NetworkDiscovery';
+import BruteForceTools from '@/components/BruteForceTools';
 import { Toaster } from '@/components/ui/toaster';
 
 function App() {
@@ -30,6 +34,10 @@ function App() {
       fim: <FileIntegrityMonitor />,
       'threat-hunting': <GlobalThreatHunting />,
       'password-security': <PasswordSecurity />,
+      exploitation: <AdvancedExploitation />,
+      'api-testing': <ApiTesting />,
+      'network-discovery': <NetworkDiscovery />,
+      'brute-force': <BruteForceTools />,
       reports: <ReportsGenerator />,
       compliance: <ComplianceTracker />,
       intelligence: <ThreatIntelligence />,

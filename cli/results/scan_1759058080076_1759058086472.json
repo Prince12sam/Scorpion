@@ -1,0 +1,138 @@
+{
+  "scanId": "1759058080076",
+  "target": "localhost",
+  "timestamp": "2025-09-28T11:14:40.076Z",
+  "type": "quick",
+  "vulnerabilities": [],
+  "openPorts": [
+    {
+      "port": 135,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "13ms"
+    },
+    {
+      "port": 443,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "12ms"
+    },
+    {
+      "port": 445,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "12ms"
+    },
+    {
+      "port": 902,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "6ms"
+    },
+    {
+      "port": 912,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "10ms"
+    },
+    {
+      "port": 992,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "10ms"
+    }
+  ],
+  "services": [
+    {
+      "port": 135,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "13ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 443,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "12ms",
+      "name": "HTTPS",
+      "version": "unknown",
+      "banner": null,
+      "error": "read ECONNRESET",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 445,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "12ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "read ECONNRESET",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 902,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "6ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "read ECONNRESET",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 912,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "10ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": "220 VMware Authentication Daemon Version 1.0, ServerDaemonProtocol:SOAP, MKSDisplayProtocol:VNC , , , \r\n530 Please login with USER and PASS.\r\n530 Please login with USER and PASS.",
+      "product": null,
+      "extraInfo": [],
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 992,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "10ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "read ECONNRESET",
+      "vulnerabilities": [],
+      "exploits": []
+    }
+  ],
+  "summary": {
+    "totalVulnerabilities": 0,
+    "criticalVulns": 0,
+    "highVulns": 0,
+    "mediumVulns": 0,
+    "lowVulns": 0,
+    "openPorts": 6,
+    "services": 6,
+    "riskScore": 0
+  },
+  "osFingerprint": {
+    "detectedOS": "Windows",
+    "confidence": 50,
+    "evidence": [
+      "135/tcp service detected",
+      "445/tcp service detected"
+    ]
+  }
+}
