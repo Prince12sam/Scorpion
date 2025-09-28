@@ -2,7 +2,7 @@
 class APIClient {
   constructor() {
     this.pendingRequests = new Map();
-    this.baseURL = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+    const API_BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
   }
 
   // Create a cache key for request deduplication
