@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <!-- Compact scorpion favicon for ICO format -->
+  <defs>
+    <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a"/>
+      <stop offset="100%" style="stop-color:#2d1810"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Main body -->
+  <ellipse cx="8" cy="9" rx="4" ry="3" fill="url(#bodyGrad)" stroke="#dc2626" stroke-width="0.3"/>
+  
+  <!-- Head -->
+  <ellipse cx="8" cy="6" rx="2" ry="1.5" fill="url(#bodyGrad)" stroke="#dc2626" stroke-width="0.3"/>
+  
+  <!-- Claws -->
+  <path d="M5 5 Q4 4 3 5 Q4 6 5 5.5" fill="#dc2626"/>
+  <path d="M11 5 Q12 4 13 5 Q12 6 11 5.5" fill="#dc2626"/>
+  
+  <!-- Legs -->
+  <line x1="6" y1="8" x2="4" y2="10" stroke="#dc2626" stroke-width="0.5"/>
+  <line x1="10" y1="8" x2="12" y2="10" stroke="#dc2626" stroke-width="0.5"/>
+  
+  <!-- Tail -->
+  <ellipse cx="8" cy="12" rx="1" ry="0.8" fill="url(#bodyGrad)" stroke="#dc2626" stroke-width="0.2"/>
+  <path d="M8.5 13 Q9 14 8.5 14.5" fill="#dc2626"/>
+  
+  <!-- Eyes -->
+  <circle cx="7" cy="5.5" r="0.3" fill="#dc2626"/>
+  <circle cx="9" cy="5.5" r="0.3" fill="#dc2626"/>
+</svg>
