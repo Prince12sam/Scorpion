@@ -2,7 +2,8 @@
 class APIClient {
   constructor() {
     this.pendingRequests = new Map();
-    const API_BASE_URL = process.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+    // Use import.meta.env for Vite instead of process.env
+    this.API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
   }
 
   // Create a cache key for request deduplication
@@ -14,7 +15,7 @@ class APIClient {
 
   // Fetch with automatic deduplication
   async fetch(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`;
+    const url = `${this.API_BASE_URL}${endpoint}`;
     const cacheKey = this.createCacheKey(url, options);
 
     // If request is already pending, return the existing promise
