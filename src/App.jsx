@@ -19,6 +19,7 @@ import AdvancedExploitation from '@/components/AdvancedExploitation';
 import ApiTesting from '@/components/ApiTesting';
 import NetworkDiscovery from '@/components/NetworkDiscovery';
 import BruteForceTools from '@/components/BruteForceTools';
+import APIStatus from '@/components/APIStatus';
 import { Toaster } from '@/components/ui/toaster';
 
 function App() {
@@ -84,6 +85,7 @@ function App() {
           </main>
         </div>
         
+        <APIStatus />
         <Toaster />
       </div>
     </>
