@@ -48,31 +48,36 @@ const Dashboard = () => {
   const fetchDashboardMetrics = async () => {
     try {
       const data = await apiClient.get('/dashboard/metrics');
-      if (data && data.metrics) {
-        setRealTimeData(data.metrics);
-      } else {
-        // Fallback to simulated data if API doesn't return expected structure
+      if (data && data.metrics && data.metrics.securityMetrics) {
         setRealTimeData({
-          intrusionsDetected: Math.floor(Math.random() * 10),
-          vulnerabilities: Math.floor(Math.random() * 25) + 5,
-          fimAlerts: Math.floor(Math.random() * 8),
-          complianceScore: Math.floor(Math.random() * 20) + 75
+          intrusionsDetected: data.metrics.securityMetrics.intrusionsDetected || 0,
+          vulnerabilities: data.metrics.securityMetrics.vulnerabilities || 0,
+          fimAlerts: data.metrics.securityMetrics.fimAlerts || 0,
+          complianceScore: data.metrics.securityMetrics.complianceScore || 100
+        });
+      } else {
+        // Use default values when no API data is available
+        setRealTimeData({
+          intrusionsDetected: 0,
+          vulnerabilities: 0,
+          fimAlerts: 0,
+          complianceScore: 100
         });
       }
     } catch (error) {
       // Don't show error for cancelled requests
       if (error.name !== 'AbortError') {
         console.error('Failed to fetch dashboard metrics:', error);
-        // Use fallback data instead of showing error
+        // Use clean default values instead of random data
         setRealTimeData({
-          intrusionsDetected: Math.floor(Math.random() * 10),
-          vulnerabilities: Math.floor(Math.random() * 25) + 5,
-          fimAlerts: Math.floor(Math.random() * 8),
-          complianceScore: Math.floor(Math.random() * 20) + 75
+          intrusionsDetected: 0,
+          vulnerabilities: 0,
+          fimAlerts: 0,
+          complianceScore: 100
         });
         toast({
           title: "API Connection Issue",
-          description: "Using simulated data. Check server connection.",
+          description: "Unable to connect to security server. Please check server status.",
           variant: "destructive"
         });
       }
@@ -120,8 +125,9 @@ const Dashboard = () => {
               variant: "destructive"
             });
           } else {
-            // Update progress (simulate for now)
-            setScanProgress(prev => Math.min(prev + Math.random() * 10, 95));
+            // Update progress based on actual scan progress
+            const progress = scanData.progress || 0;
+            setScanProgress(progress);
           }
         } catch (error) {
           console.error('Failed to get scan progress:', error);

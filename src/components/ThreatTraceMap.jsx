@@ -30,26 +30,29 @@ const ThreatTraceMap = () => {
     try {
       const data = await apiClient.get('/threat-map');
       
-      if (data.threats) {
+      if (data && data.threats && Array.isArray(data.threats)) {
         // Transform API data to component format
         const transformedThreats = data.threats.map((threat, index) => ({
           id: threat.ip || `threat-${index}`,
-          country: threat.country,
-          lat: threat.lat,
-          lng: threat.lng,
-          type: threat.type || 'Malicious Activity',
+          country: threat.country || 'Unknown',
+          lat: threat.lat || 0,
+          lng: threat.lng || 0,
+          type: threat.type || 'Security Event',
           ip: threat.ip || 'Unknown',
-          severity: threat.severity || 'medium',
-          timestamp: new Date().toISOString(),
+          severity: threat.severity || 'low',
+          timestamp: threat.timestamp || new Date().toISOString(),
           threats: threat.threats || 1
         }));
 
         setThreats(transformedThreats);
+      } else {
+        // Clear threats if no valid data received
+        setThreats([]);
       }
     } catch (error) {
       if (error.name !== 'AbortError') {
         console.error('Failed to fetch live threat data:', error);
-        // Fall back to empty array on error
+        // Clear threats on error - no dummy data
         setThreats([]);
       }
     }
@@ -89,6 +92,16 @@ const ThreatTraceMap = () => {
       <div className="flex-grow relative bg-slate-800/50 rounded-lg overflow-hidden">
         <div className="absolute inset-0 transition-transform duration-500" style={{ transform: `scale(${view.zoom}) translate(${-view.lng / 20}px, ${view.lat / 10}px)` }}>
           <img alt="Stylized world map for threat visualization" className="w-full h-full object-cover opacity-20" src="https://images.unsplash.com/photo-1628945168072-c4c9213c5225" />
+          
+          {threats.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="text-center text-slate-400">
+                <Globe className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p className="text-lg font-medium">No Active Threats</p>
+                <p className="text-sm">The system is monitoring for threats globally</p>
+              </div>
+            </div>
+          )}
           
           {threats.map((threat) => {
             const x = (threat.lng + 180) / 360 * 100;
