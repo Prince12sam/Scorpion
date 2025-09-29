@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Globe, MapPin, AlertTriangle, ZoomIn, ZoomOut, LocateFixed } from 'lucide-react';
+import { Globe, MapPin, AlertTriangle, ZoomIn, ZoomOut, LocateFixed, Activity, Play, Pause, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import apiClient from '@/lib/api-client';
+import LiveThreatMap from './LiveThreatMap';
 
 const ThreatTraceMap = () => {
   const [threats, setThreats] = useState([]);
@@ -13,13 +13,12 @@ const ThreatTraceMap = () => {
     lng: 0,
     zoom: 1.5,
   });
+  const [liveMode, setLiveMode] = useState(false);
+  const [isMonitoring, setIsMonitoring] = useState(false);
 
   useEffect(() => {
     fetchLiveThreatData();
-
-    // Set up live updates every 10 seconds
     const interval = setInterval(fetchLiveThreatData, 10000);
-
     return () => {
       clearInterval(interval);
       apiClient.cancelRequest('/threat-map');
@@ -29,98 +28,145 @@ const ThreatTraceMap = () => {
   const fetchLiveThreatData = async () => {
     try {
       const data = await apiClient.get('/threat-map');
-      
-      if (data && data.threats && Array.isArray(data.threats)) {
-        // Transform API data to component format
+      if (data && data.threats) {
         const transformedThreats = data.threats.map((threat, index) => ({
           id: threat.ip || `threat-${index}`,
+          ip: threat.ip || '0.0.0.0',
           country: threat.country || 'Unknown',
-          lat: threat.lat || 0,
-          lng: threat.lng || 0,
-          type: threat.type || 'Security Event',
-          ip: threat.ip || 'Unknown',
-          severity: threat.severity || 'low',
-          timestamp: threat.timestamp || new Date().toISOString(),
-          threats: threat.threats || 1
+          type: threat.attack_type || 'Unknown Attack',
+          severity: threat.severity || 'medium',
+          lat: threat.latitude || (Math.random() * 180 - 90),
+          lng: threat.longitude || (Math.random() * 360 - 180),
+          timestamp: threat.timestamp || new Date().toISOString()
         }));
-
         setThreats(transformedThreats);
       } else {
-        // Clear threats if no valid data received
         setThreats([]);
       }
     } catch (error) {
-      if (error.name !== 'AbortError') {
-        console.error('Failed to fetch live threat data:', error);
-        // Clear threats on error - no dummy data
-        setThreats([]);
-      }
+      console.error('Failed to fetch threat data:', error);
+      setThreats([]);
     }
   };
 
-  const getSeverityColor = (severity) => {
-    return severity === 'critical' ? 'bg-red-500' : 'bg-orange-500';
+  const handleZoom = (delta) => {
+    setView(prev => ({
+      ...prev,
+      zoom: Math.max(0.5, Math.min(5, prev.zoom + delta))
+    }));
   };
 
-  const handleZoom = (direction) => {
-    setView(v => ({ ...v, zoom: Math.max(1, Math.min(8, v.zoom + direction)) }));
-  };
-
-  const resetView = () => {
-    setView({ lat: 20, lng: 0, zoom: 1.5 });
-  };
-
-  const selectAndCenter = (threat) => {
+  const handleThreatClick = (threat) => {
     setSelectedThreat(threat);
-    setView({ lat: threat.lat, lng: threat.lng, zoom: 4 });
+    setView(prev => ({
+      ...prev,
+      lat: threat.lat,
+      lng: threat.lng,
+      zoom: Math.max(prev.zoom, 2)
+    }));
   };
+
+  const toggleLiveMonitoring = async () => {
+    try {
+      const endpoint = isMonitoring ? '/api/threat-feeds/stop' : '/api/threat-feeds/start';
+      const response = await fetch(`http://localhost:3001${endpoint}`, {
+        method: 'POST'
+      });
+      const result = await response.json();
+      if (result.success) {
+        setIsMonitoring(!isMonitoring);
+      }
+    } catch (error) {
+      console.error('Failed to toggle monitoring:', error);
+    }
+  };
+
+  if (liveMode) {
+    return <LiveThreatMap />;
+  }
 
   return (
-    <div className="glass-card p-6 rounded-xl h-[450px] flex flex-col">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-white flex items-center">
-          <Globe className="w-5 h-5 mr-2 text-blue-400" />
-          Live Threat Trace
-        </h2>
-        <div className="flex items-center space-x-2">
-          <Button variant="outline" size="icon" onClick={() => handleZoom(0.5)}><ZoomIn className="w-4 h-4" /></Button>
-          <Button variant="outline" size="icon" onClick={() => handleZoom(-0.5)}><ZoomOut className="w-4 h-4" /></Button>
-          <Button variant="outline" size="icon" onClick={resetView}><LocateFixed className="w-4 h-4" /></Button>
+    <div className="space-y-6">
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Global Threat Intelligence Map</h1>
+            <p className="text-slate-400">Visualize and trace threats across geographical regions.</p>
+          </div>
+          <div className="flex items-center space-x-4">
+            <Button
+              onClick={() => setLiveMode(true)}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              <Activity className="w-4 h-4 mr-2" />
+              Switch to Live Mode
+            </Button>
+            <Button
+              onClick={toggleLiveMonitoring}
+              className={`${isMonitoring ? 'bg-red-600 hover:bg-red-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+            >
+              {isMonitoring ? <Pause className="w-4 h-4 mr-2" /> : <Play className="w-4 h-4 mr-2" />}
+              {isMonitoring ? 'Stop Monitoring' : 'Start Monitoring'}
+            </Button>
+          </div>
         </div>
-      </div>
+      </motion.div>
 
-      <div className="flex-grow relative bg-slate-800/50 rounded-lg overflow-hidden">
-        <div className="absolute inset-0 transition-transform duration-500" style={{ transform: `scale(${view.zoom}) translate(${-view.lng / 20}px, ${view.lat / 10}px)` }}>
-          <img alt="Stylized world map for threat visualization" className="w-full h-full object-cover opacity-20" src="https://images.unsplash.com/photo-1628945168072-c4c9213c5225" />
-          
-          {threats.length === 0 && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center text-slate-400">
-                <Globe className="w-12 h-12 mx-auto mb-2 opacity-50" />
-                <p className="text-lg font-medium">No Active Threats</p>
-                <p className="text-sm">The system is monitoring for threats globally</p>
+      <div className="glass-card p-6 rounded-xl h-[450px] flex flex-col">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-white flex items-center">
+            <Globe className="w-5 h-5 mr-2 text-blue-400" />
+            Static Threat Map
+          </h2>
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" size="icon" onClick={() => handleZoom(0.5)}><ZoomIn className="w-4 h-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => handleZoom(-0.5)}><ZoomOut className="w-4 h-4" /></Button>
+            <Button variant="outline" size="icon" onClick={() => setView({ lat: 20, lng: 0, zoom: 1.5 })}><LocateFixed className="w-4 h-4" /></Button>
+          </div>
+        </div>
+
+        <div className="flex-1 relative bg-slate-800 rounded-lg overflow-hidden">
+          {threats.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Shield className="w-16 h-16 mx-auto mb-4 text-green-500" />
+                <h3 className="text-xl font-semibold text-white mb-2">No Active Threats</h3>
+                <p className="text-slate-400">Your network is secure. No threats detected in the current monitoring period.</p>
               </div>
             </div>
+          ) : (
+            <>
+              <div 
+                className="absolute inset-0 bg-gradient-to-br from-slate-900 to-slate-700"
+                style={{
+                  backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'60\' height=\'60\' viewBox=\'0 0 60 60\'%3E%3Cg fill-rule=\'evenodd\'%3E%3Cg fill=\'%23334155\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
+                  transform: `scale(${view.zoom}) translate(${-view.lng * 2}px, ${-view.lat * 2}px)`
+                }}
+              />
+              
+              {threats.map(threat => {
+                const x = ((threat.lng + 180) / 360) * 100;
+                const y = ((90 - threat.lat) / 180) * 100;
+                
+                return (
+                  <motion.div
+                    key={threat.id}
+                    initial={{ scale: 0, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`absolute w-4 h-4 -translate-x-2 -translate-y-2 rounded-full cursor-pointer z-10 ${
+                      threat.severity === 'critical' ? 'bg-red-500 shadow-red-500/50' : 'bg-orange-500 shadow-orange-500/50'
+                    } shadow-lg animate-pulse`}
+                    style={{ left: `${x}%`, top: `${y}%` }}
+                    onClick={() => handleThreatClick(threat)}
+                  >
+                    <div className={`absolute inset-0 rounded-full animate-ping ${
+                      threat.severity === 'critical' ? 'bg-red-500' : 'bg-orange-500'
+                    }`} />
+                  </motion.div>
+                );
+              })}
+            </>
           )}
-          
-          {threats.map((threat) => {
-            const x = (threat.lng + 180) / 360 * 100;
-            const y = (-threat.lat + 90) / 180 * 100;
-            return (
-              <motion.div
-                key={threat.id}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="absolute w-3 h-3 rounded-full cursor-pointer"
-                style={{ left: `${x}%`, top: `${y}%`, transform: 'translate(-50%, -50%)' }}
-                onClick={() => selectAndCenter(threat)}
-                whileHover={{ scale: 2.5, zIndex: 10 }}
-              >
-                <div className={`absolute inset-0 rounded-full ${getSeverityColor(threat.severity)}`}></div>
-                <div className={`absolute inset-0 rounded-full ${getSeverityColor(threat.severity)} animate-ping opacity-75`}></div>
-              </motion.div>
-            );
-          })}
         </div>
 
         {selectedThreat && (

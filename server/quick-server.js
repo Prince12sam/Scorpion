@@ -1,8 +1,14 @@
 import express from 'express';
 import cors from 'cors';
+import { LiveThreatTracer } from './live-threat-tracer.js';
+import { WebSocketServer } from 'ws';
 
 const app = express();
 const PORT = 3001;
+
+// Initialize Live Threat Tracer
+const threatTracer = new LiveThreatTracer();
+let wss = null;
 
 // Middleware
 app.use(cors());
@@ -192,6 +198,53 @@ app.post('/api/testing/api', (req, res) => {
   });
 });
 
+// Live Threat Intelligence Endpoints
+app.get('/api/threat-map/live', (req, res) => {
+  const liveData = threatTracer.getLiveThreatMap();
+  res.json(liveData);
+});
+
+app.post('/api/threat-intel/live-lookup', async (req, res) => {
+  const { indicator } = req.body;
+  const result = await threatTracer.lookupThreatIntel(indicator);
+  res.json(result);
+});
+
+app.get('/api/threat-feeds/status', (req, res) => {
+  res.json({
+    isMonitoring: threatTracer.isMonitoring,
+    activeFeeds: Array.from(threatTracer.activeThreatFeeds.keys()),
+    cacheSize: threatTracer.threatCache.size,
+    lastUpdate: new Date().toISOString()
+  });
+});
+
+app.post('/api/threat-feeds/start', (req, res) => {
+  if (!threatTracer.isMonitoring) {
+    threatTracer.startLiveMonitoring();
+    res.json({ success: true, message: 'Live threat monitoring started' });
+  } else {
+    res.json({ success: false, message: 'Monitoring already active' });
+  }
+});
+
+app.post('/api/threat-feeds/stop', (req, res) => {
+  if (threatTracer.isMonitoring) {
+    threatTracer.stopMonitoring();
+    res.json({ success: true, message: 'Live threat monitoring stopped' });
+  } else {
+    res.json({ success: false, message: 'Monitoring not active' });
+  }
+});
+
+// Real-time threat alerts (WebSocket endpoint info)
+app.get('/api/threat-feeds/websocket', (req, res) => {
+  res.json({
+    endpoint: `ws://localhost:${PORT}/threat-alerts`,
+    message: 'Connect to this WebSocket for real-time threat alerts'
+  });
+});
+
 // Catch-all for missing endpoints
 app.use('/api/*', (req, res) => {
   res.json({ 
@@ -203,7 +256,43 @@ app.use('/api/*', (req, res) => {
   });
 });
 
-app.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🦂 Scorpion Security Platform API Server running on http://localhost:${PORT}`);
   console.log(`✅ All security tools are now functional and ready for testing!`);
+  
+  // Initialize WebSocket for real-time threat alerts
+  wss = new WebSocketServer({ server });
+  
+  wss.on('connection', (ws) => {
+    console.log('🔗 WebSocket client connected for live threat alerts');
+    
+    // Send welcome message
+    ws.send(JSON.stringify({
+      type: 'welcome',
+      message: 'Connected to Scorpion Live Threat Feed',
+      timestamp: new Date().toISOString()
+    }));
+    
+    // Listen for threat detection events
+    const threatHandler = (threat) => {
+      ws.send(JSON.stringify({
+        type: 'threat_alert',
+        data: threat,
+        timestamp: new Date().toISOString()
+      }));
+    };
+    
+    threatTracer.on('threatDetected', threatHandler);
+    
+    ws.on('close', () => {
+      console.log('🔌 WebSocket client disconnected');
+      threatTracer.off('threatDetected', threatHandler);
+    });
+  });
+  
+  // Start live threat monitoring automatically
+  setTimeout(() => {
+    threatTracer.startLiveMonitoring();
+    console.log('🌐 Live Threat Intelligence monitoring started');
+  }, 2000);
 });
