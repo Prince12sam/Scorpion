@@ -295,7 +295,7 @@ app.post('/api/threat-intel/lookup', (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`🦂 Scorpion Security Platform API running on http://localhost:${PORT}`);
 });
 
