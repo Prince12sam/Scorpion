@@ -203,7 +203,7 @@ app.use('/api/*', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🦂 Scorpion Security Platform API Server running on http://localhost:${PORT}`);
   console.log(`✅ All security tools are now functional and ready for testing!`);
 });
