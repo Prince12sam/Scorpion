@@ -16,6 +16,8 @@ const ThreatIntelligence = () => {
 
   useEffect(() => {
     fetchLatestIOCs();
+    fetchIntelligenceSources();
+    fetchLatestThreats();
   }, []);
 
   const fetchLatestIOCs = async () => {
@@ -27,6 +29,48 @@ const ThreatIntelligence = () => {
       }
     } catch (error) {
       console.error('Error fetching IOCs:', error);
+    }
+  };
+
+  const fetchIntelligenceSources = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/threat-feeds/status`);
+      if (response.ok) {
+        const data = await response.json();
+        setIntelligenceSources(data.feeds || []);
+      }
+    } catch (error) {
+      console.error('Error fetching intelligence sources:', error);
+      // Fallback to empty array - no mockup data
+      setIntelligenceSources([]);
+    }
+  };
+
+  const fetchLatestThreats = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/threat-map/live`);
+      if (response.ok) {
+        const data = await response.json();
+        // Convert backend threat data to frontend format
+        const formattedThreats = (data.recentThreats || []).map(threat => ({
+          id: threat.id,
+          title: threat.description,
+          description: `${threat.type}: ${threat.indicator}`,
+          severity: threat.severity,
+          source: threat.source,
+          category: threat.type,
+          confidence: threat.metadata?.confidence || 85,
+          affected_regions: [threat.geolocation?.country || 'Unknown'],
+          timestamp: new Date(threat.timestamp),
+          indicators: [threat.indicator],
+          techniques: threat.tags || [],
+          mitigation: `Block ${threat.type} indicator: ${threat.indicator}`
+        }));
+        setThreatFeeds(formattedThreats);
+      }
+    } catch (error) {
+      console.error('Error fetching latest threats:', error);
+      setThreatFeeds([]);
     }
   };
 
@@ -50,6 +94,8 @@ const ThreatIntelligence = () => {
       setLoading(true);
       try {
         await fetchLatestIOCs();
+        await fetchIntelligenceSources();
+        await fetchLatestThreats();
         toast({
           title: "Feeds Updated",
           description: "Threat intelligence feeds have been refreshed",
@@ -107,13 +153,7 @@ const ThreatIntelligence = () => {
     }
   };
 
-  const intelligenceSources = [
-    { name: 'OSINT Feeds', status: 'active' },
-    { name: 'Dark Web Monitoring', status: 'active' },
-    { name: 'MITRE ATT&CK', status: 'active' },
-    { name: 'Vendor Reports', status: 'active' },
-    { name: 'Honeypots', status: 'inactive' }
-  ];
+  const [intelligenceSources, setIntelligenceSources] = useState([]);
 
   return (
     <div className="space-y-6">
@@ -180,22 +220,28 @@ const ThreatIntelligence = () => {
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6 rounded-xl">
         <h2 className="text-xl font-semibold text-white mb-4 flex items-center"><Brain className="w-5 h-5 mr-2 text-blue-400" />Intelligence Sources</h2>
-        <div className="flex flex-wrap gap-4">
-          {intelligenceSources.map((source) => (
-            <div key={source.name} className="flex items-center space-x-2 p-2 bg-slate-800/50 rounded-lg">
-              {source.status === 'active' ? <div className="w-2 h-2 bg-green-500 rounded-full security-pulse"></div> : <WifiOff className="w-4 h-4 text-red-500" />}
-              <div className="text-sm font-medium text-white">{source.name}</div>
-            </div>
-          ))}
-        </div>
+        {intelligenceSources.length === 0 ? (
+          <div className="text-center py-4 text-slate-400">
+            <p>Loading intelligence sources...</p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-4">
+            {intelligenceSources.map((source) => (
+              <div key={source.name} className="flex items-center space-x-2 p-2 bg-slate-800/50 rounded-lg">
+                {source.status === 'active' ? <div className="w-2 h-2 bg-green-500 rounded-full security-pulse"></div> : <WifiOff className="w-4 h-4 text-red-500" />}
+                <div className="text-sm font-medium text-white">{source.name}</div>
+              </div>
+            ))}
+          </div>
+        )}
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-card p-6 rounded-xl">
         <h2 className="text-xl font-semibold text-white mb-6 flex items-center"><Eye className="w-5 h-5 mr-2 text-red-400" />Latest Threat Intelligence</h2>
         {threatFeeds.length === 0 ? (
           <div className="text-center py-8 text-slate-400">
-            <p>No threat intelligence feeds available.</p>
-            <p className="text-sm">Update feeds to see the latest threats.</p>
+            <p>Loading latest threat intelligence...</p>
+            <p className="text-sm">Connect to live threat feeds for real-time updates.</p>
           </div>
         ) : (
           <div className="space-y-4">
