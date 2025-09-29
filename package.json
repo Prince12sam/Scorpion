@@ -13,7 +13,7 @@
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "server": "node server/simple-server.js",
+    "server": "node server/working-server.js",
     "cli": "node cli/scorpion.js",
     "setup": "node setup.js",
     "postinstall": "npm run setup",
