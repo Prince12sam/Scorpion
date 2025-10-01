@@ -1,6 +1,9 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import { SecurityScanner } from '../cli/lib/scanner.js';
+import { NetworkRecon } from '../cli/lib/recon.js';
+import { ThreatIntel } from '../cli/lib/threat-intel.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -90,48 +93,240 @@ app.get('/api/monitoring/performance', (req, res) => {
   });
 });
 
-// Other endpoints
-app.post('/api/scanner/scan', (req, res) => {
-  const { target } = req.body;
-  res.json({
-    success: true,
-    scanId: Date.now().toString(),
-    target: target || 'localhost',
-    status: 'completed',
-    results: {
-      vulnerabilities: [],
-      openPorts: [],
-      services: []
-    },
-    timestamp: new Date().toISOString()
-  });
+// Initialize security tools
+const scanner = new SecurityScanner();
+const recon = new NetworkRecon();
+const threatIntel = new ThreatIntel();
+
+// Vulnerability Scanner
+app.post('/api/scanner/scan', async (req, res) => {
+  const { target, type = 'quick', ports } = req.body;
+  
+  if (!target) {
+    return res.status(400).json({
+      success: false,
+      error: 'Target is required'
+    });
+  }
+
+  try {
+    console.log(`🔍 Starting ${type} scan for target: ${target}`);
+    
+    // Perform actual scan
+    const scanOptions = {
+      type: type,
+      ports: ports || (type === 'quick' ? '80,443,22,21' : '1-1000')
+    };
+    
+    const results = await scanner.scan(target, scanOptions);
+    
+    res.json({
+      success: true,
+      scanId: Date.now().toString(),
+      target: target,
+      status: 'completed',
+      results: {
+        vulnerabilities: results.vulnerabilities || [],
+        openPorts: results.openPorts || [],
+        services: results.services || [],
+        summary: results.summary || {}
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Scan error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      scanId: Date.now().toString(),
+      target: target,
+      status: 'failed',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
-app.post('/api/recon/discover', (req, res) => {
+// Network Reconnaissance
+app.post('/api/recon/discover', async (req, res) => {
   const { target } = req.body;
-  res.json({
-    success: true,
-    target: target || 'localhost',
-    results: [],
-    timestamp: new Date().toISOString()
-  });
+  
+  if (!target) {
+    return res.status(400).json({
+      success: false,
+      error: 'Target is required'
+    });
+  }
+
+  try {
+    console.log(`🕵️ Starting reconnaissance for target: ${target}`);
+    
+    const results = await recon.discover(target, {
+      dns: true,
+      whois: true,
+      ports: true,
+      headers: true
+    });
+    
+    res.json({
+      success: true,
+      target: target,
+      results: {
+        dns: results.dns || {},
+        whois: results.whois || {},
+        ports: results.ports || [],
+        headers: results.headers || {},
+        geolocation: results.geolocation || {}
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Recon error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      target: target,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
-app.post('/api/file-integrity/scan', (req, res) => {
+// Threat Intelligence
+app.post('/api/threat-intel/lookup', async (req, res) => {
+  const { indicator, type = 'ip' } = req.body;
+  
+  if (!indicator) {
+    return res.status(400).json({
+      success: false,
+      error: 'Indicator is required'
+    });
+  }
+
+  try {
+    console.log(`🧠 Looking up threat intelligence for: ${indicator}`);
+    
+    let results;
+    if (type === 'ip') {
+      results = await threatIntel.checkIP(indicator);
+    } else if (type === 'domain') {
+      results = await threatIntel.checkDomain(indicator);
+    } else if (type === 'hash') {
+      results = await threatIntel.checkHash(indicator);
+    }
+    
+    res.json({
+      success: true,
+      indicator: indicator,
+      type: type,
+      results: results || {},
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Threat intel error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      indicator: indicator,
+      type: type,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// File Integrity Monitoring
+app.post('/api/file-integrity/scan', async (req, res) => {
   const { path } = req.body;
+  
+  if (!path) {
+    return res.status(400).json({
+      success: false,
+      error: 'Path is required'
+    });
+  }
+
+  try {
+    console.log(`👁️ Starting file integrity scan for: ${path}`);
+    
+    // Import file integrity module
+    const { FileIntegrity } = await import('../cli/lib/file-integrity.js');
+    const fim = new FileIntegrity();
+    
+    const results = await fim.createBaseline(path);
+    
+    res.json({
+      success: true,
+      scanId: Date.now().toString(),
+      path: path,
+      status: 'completed',
+      results: {
+        filesScanned: results.totalFiles || 0,
+        filesModified: 0,
+        filesAdded: 0,
+        filesDeleted: 0,
+        alerts: [],
+        baseline: results.baseline || {}
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('FIM error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      path: path,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Password Security
+app.post('/api/password/analyze', async (req, res) => {
+  const { password } = req.body;
+  
+  if (!password) {
+    return res.status(400).json({
+      success: false,
+      error: 'Password is required'
+    });
+  }
+
+  try {
+    console.log(`🔐 Analyzing password security`);
+    
+    // Import password security module
+    const { PasswordSecurity } = await import('../cli/lib/password-security.js');
+    const pwdSec = new PasswordSecurity();
+    
+    const analysis = await pwdSec.analyzePassword(password);
+    
+    res.json({
+      success: true,
+      analysis: analysis || {},
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Password analysis error:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Get scan status
+app.get('/api/scanner/status/:scanId', (req, res) => {
+  const { scanId } = req.params;
+  
   res.json({
-    success: true,
-    scanId: Date.now().toString(),
-    path: path || './src',
+    scanId: scanId,
     status: 'completed',
-    results: {
-      filesScanned: 0,
-      filesModified: 0,
-      filesAdded: 0,
-      filesDeleted: 0,
-      alerts: []
-    },
-    timestamp: new Date().toISOString()
+    progress: 100,
+    message: 'Scan completed successfully'
   });
 });
 
