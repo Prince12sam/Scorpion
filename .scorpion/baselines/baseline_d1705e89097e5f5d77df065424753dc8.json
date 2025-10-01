@@ -1,0 +1,408 @@
+{
+  "path": "./src",
+  "created": "2025-10-01T18:43:52.857Z",
+  "files": {
+    "src\\App.jsx": {
+      "path": "src\\App.jsx",
+      "size": 3712,
+      "hash": "e1b1d8930c4a0fb9bb0528c5134b74548edce0db7aeb8b21a1a1be6d883accb6",
+      "modified": "2025-09-28T15:54:44.000Z",
+      "created": "2025-09-18T03:56:48.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\main.jsx": {
+      "path": "src\\main.jsx",
+      "size": 456,
+      "hash": "440d1bed7d1e4610db22078a0d25a9cc658708af9244ecc16906e58c405d1dbf",
+      "modified": "2025-09-18T11:49:08.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\index.css": {
+      "path": "src\\index.css",
+      "size": 2970,
+      "hash": "b2b8079d9cc3c55679a2458967290ee9c1e9df5a1f6d11df334018ced487168c",
+      "modified": "2025-09-18T02:58:00.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\lib\\utils.js": {
+      "path": "src\\lib\\utils.js",
+      "size": 136,
+      "hash": "61ee85fe140ed9d4458eb254b9f8807abfe52ea313037921ff85c99bd6a174d7",
+      "modified": "2025-09-18T02:58:00.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\lib\\api-client.js": {
+      "path": "src\\lib\\api-client.js",
+      "size": 3327,
+      "hash": "b2ce9dc3e87d2e47688fffc0c34da995c4d2a4239f57f875bc8450d9777291f6",
+      "modified": "2025-09-28T18:56:32.000Z",
+      "created": "2025-09-18T11:41:16.810Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\lib\\api-tester.js": {
+      "path": "src\\lib\\api-tester.js",
+      "size": 5329,
+      "hash": "d7d2877dce7918f9df610d8892d96cb8fbb49b4f323d21e4cd34bc2619ac28b4",
+      "modified": "2025-09-28T15:25:30.000Z",
+      "created": "2025-09-28T12:43:22.940Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ReconDiscovery.jsx": {
+      "path": "src\\components\\ReconDiscovery.jsx",
+      "size": 4966,
+      "hash": "bef59828e7e9d005035685e8e39eab6dff7e5809c269988971c6df1d6b60ffb5",
+      "modified": "2025-09-18T11:34:48.000Z",
+      "created": "2025-09-18T03:57:28.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\Dashboard.jsx": {
+      "path": "src\\components\\Dashboard.jsx",
+      "size": 11184,
+      "hash": "d4dd97e37a7879e5973dac0c5423d9fd0c4adaebd266157d4daa9dbc01d45e7b",
+      "modified": "2025-09-28T18:15:16.000Z",
+      "created": "2025-09-18T04:06:56.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ComplianceTracker.jsx": {
+      "path": "src\\components\\ComplianceTracker.jsx",
+      "size": 9901,
+      "hash": "e45b8c31c129fc496672d501a37e1b41d66a4b7246c06ecec8eedff9b71b04de",
+      "modified": "2025-09-28T12:33:38.000Z",
+      "created": "2025-09-18T03:27:02.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\WelcomeMessage.jsx": {
+      "path": "src\\components\\WelcomeMessage.jsx",
+      "size": 535,
+      "hash": "3fb38cc7aad01f50b348599f35bcde6380711c48a6951ec0b47b605968db9199",
+      "modified": "2025-09-18T02:58:00.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\UserManagement.jsx": {
+      "path": "src\\components\\UserManagement.jsx",
+      "size": 13712,
+      "hash": "bf335880d1eb169f1cf888861063b4e83c3db0577c96cc8d7ae2ad5b1ab42084",
+      "modified": "2025-09-28T12:10:46.000Z",
+      "created": "2025-09-18T04:08:18.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\RecentAlerts.jsx": {
+      "path": "src\\components\\RecentAlerts.jsx",
+      "size": 6887,
+      "hash": "d2608f88bd9c4dfd89361fc1dae8ffffbf5dc62b058aa03431593b08fbc233d9",
+      "modified": "2025-09-18T04:07:10.000Z",
+      "created": "2025-09-18T04:07:10.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\Settings.jsx": {
+      "path": "src\\components\\Settings.jsx",
+      "size": 21599,
+      "hash": "f3aa00fb98758ecb802f32e32f159ca91e173758509b9d88e06fe8d229e18843",
+      "modified": "2025-09-21T16:03:20.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\CallToAction.jsx": {
+      "path": "src\\components\\CallToAction.jsx",
+      "size": 388,
+      "hash": "e0299c3fc5cc3b85ae83add7412bc2161abc82af35f51879c7c2d8640f896826",
+      "modified": "2025-09-18T02:57:58.000Z",
+      "created": "2025-09-18T02:57:58.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\Sidebar.jsx": {
+      "path": "src\\components\\Sidebar.jsx",
+      "size": 4957,
+      "hash": "11cd83b967f5336c1e3365f9d048c1fd8b3f08e952a943d14cdd35200fd4da61",
+      "modified": "2025-09-28T11:37:10.000Z",
+      "created": "2025-09-18T03:56:58.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ThreatMap.jsx": {
+      "path": "src\\components\\ThreatMap.jsx",
+      "size": 5949,
+      "hash": "f8e842965872780143a9ac4f58a16bcc0f5e86bcfa7fb85d9e8fd7ad369ec47c",
+      "modified": "2025-09-18T02:58:00.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\SystemHealth.jsx": {
+      "path": "src\\components\\SystemHealth.jsx",
+      "size": 6122,
+      "hash": "c4bd459f2962c710cb656b37980e316da20274bcd65f4e61568c423cf943f35d",
+      "modified": "2025-09-28T18:15:16.000Z",
+      "created": "2025-09-18T04:07:16.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\VulnerabilityScanner.jsx": {
+      "path": "src\\components\\VulnerabilityScanner.jsx",
+      "size": 14167,
+      "hash": "b55d37972b716707e84c9191d80d7210a06b00b50d7528b814ffcb3fb1727d32",
+      "modified": "2025-09-18T09:23:18.000Z",
+      "created": "2025-09-18T03:37:16.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\SecurityMetricCard.jsx": {
+      "path": "src\\components\\SecurityMetricCard.jsx",
+      "size": 1636,
+      "hash": "3badab34bf09a9bee2acfdd935c699a871b74c7f04b1fb8cf22a9555bcb5639a",
+      "modified": "2025-09-18T04:08:40.000Z",
+      "created": "2025-09-18T04:08:40.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ThreatIntelligence.jsx": {
+      "path": "src\\components\\ThreatIntelligence.jsx",
+      "size": 13826,
+      "hash": "928ebb36a89ae5478709f2d2966efefc0b20cf03f2059dae7cc848f5b034cb7e",
+      "modified": "2025-09-29T17:41:54.000Z",
+      "created": "2025-09-18T04:08:06.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\PasswordSecurity.jsx": {
+      "path": "src\\components\\PasswordSecurity.jsx",
+      "size": 7495,
+      "hash": "b412ae39cd355940cb3f0c35a4c68ee08b636da6f2b7539d8947d95223febcd1",
+      "modified": "2025-09-21T16:03:20.000Z",
+      "created": "2025-09-18T03:57:40.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\InvestigationTools.jsx": {
+      "path": "src\\components\\InvestigationTools.jsx",
+      "size": 13575,
+      "hash": "497eb7a6827ff1f70e5c8a6dea0c197f5e3eb5991a1c3142dac9abd4a2e35f3f",
+      "modified": "2025-09-21T16:03:20.000Z",
+      "created": "2025-09-18T03:26:10.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\GlobalThreatHunting.jsx": {
+      "path": "src\\components\\GlobalThreatHunting.jsx",
+      "size": 6453,
+      "hash": "e24f7d6f2abf7b17b1cbf793d1a76b2a8cb9d9a038799044b46f0e9e73262da2",
+      "modified": "2025-09-18T03:25:56.000Z",
+      "created": "2025-09-18T03:25:56.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\HeroImage.jsx": {
+      "path": "src\\components\\HeroImage.jsx",
+      "size": 328,
+      "hash": "45d485629fa0ba5a190c36e1691aeed8089f5b2607fba65a882c66aaf5b286ec",
+      "modified": "2025-09-18T02:57:58.000Z",
+      "created": "2025-09-18T02:57:58.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ReportsGenerator.jsx": {
+      "path": "src\\components\\ReportsGenerator.jsx",
+      "size": 11836,
+      "hash": "e0ba056ff6092d3d68b78e5c4b87d6822cf0c1a00151c6e3dd6b1d14bb5ee34f",
+      "modified": "2025-09-18T10:13:06.000Z",
+      "created": "2025-09-18T04:08:36.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\MonitoringCenter.jsx": {
+      "path": "src\\components\\MonitoringCenter.jsx",
+      "size": 16843,
+      "hash": "29ed7cea63c522409d196758398ac29f8037a298115ee668717403d57c125f46",
+      "modified": "2025-09-28T15:25:30.000Z",
+      "created": "2025-09-18T04:07:34.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ui\\toast.jsx": {
+      "path": "src\\components\\ui\\toast.jsx",
+      "size": 3789,
+      "hash": "b71047518523aa7e64d9066aea4c3b159dfb6d7b4b6dfeb9702491f7b943cb29",
+      "modified": "2025-09-18T09:51:40.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ui\\use-toast.js": {
+      "path": "src\\components\\ui\\use-toast.js",
+      "size": 2032,
+      "hash": "48352a8f7d38c200e897d0feedb00c0c0117039415370c6fe0d04a378417b5a5",
+      "modified": "2025-09-18T02:58:00.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ui\\button.jsx": {
+      "path": "src\\components\\ui\\button.jsx",
+      "size": 1512,
+      "hash": "15b61b42558e4cabdcdf16c77ec44adf0457ed75bbe103fd3b890e6d229df0f2",
+      "modified": "2025-09-18T02:58:00.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ui\\toaster.jsx": {
+      "path": "src\\components\\ui\\toaster.jsx",
+      "size": 712,
+      "hash": "6d3047552101d130bfc6ccb934465409f697245fb1e879facb52be03af04456c",
+      "modified": "2025-09-18T02:58:00.000Z",
+      "created": "2025-09-18T02:58:00.000Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ErrorBoundary.jsx": {
+      "path": "src\\components\\ErrorBoundary.jsx",
+      "size": 3422,
+      "hash": "3802f31b481deaf8962b678c0d2f37bd372167dd63c395be27ba76a293b490a7",
+      "modified": "2025-09-18T11:49:08.000Z",
+      "created": "2025-09-18T11:42:59.770Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\FileIntegrityMonitor.jsx": {
+      "path": "src\\components\\FileIntegrityMonitor.jsx",
+      "size": 14144,
+      "hash": "7b24482de98cdc7d8818693df90fae1738708f22be0a7980655634dd45117207",
+      "modified": "2025-09-28T12:33:38.000Z",
+      "created": "2025-09-21T16:16:11.450Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\AdvancedExploitation.jsx": {
+      "path": "src\\components\\AdvancedExploitation.jsx",
+      "size": 10507,
+      "hash": "0c9f49765e12e85259fa5f0c6a535b901de6598313dedbc3f184a5fb49e4f54c",
+      "modified": "2025-09-28T11:37:10.000Z",
+      "created": "2025-09-28T11:27:21.520Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ApiTesting.jsx": {
+      "path": "src\\components\\ApiTesting.jsx",
+      "size": 12308,
+      "hash": "ca1168883a1ac0094a4d48e80963f02a29c05aa592f6aafb2e1b0eb6fd62a98b",
+      "modified": "2025-09-28T11:37:10.000Z",
+      "created": "2025-09-28T11:28:47.870Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\NetworkDiscovery.jsx": {
+      "path": "src\\components\\NetworkDiscovery.jsx",
+      "size": 13951,
+      "hash": "8bae3f22480ef7f915f2fcf0860d95e7df884848a978889bbf1c595b35df2d3e",
+      "modified": "2025-09-28T11:37:10.000Z",
+      "created": "2025-09-28T11:29:34.020Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\BruteForceTools.jsx": {
+      "path": "src\\components\\BruteForceTools.jsx",
+      "size": 16328,
+      "hash": "de5c35a16217cac293042d83ac2ab4db0765f9b8da20173846f871a7048601a0",
+      "modified": "2025-09-28T11:37:10.000Z",
+      "created": "2025-09-28T11:30:35.340Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\APIStatus.jsx": {
+      "path": "src\\components\\APIStatus.jsx",
+      "size": 6301,
+      "hash": "4e185098e3db533ae75a203703a0487e073bfe2a6e2a9b605306d1a46df310e1",
+      "modified": "2025-09-28T15:25:30.000Z",
+      "created": "2025-09-28T12:45:08.380Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\EnterpriseSecurityComponents.jsx": {
+      "path": "src\\components\\EnterpriseSecurityComponents.jsx",
+      "size": 32829,
+      "hash": "d3991a1a05fc5e846785f37109eb75e23d9ad2176e8dd8f288f7e7c4e1cde2bc",
+      "modified": "2025-09-28T17:40:46.000Z",
+      "created": "2025-09-28T17:14:38.260Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\LiveThreatMap.jsx": {
+      "path": "src\\components\\LiveThreatMap.jsx",
+      "size": 13910,
+      "hash": "6f73abb6f8d5341c89a3c8256c3d5ab5ea2aee9a12cd0d2bc8f26491194eb85d",
+      "modified": "2025-09-29T16:34:32.000Z",
+      "created": "2025-09-29T16:25:11.220Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "src\\components\\ThreatTraceMap.jsx": {
+      "path": "src\\components\\ThreatTraceMap.jsx",
+      "size": 8573,
+      "hash": "edf7fdb9723de37578b5733bbaba6c722ee17111de79f2ec13907908f29c6c0f",
+      "modified": "2025-09-29T16:34:32.000Z",
+      "created": "2025-09-29T16:30:25.930Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    }
+  },
+  "totalFiles": 40,
+  "totalSize": 328607
+}

@@ -1,8 +1,44 @@
 # Scorpion Security Platform 🦂
 
-**Global Threat-Hunting Platform with Advanced Vulnerability Assessment**
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Prince12sam/Scorpion)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 
-Scorpion is a comprehensive security platform that combines automated vulnerability scanning, intelligent payload selection, and mass exploitation capabilities across Windows, macOS, and Linux systems.
+**🌍 Professional-Grade Global Threat-Hunting & Vulnerability Assessment Platform**
+
+Scorpion is an enterprise-ready security platform offering comprehensive vulnerability scanning, real-time threat intelligence, and advanced security testing capabilities. Built for security professionals, penetration testers, and enterprise security teams.
+
+## 🚀 Quick Start
+
+### **Option 1: One-Command Setup (Recommended)**
+```bash
+git clone https://github.com/Prince12sam/Scorpion.git
+cd Scorpion
+npm install && npm run dev:full
+```
+
+### **Option 2: Manual Setup**
+```bash
+# Clone and install
+git clone https://github.com/Prince12sam/Scorpion.git
+cd Scorpion
+npm install
+
+# Start backend server (Terminal 1)
+npm run server
+
+# Start web interface (Terminal 2) 
+npm run dev
+
+# Or use CLI directly
+npm run cli --help
+```
+
+**🌐 Access the Platform:**
+- **Web Interface:** http://localhost:5173
+- **API Server:** http://localhost:3001
+- **CLI:** `npm run cli [command]`
 
 ## ✨ Features
 
@@ -49,21 +85,58 @@ Scorpion is a comprehensive security platform that combines automated vulnerabil
 - Detailed technical reports
 - Real-time dashboard
 
-## 🚀 Installation
+## � Installation & Setup
 
-### Prerequisites
-- Node.js 18+ 
-- npm or yarn
+### **Prerequisites**
+- Node.js >= 16.0.0
+- npm package manager
+- Git
 
-### Install Dependencies
+### **One-Command Installation** ⚡
 ```bash
+git clone https://github.com/Prince12sam/Scorpion.git
+cd Scorpion
+npm install && npm start
+```
+
+**🎯 That's it! The platform will automatically:**
+- Install all dependencies
+- Configure the environment  
+- Start both web interface and API server
+- Open your browser to http://localhost:5173
+
+### **Manual Installation**
+```bash
+# Clone the repository
+git clone https://github.com/Prince12sam/Scorpion.git
+cd Scorpion
+
+# Install dependencies
 npm install
+
+# Start full platform (recommended)
+npm start
+
+# Or start components separately:
+npm run server  # API server only (port 3001)
+npm run dev     # Web interface only (port 5173)
+npm run cli     # CLI interface only
 ```
 
-### Build Web Interface
+### **Platform Verification**
 ```bash
-npm run build
+# Test the installation
+node test-web-interface.js
+
+# Check all components
+curl http://localhost:3001/api/health
+curl http://localhost:5173
 ```
+
+### **Cross-Platform Startup Scripts**
+- **Windows**: `start-scorpion.bat`
+- **Linux/macOS**: `start-scorpion.sh`  
+- **PowerShell**: `start-scorpion.ps1`
 
 ## 💻 CLI Usage
 

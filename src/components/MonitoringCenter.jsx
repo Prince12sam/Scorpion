@@ -8,12 +8,7 @@ const MonitoringCenter = () => {
   const [activeAlerts, setActiveAlerts] = useState([]);
   const [filterSeverity, setFilterSeverity] = useState('all');
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [logSources, setLogSources] = useState([
-    { id: 1, name: 'Web Server Logs', type: 'server', status: 'connected', events: 1240 },
-    { id: 2, name: 'Database Logs', type: 'server', status: 'connected', events: 856 },
-    { id: 3, name: 'Cloud Storage', type: 'cloud', status: 'connected', events: 432 },
-    { id: 4, name: 'DNS Logs', type: 'public', status: 'connected', events: 2100 }
-  ]);
+  const [logSources, setLogSources] = useState([]);
   const [systemMetrics, setSystemMetrics] = useState({
     cpu: 0,
     memory: 0,
@@ -30,28 +25,7 @@ const MonitoringCenter = () => {
         if (data && data.alerts) {
           setActiveAlerts(data.alerts);
         } else {
-          // Generate sample alerts if API doesn't return data
-          const sampleAlerts = [
-            {
-              id: 1,
-              title: 'Suspicious Login Attempt',
-              description: 'Multiple failed login attempts detected from IP 192.168.1.100',
-              severity: 'high',
-              status: 'active',
-              source: 'Web Server',
-              timestamp: new Date()
-            },
-            {
-              id: 2,
-              title: 'File Integrity Violation',
-              description: 'Critical system file /etc/passwd has been modified',
-              severity: 'critical',
-              status: 'investigating',
-              source: 'FIM',
-              timestamp: new Date()
-            }
-          ];
-          setActiveAlerts(sampleAlerts);
+          setActiveAlerts([]);
         }
       } catch (error) {
         console.error('Failed to fetch alerts:', error);
@@ -60,40 +34,50 @@ const MonitoringCenter = () => {
       }
     };
 
+    const fetchLogSources = async () => {
+      try {
+        const response = await fetch('/api/monitoring/log-sources');
+        const data = await response.json();
+        if (data && data.sources) {
+          setLogSources(data.sources);
+        } else {
+          setLogSources([]);
+        }
+      } catch (error) {
+        console.error('Failed to fetch log sources:', error);
+        setLogSources([]);
+      }
+    };
+
     const fetchMetrics = async () => {
       try {
         const response = await fetch('/api/monitoring/metrics');
         const data = await response.json();
-        if (data && data.metrics) {
-          setSystemMetrics(data.metrics);
-        } else {
-          // Generate realistic system metrics
+        if (data && data.cpu !== undefined) {
           setSystemMetrics({
-            cpu: Math.floor(Math.random() * 40) + 20,
-            memory: Math.floor(Math.random() * 50) + 30,
-            disk: Math.floor(Math.random() * 30) + 15,
-            network: Math.floor(Math.random() * 10) + 2
+            cpu: data.cpu,
+            memory: data.memory,
+            disk: data.disk,
+            network: data.network
           });
+        } else {
+          setSystemMetrics({ cpu: 0, memory: 0, disk: 0, network: 0 });
         }
       } catch (error) {
         console.error('Failed to fetch metrics:', error);
-        // Set fallback metrics
-        setSystemMetrics({
-          cpu: Math.floor(Math.random() * 40) + 20,
-          memory: Math.floor(Math.random() * 50) + 30,
-          disk: Math.floor(Math.random() * 30) + 15,
-          network: Math.floor(Math.random() * 10) + 2
-        });
+        setSystemMetrics({ cpu: 0, memory: 0, disk: 0, network: 0 });
       }
     };
 
     fetchAlerts();
+    fetchLogSources();
     fetchMetrics();
 
     // Auto-refresh every 10 seconds if enabled
     const interval = setInterval(() => {
       if (autoRefresh) {
         fetchAlerts();
+        fetchLogSources();
         fetchMetrics();
       }
     }, 10000);
