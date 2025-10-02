@@ -153,8 +153,10 @@ const Settings = () => {
 
   const handleThemeChange = (theme) => {
     setSettings(prev => ({ ...prev, theme }));
+    setHasUnsavedChanges(true);
     toast({
-      title: "🚧 This feature isn't implemented yet—but don't worry! You can request it in your next prompt! 🚀"
+      title: "Theme Changed",
+      description: `Switched to ${theme} theme. Don't forget to save your settings!`
     });
   };
 
