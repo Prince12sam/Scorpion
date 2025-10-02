@@ -34,18 +34,34 @@ const InvestigationTools = () => {
     setResults(null);
 
     try {
-      // Simulate different investigation types with realistic data
-      const investigationData = await simulateInvestigation(activeTool, query);
-      setResults(investigationData);
-      
-      toast({
-        title: "Investigation Complete",
-        description: `Found ${Object.keys(investigationData).length} data points for your query.`
+      const response = await fetch('http://localhost:3001/api/investigation/lookup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          query: query.trim(), 
+          toolType: activeTool 
+        })
       });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.results) {
+          setResults(data.results);
+          toast({
+            title: "Investigation Complete",
+            description: `Analysis completed for ${query} using ${tools.find(t => t.id === activeTool)?.name}`
+          });
+        } else {
+          throw new Error('No investigation data received');
+        }
+      } else {
+        throw new Error(`Server error: ${response.status}`);
+      }
     } catch (error) {
+      console.error('Investigation error:', error);
       toast({
         title: "Investigation Failed",
-        description: "Unable to complete investigation. Please try again.",
+        description: error.message || "Unable to complete investigation. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -53,107 +69,7 @@ const InvestigationTools = () => {
     }
   };
 
-  const simulateInvestigation = async (toolType, searchQuery) => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1500));
 
-    switch (toolType) {
-      case 'ip-lookup':
-        return {
-          ip_address: searchQuery,
-          location: "San Francisco, CA, USA",
-          country: "United States",
-          isp: "Cloudflare, Inc.",
-          organization: "Cloudflare",
-          threat_level: "Low",
-          reputation: "Clean",
-          last_seen: "2025-09-21T10:30:00Z",
-          ports_open: ["80", "443", "853"],
-          services: ["HTTP", "HTTPS", "DNS-over-TLS"]
-        };
-      
-      case 'domain-lookup':
-        return {
-          domain: searchQuery,
-          registrar: "GoDaddy LLC",
-          creation_date: "2023-05-15",
-          expiration_date: "2026-05-15",
-          name_servers: ["ns1.example.com", "ns2.example.com"],
-          ip_addresses: ["192.168.1.100", "192.168.1.101"],
-          ssl_certificate: "Valid (Let's Encrypt)",
-          security_score: 85,
-          threat_indicators: []
-        };
-      
-      case 'hash-analysis':
-        return {
-          hash: searchQuery,
-          hash_type: "SHA256",
-          file_size: "2.4 MB",
-          file_type: "PE32 Executable",
-          threat_verdict: "Clean",
-          detection_ratio: "0/65",
-          first_seen: "2025-09-15T08:22:00Z",
-          last_analysis: "2025-09-21T14:15:00Z",
-          behavioral_analysis: ["No suspicious network activity", "No registry modifications"],
-          sandbox_report: "No malicious behavior detected"
-        };
-      
-      case 'sim-imei':
-        return {
-          identifier: searchQuery,
-          device_type: "Smartphone",
-          manufacturer: "Samsung",
-          model: "Galaxy S24",
-          carrier: "Verizon",
-          country: "United States",
-          status: "Active",
-          last_location: "New York, NY",
-          risk_level: "Low"
-        };
-      
-      case 'financial-trace':
-        return {
-          identifier: searchQuery,
-          wallet_type: "Bitcoin",
-          balance: "0.00234 BTC",
-          total_received: "1.45673 BTC",
-          total_sent: "1.45439 BTC",
-          transaction_count: 127,
-          first_transaction: "2024-03-15T12:00:00Z",
-          last_transaction: "2025-09-20T16:45:00Z",
-          risk_score: 23,
-          exchanges_used: ["Coinbase", "Binance"]
-        };
-      
-      case 'user-activity':
-        return {
-          username: searchQuery,
-          account_status: "Active",
-          last_login: "2025-09-21T09:15:00Z",
-          login_count: 342,
-          failed_attempts: 5,
-          locations: ["New York, NY", "Los Angeles, CA"],
-          devices: ["iPhone 15", "MacBook Pro"],
-          security_alerts: 2,
-          risk_level: "Medium"
-        };
-      
-      case 'log-search':
-        return {
-          query: searchQuery,
-          total_matches: 156,
-          time_range: "Last 24 hours",
-          sources: ["auth.log", "access.log", "security.log"],
-          top_ips: ["192.168.1.50", "10.0.0.25", "172.16.0.10"],
-          patterns_found: ["Failed login attempts", "Brute force indicators"],
-          severity_breakdown: { high: 5, medium: 23, low: 128 }
-        };
-      
-      default:
-        return { message: "Investigation completed", status: "success" };
-    }
-  };
 
   const currentTool = tools.find(t => t.id === activeTool);
 
