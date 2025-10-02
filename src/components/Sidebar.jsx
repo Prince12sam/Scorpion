@@ -102,30 +102,7 @@ const Sidebar = ({ activeSection, setActiveSection, collapsed, setCollapsed }) =
         })}
       </nav>
 
-      {!collapsed && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="absolute bottom-4 left-4 right-4"
-        >
-          <div className="glass-card p-3 rounded-lg">
-            <div className="flex items-center space-x-2 mb-2">
-              <AlertTriangle className="w-4 h-4 text-yellow-500" />
-              <span className="text-xs font-medium text-white">System Status</span>
-            </div>
-            <div className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Active Scans</span>
-                <span className="text-green-400">0</span>
-              </div>
-              <div className="flex justify-between text-xs">
-                <span className="text-slate-400">Threats Blocked</span>
-                <span className="text-red-400">0</span>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
+
     </motion.aside>
   );
 };

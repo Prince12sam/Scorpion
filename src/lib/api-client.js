@@ -3,7 +3,7 @@ class APIClient {
   constructor() {
     this.pendingRequests = new Map();
     // Use import.meta.env for Vite instead of process.env
-    this.API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
+    this.API_BASE_URL = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
   }
 
   // Create a cache key for request deduplication
