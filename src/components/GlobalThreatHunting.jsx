@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Globe, User, Users, Link, MapPin, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,12 @@ const GlobalThreatHunting = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [profile, setProfile] = useState(null);
+
+
+
+
+
+
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) {
@@ -19,14 +25,17 @@ const GlobalThreatHunting = () => {
     setProfile(null);
     
     try {
-      const response = await fetch('http://localhost:3001/api/threat/hunt', {
+      const response = await fetch('/api/threat/hunt', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: searchQuery.trim() })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: searchQuery }),
       });
-      
+
       if (response.ok) {
         const data = await response.json();
+        
         if (data.success && data.profile) {
           setProfile(data.profile);
           toast({ 
@@ -92,6 +101,7 @@ const GlobalThreatHunting = () => {
           <Globe className="w-16 h-16 mx-auto mb-4 text-slate-500" />
           <h2 className="text-xl font-semibold text-white">Start Your Hunt</h2>
           <p>Enter a query to begin tracking suspects and networks.</p>
+
         </div>
       )}
 
