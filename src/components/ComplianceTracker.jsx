@@ -6,51 +6,9 @@ import { toast } from '@/components/ui/use-toast';
 
 const ComplianceTracker = () => {
   const [selectedFramework, setSelectedFramework] = useState('owasp');
-  const [complianceFrameworks, setComplianceFrameworks] = useState([
-    {
-      id: 'owasp',
-      name: 'OWASP Top 10',
-      description: 'Web Application Security Risks',
-      overallScore: 78,
-      status: 'good',
-      lastAssessment: '2025-09-21T10:00:00Z',
-      controls: [
-        { id: 1, name: 'Injection', status: 'compliant', priority: 'high', score: 90 },
-        { id: 2, name: 'Broken Authentication', status: 'partial', priority: 'critical', score: 65 },
-        { id: 3, name: 'Sensitive Data Exposure', status: 'compliant', priority: 'high', score: 85 },
-        { id: 4, name: 'XML External Entities', status: 'non-compliant', priority: 'medium', score: 40 },
-        { id: 5, name: 'Broken Access Control', status: 'partial', priority: 'critical', score: 70 }
-      ]
-    },
-    {
-      id: 'pci-dss',
-      name: 'PCI DSS',
-      description: 'Payment Card Industry Data Security Standard',
-      overallScore: 92,
-      status: 'excellent',
-      lastAssessment: '2025-09-20T14:30:00Z',
-      controls: [
-        { id: 1, name: 'Firewall Configuration', status: 'compliant', priority: 'high', score: 95 },
-        { id: 2, name: 'Default Passwords', status: 'compliant', priority: 'critical', score: 100 },
-        { id: 3, name: 'Cardholder Data Protection', status: 'compliant', priority: 'critical', score: 88 },
-        { id: 4, name: 'Data Transmission Encryption', status: 'partial', priority: 'high', score: 85 }
-      ]
-    },
-    {
-      id: 'iso27001',
-      name: 'ISO 27001',
-      description: 'Information Security Management System',
-      overallScore: 67,
-      status: 'needs-improvement',
-      lastAssessment: '2025-09-19T09:15:00Z',
-      controls: [
-        { id: 1, name: 'Information Security Policy', status: 'compliant', priority: 'high', score: 85 },
-        { id: 2, name: 'Risk Management', status: 'partial', priority: 'critical', score: 60 },
-        { id: 3, name: 'Asset Management', status: 'non-compliant', priority: 'medium', score: 45 },
-        { id: 4, name: 'Access Control', status: 'partial', priority: 'high', score: 75 }
-      ]
-    }
-  ]);
+  const [complianceFrameworks, setComplianceFrameworks] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [target, setTarget] = useState('');
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -90,69 +48,88 @@ const ComplianceTracker = () => {
     }
   };
 
-  const currentFramework = complianceFrameworks.find(f => f.id === selectedFramework);
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
 
   const handleAssessment = async () => {
+    if (!target.trim()) {
+      toast({
+        title: "Target Required",
+        description: "Please enter a target system or domain for assessment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
     try {
       toast({
         title: "Starting Assessment",
-        description: `Running ${currentFramework.name} compliance assessment...`
+        description: `Running ${selectedFramework} compliance assessment for ${target}...`
       });
       
-      const response = await fetch('/api/compliance/assess', {
+      const response = await fetch(`${API_BASE}/compliance/assess`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ framework: selectedFramework })
+        body: JSON.stringify({ 
+          framework: selectedFramework,
+          target: target.trim()
+        })
       });
       
       if (response.ok) {
         const data = await response.json();
         
-        // Update framework with new scores
-        const updatedFrameworks = complianceFrameworks.map(framework => {
-          if (framework.id === selectedFramework) {
-            return {
-              ...framework,
-              overallScore: data.overallScore || framework.overallScore + Math.floor(Math.random() * 10),
-              lastAssessment: new Date().toISOString(),
-              controls: framework.controls.map(control => ({
-                ...control,
-                score: Math.min(100, control.score + Math.floor(Math.random() * 15))
-              }))
-            };
-          }
-          return framework;
-        });
-        
-        setComplianceFrameworks(updatedFrameworks);
-        
         toast({
           title: "Assessment Complete",
-          description: `${currentFramework.name} assessment finished. Score updated.`
+          description: `Compliance assessment completed with ${data.overallScore}% score.`
         });
+        
+        // Create framework result
+        const newFramework = {
+          id: selectedFramework,
+          name: frameworkTemplates.find(f => f.id === selectedFramework)?.name || selectedFramework,
+          description: frameworkTemplates.find(f => f.id === selectedFramework)?.description || 'Custom framework',
+          overallScore: data.overallScore,
+          status: data.status,
+          lastAssessment: data.timestamp,
+          target: target,
+          controls: data.assessments || []
+        };
+        
+        setComplianceFrameworks([newFramework]);
+        
+      } else {
+        throw new Error('Assessment failed');
       }
     } catch (error) {
       toast({
         title: "Assessment Failed",
-        description: "Unable to complete compliance assessment.",
+        description: "Unable to complete compliance assessment. Please check your connection.",
         variant: "destructive"
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleExportReport = async () => {
     try {
-      const response = await fetch('/api/compliance/export', {
+      const response = await fetch(`${API_BASE}/reports/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ framework: selectedFramework })
+        body: JSON.stringify({ 
+          type: 'compliance',
+          format: 'json',
+          framework: selectedFramework 
+        })
       });
       
       if (response.ok) {
         const data = await response.json();
         toast({
           title: "Report Generated",
-          description: `${currentFramework.name} compliance report saved as ${data.filename}`
+          description: `Compliance report generated with ID: ${data.reportId}`
         });
       }
     } catch (error) {
@@ -170,28 +147,60 @@ const ComplianceTracker = () => {
     { id: 'hipaa', name: 'HIPAA', description: 'Health Insurance Portability and Accountability Act' },
     { id: 'iso27001', name: 'ISO 27001', description: 'Information Security Management System' },
   ];
+  
+  const currentFramework = complianceFrameworks.find(f => f.id === selectedFramework);
 
   return (
     <div className="space-y-6">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center justify-between"
+        className="space-y-4"
       >
-        <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Compliance Tracker</h1>
-          <p className="text-slate-400">Monitor regulatory compliance and security standards</p>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <Button onClick={handleAssessment} className="bg-blue-600 hover:bg-blue-700">
-            <Shield className="w-4 h-4 mr-2" />
-            Run Assessment  
-          </Button>
-          <Button variant="outline" onClick={handleExportReport}>
-            <FileCheck className="w-4 h-4 mr-2" />
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-white mb-2">Compliance Tracker</h1>
+            <p className="text-slate-400">Monitor regulatory compliance and security standards</p>
+          </div>
+          
+          <div className="flex items-center space-x-3">
+            <Button onClick={handleAssessment} disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+              <Shield className="w-4 h-4 mr-2" />
+              {isLoading ? 'Assessing...' : 'Run Assessment'}
+            </Button>
+            <Button variant="outline" onClick={handleExportReport} disabled={complianceFrameworks.length === 0}>
+              <FileCheck className="w-4 h-4 mr-2" />
             Export Report
           </Button>
+        </div>
+        
+        {/* Assessment Configuration */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-800/30 rounded-lg border border-slate-700">
+          <div>
+            <label className="block text-sm font-medium mb-2 text-slate-300">Target System/Domain</label>
+            <input
+              type="text"
+              value={target}
+              onChange={(e) => setTarget(e.target.value)}
+              placeholder="Enter domain or IP (e.g., example.com)"
+              className="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:border-blue-500 focus:outline-none"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium mb-2 text-slate-300">Compliance Framework</label>
+            <select
+              value={selectedFramework}
+              onChange={(e) => setSelectedFramework(e.target.value)}
+              className="w-full p-3 bg-slate-900 border border-slate-600 rounded-lg text-white focus:border-blue-500 focus:outline-none"
+            >
+              {frameworkTemplates.map(framework => (
+                <option key={framework.id} value={framework.id}>
+                  {framework.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </motion.div>
 

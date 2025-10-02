@@ -245,9 +245,34 @@ const Dashboard = () => {
     }
   };
 
+  const startMonitoring = async () => {
+    try {
+      // Start real-time monitoring
+      toast({
+        title: "Monitoring Started",
+        description: "Real-time security monitoring has been activated",
+      });
+      
+      // Increase update frequency during monitoring
+      const data = await apiClient.get('/monitoring/metrics');
+      
+      setRealTimeData(prevData => ({
+        ...prevData,
+        activeMonitoring: true
+      }));
+      
+    } catch (error) {
+      toast({
+        title: "Monitoring Failed",
+        description: "Unable to start security monitoring",
+        variant: "destructive"
+      });
+    }
+  };
+
   const quickActions = [
     { label: 'Run Vulnerability Scan', icon: Search, action: startQuickScan },
-    { label: 'Check System Health', icon: Activity, action: checkSystemHealth },
+    { label: 'Start Monitoring', icon: Activity, action: startMonitoring },
     { label: 'Generate Report', icon: FileText, action: generateReport },
     { label: 'Update Threat Intel', icon: Zap, action: updateThreatIntel }
   ];

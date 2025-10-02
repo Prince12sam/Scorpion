@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scorpion Web Interface Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-container {
+            background: #2d2d2d;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        .result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success { background: #2d5a2d; border: 1px solid #4a7c59; }
+        .error { background: #5a2d2d; border: 1px solid #7c4a4a; }
+        .info { background: #2d4a5a; border: 1px solid #4a6a7c; }
+        button {
+            background: #ff6b35;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #e55a2b; }
+        input {
+            padding: 8px;
+            border: 1px solid #555;
+            border-radius: 5px;
+            background: #3a3a3a;
+            color: #fff;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🦂 Scorpion Web Interface Test</h1>
+    <p>This page tests the Scorpion Security Platform web interface functionality.</p>
+
+    <div class="test-container">
+        <h3>🔧 Server Status Test</h3>
+        <button onclick="testServerStatus()">Test API Server</button>
+        <div id="server-result" class="result info">Click button to test server connection...</div>
+    </div>
+
+    <div class="test-container">
+        <h3>🔍 Vulnerability Scanner Test</h3>
+        <input type="text" id="scan-target" placeholder="Enter domain or IP" value="google.com">
+        <button onclick="testVulnerabilityScanner()">Start Scan</button>
+        <div id="scan-result" class="result info">Enter a target and click Start Scan...</div>
+    </div>
+
+    <div class="test-container">
+        <h3>🕵️ Network Reconnaissance Test</h3>
+        <input type="text" id="recon-target" placeholder="Enter domain or IP" value="github.com">
+        <button onclick="testNetworkRecon()">Start Recon</button>
+        <div id="recon-result" class="result info">Enter a target and click Start Recon...</div>
+    </div>
+
+    <div class="test-container">
+        <h3>🧠 Threat Intelligence Test</h3>
+        <input type="text" id="threat-target" placeholder="Enter IP address" value="8.8.8.8">
+        <button onclick="testThreatIntel()">Lookup IP</button>
+        <div id="threat-result" class="result info">Enter an IP and click Lookup IP...</div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+
+        async function testServerStatus() {
+            const resultDiv = document.getElementById('server-result');
+            resultDiv.innerHTML = '⏳ Testing server connection...';
+            resultDiv.className = 'result info';
+
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    resultDiv.innerHTML = `✅ Server is running! Version: ${data.version}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = '❌ Server responded but status is not ok';
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Connection failed: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testVulnerabilityScanner() {
+            const target = document.getElementById('scan-target').value;
+            const resultDiv = document.getElementById('scan-result');
+            
+            if (!target) {
+                resultDiv.innerHTML = '❌ Please enter a target';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            resultDiv.innerHTML = `⏳ Scanning ${target}...`;
+            resultDiv.className = 'result info';
+
+            try {
+                const response = await fetch(`${API_BASE}/scanner/scan`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: target, type: 'quick' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const vulnCount = data.results.vulnerabilities.length;
+                    const portCount = data.results.openPorts.length;
+                    resultDiv.innerHTML = `✅ Scan completed! Found ${vulnCount} vulnerabilities and ${portCount} open ports on ${target}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `❌ Scan failed: ${data.error}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Scan error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testNetworkRecon() {
+            const target = document.getElementById('recon-target').value;
+            const resultDiv = document.getElementById('recon-result');
+            
+            if (!target) {
+                resultDiv.innerHTML = '❌ Please enter a target';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            resultDiv.innerHTML = `⏳ Reconning ${target}...`;
+            resultDiv.className = 'result info';
+
+            try {
+                const response = await fetch(`${API_BASE}/recon/discover`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: target })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const dnsCount = Object.keys(data.results.dns).length;
+                    const portCount = data.results.ports.length;
+                    resultDiv.innerHTML = `✅ Recon completed! Found ${dnsCount} DNS record types and ${portCount} open ports on ${target}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `❌ Recon failed: ${data.error}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Recon error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        async function testThreatIntel() {
+            const indicator = document.getElementById('threat-target').value;
+            const resultDiv = document.getElementById('threat-result');
+            
+            if (!indicator) {
+                resultDiv.innerHTML = '❌ Please enter an IP address';
+                resultDiv.className = 'result error';
+                return;
+            }
+
+            resultDiv.innerHTML = `⏳ Looking up ${indicator}...`;
+            resultDiv.className = 'result info';
+
+            try {
+                const response = await fetch(`${API_BASE}/threat-intel/lookup`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ indicator: indicator, type: 'ip' })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    const rep = data.results.reputation;
+                    const confidence = data.results.confidence;
+                    const country = data.results.country;
+                    resultDiv.innerHTML = `✅ Lookup completed! ${indicator} has ${rep} reputation (${confidence}% confidence) from ${country}`;
+                    resultDiv.className = 'result success';
+                } else {
+                    resultDiv.innerHTML = `❌ Lookup failed: ${data.error}`;
+                    resultDiv.className = 'result error';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `❌ Lookup error: ${error.message}`;
+                resultDiv.className = 'result error';
+            }
+        }
+
+        // Auto-test server on page load
+        window.onload = function() {
+            testServerStatus();
+        };
+    </script>
+</body>
+</html>
