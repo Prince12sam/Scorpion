@@ -11,7 +11,7 @@ const APIStatus = ({ compact = false }) => {
     { name: 'Dashboard', path: '/api/dashboard/metrics' },
     { name: 'Monitoring', path: '/api/monitoring/alerts' },
     { name: 'System Health', path: '/api/system/health' },
-    { name: 'Scanner', path: '/api/scan' }
+    { name: 'Threat Map', path: '/api/threat-map' }
   ];
 
   const checkAPIHealth = async () => {
