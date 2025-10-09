@@ -19,15 +19,18 @@ const FileIntegrityMonitor = () => {
       try {
         const response = await fetch('/api/fim/watched');
         const data = await response.json();
-        if (data.watchedPaths && data.watchedPaths.length > 0) {
-          setMonitoredFiles(data.watchedPaths.map((path, index) => ({
+        if ((data.paths || data.watchedPaths) && (data.paths || data.watchedPaths).length > 0) {
+          const list = data.paths || data.watchedPaths;
+          setMonitoredFiles(list.map((item, index) => ({
             id: index + 1,
-            path: path.path || path,
-            status: path.status || 'verified',
-            size: path.size || Math.floor(Math.random() * 10000),
-            lastCheck: new Date().toISOString(),
-            hash: path.hash || `sha256:${Math.random().toString(36).substring(2, 32)}`
+            path: item.path || item,
+            status: item.status || 'active',
+            size: item.totalSize || item.size || 0,
+            lastCheck: item.lastCheck || new Date().toISOString(),
+            hash: item.hash || undefined
           })));
+        } else {
+          setMonitoredFiles([]);
         }
       } catch (error) {
         console.error('Failed to fetch watched files:', error);
@@ -82,8 +85,7 @@ const FileIntegrityMonitor = () => {
         // Update file statuses based on scan results
         const updatedFiles = monitoredFiles.map(file => ({
           ...file,
-          lastCheck: new Date().toISOString(),
-          status: Math.random() > 0.7 ? 'modified' : file.status === 'error' ? 'error' : 'verified'
+          lastCheck: new Date().toISOString()
         }));
         
         setMonitoredFiles(updatedFiles);
@@ -126,9 +128,8 @@ const FileIntegrityMonitor = () => {
           id: Date.now(),
           path: newFilePath,
           status: 'verified',
-          size: Math.floor(Math.random() * 10000),
-          lastCheck: new Date().toISOString(),
-          hash: `sha256:${Math.random().toString(36).substring(2, 32)}`
+          size: 0,
+          lastCheck: new Date().toISOString()
         };
         
         setMonitoredFiles([...monitoredFiles, newFile]);

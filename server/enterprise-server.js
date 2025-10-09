@@ -6,7 +6,6 @@ import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import slowDown from 'express-slow-down';
-import ExpressBrute from 'express-brute';
 import session from 'express-session';
 import RedisStore from 'connect-redis';
 import { createClient } from 'redis';
@@ -77,17 +76,21 @@ redisClient.on('error', (err) => {
 
 await redisClient.connect();
 
-// Express Brute for Advanced Brute Force Protection
-const bruteforce = new ExpressBrute(new ExpressBrute.MemoryStore(), {
-  freeRetries: 3,
-  minWait: 5 * 60 * 1000, // 5 minutes
-  maxWait: 60 * 60 * 1000, // 1 hour
-  lifetime: 24 * 60 * 60, // 24 hours
-  failCallback: (req, res, next, nextValidRequestDate) => {
+// Enhanced Rate Limiting for Brute Force Protection
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // limit each IP to 5 requests per windowMs
+  message: {
+    error: 'Too many authentication attempts, please try again later.',
+    retryAfter: Math.round(15 * 60 * 1000 / 1000) // in seconds
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res) => {
     logger.warn(`Brute force attack detected from IP: ${req.ip}`);
     res.status(429).json({
-      error: 'Too many failed attempts',
-      nextValidRequestDate: nextValidRequestDate
+      error: 'Too many failed attempts, please try again later.',
+      retryAfter: Math.round(15 * 60 * 1000 / 1000)
     });
   }
 });
@@ -602,7 +605,7 @@ class ScorpionSecurityPlatform {
     // Login with 2FA Support
     this.app.post('/api/auth/login', 
       this.authLimiter,
-      bruteforce.prevent,
+      authLimiter,
       this.validationRules.login,
       this.handleValidationErrors,
       async (req, res) => {
@@ -1251,7 +1254,7 @@ class ScorpionSecurityPlatform {
         authorization: 'Role-Based Access Control',
         twoFactor: 'TOTP with Backup Codes',
         rateLimiting: 'Multi-layer Protection',
-        bruteForce: 'Express Brute Protection',
+        bruteForce: 'Enhanced Rate Limiting Protection',
         deviceFingerprinting: 'Enhanced Security',
         sessionManagement: 'Redis-backed Sessions',
         inputValidation: 'Comprehensive Sanitization',

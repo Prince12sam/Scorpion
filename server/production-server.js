@@ -2,12 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import https from 'https';
+import os from 'os';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// AbuseIPDB API Configuration
-const ABUSEIPDB_API_KEY = 'd4366640f7df6758e063f46021fd42ad698fa559e29060447349900d288b07d68fe240b1dc6bdc1e';
+// AbuseIPDB API Configuration (load from environment)
+const ABUSEIPDB_API_KEY = process.env.ABUSEIPDB_API_KEY || '';
 const ABUSEIPDB_BASE_URL = 'https://api.abuseipdb.com/api/v2';
 
 // Enhanced CORS configuration
@@ -39,20 +43,29 @@ app.get('/api/health', (req, res) => {
 
 // Dashboard metrics (no dummy data)
 app.get('/api/dashboard/metrics', (req, res) => {
-  const memUsage = process.memoryUsage();
+  const cpus = os.cpus();
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const cpuLoad = cpus.reduce((acc, cpu) => {
+    const times = cpu.times;
+    const idle = times.idle;
+    const total = Object.values(times).reduce((a, b) => a + b, 0);
+    return acc + (1 - idle / total);
+  }, 0) / cpus.length;
+
   res.json({
     metrics: {
-      systemHealth: { 
-        cpu: Math.floor(Math.random() * 30) + 10, 
-        memory: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100), 
-        disk: Math.floor(Math.random() * 20) + 10, 
-        network: Math.floor(Math.random() * 15) + 5 
+      systemHealth: {
+        cpu: Math.round(cpuLoad * 100),
+        memory: Math.round(((totalMem - freeMem) / totalMem) * 100),
+        disk: null,
+        network: null
       },
-      securityMetrics: { 
-        intrusionsDetected: 0, 
-        vulnerabilities: 0, 
-        fimAlerts: 0, 
-        complianceScore: 100 
+      securityMetrics: {
+        intrusionsDetected: 0,
+        vulnerabilities: 0,
+        fimAlerts: 0,
+        complianceScore: 100
       }
     }
   });
@@ -79,12 +92,21 @@ app.get('/api/monitoring/log-sources', (req, res) => {
 });
 
 app.get('/api/monitoring/metrics', (req, res) => {
-  const memUsage = process.memoryUsage();
+  const cpus = os.cpus();
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const cpuLoad = cpus.reduce((acc, cpu) => {
+    const times = cpu.times;
+    const idle = times.idle;
+    const total = Object.values(times).reduce((a, b) => a + b, 0);
+    return acc + (1 - idle / total);
+  }, 0) / cpus.length;
+
   res.json({
-    cpu: Math.floor(Math.random() * 30) + 10,
-    memory: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100),
-    disk: Math.floor(Math.random() * 20) + 10,
-    network: Math.floor(Math.random() * 15) + 5,
+    cpu: Math.round(cpuLoad * 100),
+    memory: Math.round(((totalMem - freeMem) / totalMem) * 100),
+    disk: null,
+    network: null,
     timestamp: new Date().toISOString()
   });
 });
@@ -256,8 +278,18 @@ app.post('/api/threat/hunt', async (req, res) => {
     const detectedType = queryType || detectQueryType(query);
     
     if (detectedType === 'ip') {
-      // Query AbuseIPDB for IP address
-      threatProfile = await queryAbuseIPDB(query);
+      if (!ABUSEIPDB_API_KEY) {
+        threatProfile = {
+          name: `IP Address: ${query}`,
+          status: 'UNKNOWN',
+          type: 'ip',
+          riskScore: null,
+          details: { message: 'AbuseIPDB API key not configured; skipping external lookup' }
+        };
+      } else {
+        // Query AbuseIPDB for IP address
+        threatProfile = await queryAbuseIPDB(query);
+      }
     } else {
       // For other types, create a basic profile
       threatProfile = await createThreatProfile(query, detectedType);

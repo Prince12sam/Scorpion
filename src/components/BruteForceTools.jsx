@@ -94,18 +94,11 @@ const BruteForceTools = () => {
     });
   };
 
-  // Simulate progress updates
+  // Progress is controlled by server responses only (no simulation)
   useEffect(() => {
-    let interval;
-    if (isRunning) {
-      interval = setInterval(() => {
-        setCurrentProgress(prev => {
-          if (prev >= 100) return 100;
-          return prev + Math.random() * 5;
-        });
-      }, 500);
+    if (!isRunning) {
+      setCurrentProgress(0);
     }
-    return () => clearInterval(interval);
   }, [isRunning]);
 
   const handleServiceChange = (selectedService) => {

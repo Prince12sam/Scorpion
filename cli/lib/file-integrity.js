@@ -587,32 +587,22 @@ export class FileIntegrity extends EventEmitter {
   async getRecentChanges(targetPath, hoursBack = 24) {
     const changes = [];
     const cutoff = new Date(Date.now() - (hoursBack * 60 * 60 * 1000));
-    
-    // This would normally check actual file modifications
-    // For now, return sample data representing potential changes
-    const sampleChanges = [
-      {
-        id: Date.now(),
-        path: path.join(targetPath, 'config.ini'),
-        type: 'modified',
-        timestamp: new Date().toISOString(),
-        severity: 'medium',
-        details: 'Configuration file modified outside of approved maintenance window'
-      }
-    ];
-
-    return sampleChanges.filter(change => new Date(change.timestamp) > cutoff);
+    const baseline = this.baselines.get(targetPath);
+    if (!baseline) {
+      return changes;
+    }
+    // In a real implementation, you would compare filesystem mtime with baseline
+    // Here we return none unless checkIntegrity is invoked elsewhere and records are maintained
+    return changes.filter(change => new Date(change.timestamp) > cutoff);
   }
 
   async getWatchedPaths() {
     try {
-      // Return list of currently watched paths
       const watchedPaths = [];
-      
-      for (const [path, watcher] of this.watchers) {
-        const baseline = this.baselines.get(path);
+      for (const [watchedPath] of this.watchers) {
+        const baseline = this.baselines.get(watchedPath);
         watchedPaths.push({
-          path,
+          path: watchedPath,
           status: 'active',
           created: baseline?.created || new Date().toISOString(),
           fileCount: baseline?.totalFiles || 0,
@@ -620,29 +610,6 @@ export class FileIntegrity extends EventEmitter {
           lastCheck: new Date().toISOString()
         });
       }
-
-      // If no active watchers, return some sample data for demo
-      if (watchedPaths.length === 0) {
-        watchedPaths.push(
-          {
-            path: 'C:\\Windows\\System32',
-            status: 'active',
-            created: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-            fileCount: 1247,
-            totalSize: 524288000,
-            lastCheck: new Date().toISOString()
-          },
-          {
-            path: 'C:\\Program Files',
-            status: 'active',
-            created: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
-            fileCount: 3521,
-            totalSize: 2147483648,
-            lastCheck: new Date().toISOString()
-          }
-        );
-      }
-
       return watchedPaths;
     } catch (error) {
       console.error('Error getting watched paths:', error);

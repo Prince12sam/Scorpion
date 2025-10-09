@@ -963,11 +963,25 @@ class ScorpionServer {
 
   async getSystemMetrics(req, res) {
     try {
+      const os = await import('os');
+      const cpus = os.cpus();
+      const totalMem = os.totalmem();
+      const freeMem = os.freemem();
+
+      // CPU usage estimation (simple average over cores)
+      const cpuLoad = cpus.reduce((acc, cpu) => {
+        const times = cpu.times;
+        const idle = times.idle;
+        const total = Object.values(times).reduce((a, b) => a + b, 0);
+        return acc + (1 - idle / total);
+      }, 0) / cpus.length;
+
       const metrics = {
-        cpu: Math.floor(Math.random() * 100),
-        memory: Math.floor(Math.random() * 100),
-        disk: Math.floor(Math.random() * 100),
-        network: Math.floor(Math.random() * 100),
+        cpu: Math.round(cpuLoad * 100),
+        memory: Math.round(((totalMem - freeMem) / totalMem) * 100),
+        disk: null, // not trivial cross-platform; leave null instead of dummy
+        network: null, // requires sampling; leave null instead of dummy
+        uptime: os.uptime(),
         timestamp: new Date().toISOString()
       };
       res.json({ metrics });
@@ -1313,14 +1327,8 @@ class ScorpionServer {
   // File Integrity Monitor methods
   async getWatchedFiles(req, res) {
     try {
-      // Simulate watched files from file integrity module
-      const watchedPaths = [
-        { path: '/etc/passwd', status: 'verified', size: 2048, hash: 'sha256:abc123...' },
-        { path: '/etc/shadow', status: 'verified', size: 1536, hash: 'sha256:def456...' },
-        { path: '/bin/bash', status: 'modified', size: 1183448, hash: 'sha256:ghi789...' }
-      ];
-      
-      res.json({ watchedPaths });
+      const paths = await this.fileIntegrity.getWatchedPaths();
+      res.json({ paths });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }
@@ -1334,15 +1342,8 @@ class ScorpionServer {
         return res.status(400).json({ error: 'File path is required' });
       }
       
-      // Simulate adding file to monitoring
-      const newFile = {
-        path,
-        status: 'verified',
-        size: Math.floor(Math.random() * 10000),
-        hash: `sha256:${Math.random().toString(36).substring(2, 32)}`
-      };
-      
-      res.json({ success: true, file: newFile });
+      // In a real implementation, this would register a path with FileIntegrity.watch
+      res.json({ success: true, message: 'Path registered for monitoring request received', path });
     } catch (error) {
       res.status(500).json({ error: error.message });
     }

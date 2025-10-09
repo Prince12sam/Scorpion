@@ -35,8 +35,8 @@ const ThreatTraceMap = () => {
           country: threat.country || 'Unknown',
           type: threat.attack_type || 'Unknown Attack',
           severity: threat.severity || 'medium',
-          lat: threat.latitude || (Math.random() * 180 - 90),
-          lng: threat.longitude || (Math.random() * 360 - 180),
+          lat: threat.latitude,
+          lng: threat.longitude,
           timestamp: threat.timestamp || new Date().toISOString()
         }));
         setThreats(transformedThreats);

@@ -69,13 +69,12 @@ async function testVirusTotalAPI() {
 // API Key validation
 if (!process.env.VIRUSTOTAL_API_KEY) {
   console.log('❌ Error: VIRUSTOTAL_API_KEY not found in .env file');
-  console.log('Please make sure your .env file contains:');
-  console.log('VIRUSTOTAL_API_KEY=6ed84ee7c1b434cf463b8a6b48f4296a6f19f66534f21ac14adb9b77ef8b28b7');
+  console.log('Please create a .env file with:');
+  console.log('VIRUSTOTAL_API_KEY=your_api_key_here');
   process.exit(1);
 }
 
-console.log('🔑 VirusTotal API Key found in environment');
-console.log(`    Key: ${process.env.VIRUSTOTAL_API_KEY.substring(0, 8)}...${process.env.VIRUSTOTAL_API_KEY.substring(-8)}\n`);
+console.log('🔑 VirusTotal API Key found in environment (value hidden)\n');
 
 // Run the test
 testVirusTotalAPI().catch(console.error);

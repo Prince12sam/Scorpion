@@ -25,7 +25,7 @@
 #### **3. Advanced Rate Limiting & DDoS Protection**
 - **Multi-Layer Rate Limiting**: IP, User, Endpoint-specific limits
 - **Progressive Delays**: Increasing delays for suspicious activity
-- **Brute Force Protection**: Express-Brute with intelligent blocking
+- **Brute Force Protection**: Advanced rate limiting and IP-based throttling
 - **Geographic Rate Limiting**: Country-based restrictions
 - **API Abuse Prevention**: Advanced pattern detection
 

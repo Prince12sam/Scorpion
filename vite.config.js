@@ -215,6 +215,9 @@ export default defineConfig({
 		},
 		allowedHosts: true,
 	},
+		optimizeDeps: {
+			include: ['framer-motion']
+		},
 	resolve: {
 		extensions: ['.jsx', '.js', '.tsx', '.ts', '.json', ],
 		alias: {

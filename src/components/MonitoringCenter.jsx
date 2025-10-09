@@ -166,7 +166,7 @@ const MonitoringCenter = () => {
       name: `New Log Source ${logSources.length + 1}`,
       type: 'server',
       status: 'connected',
-      events: Math.floor(Math.random() * 1000)
+      events: 0
     };
     setLogSources([...logSources, newSource]);
     toast({
@@ -179,7 +179,18 @@ const MonitoringCenter = () => {
     try {
       const response = await fetch('/api/monitoring/metrics');
       const data = await response.json();
-      setSystemMetrics(data.metrics || {});
+      if (data && data.metrics) {
+        setSystemMetrics(data.metrics);
+      } else if (data && (data.cpu !== undefined || data.memory !== undefined)) {
+        setSystemMetrics({
+          cpu: data.cpu ?? 0,
+          memory: data.memory ?? 0,
+          disk: data.disk ?? null,
+          network: data.network ?? null
+        });
+      } else {
+        setSystemMetrics({ cpu: 0, memory: 0, disk: 0, network: 0 });
+      }
       toast({
         title: "Metrics Refreshed",
         description: "System metrics have been updated."

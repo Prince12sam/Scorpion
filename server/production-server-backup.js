@@ -2,12 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import https from 'https';
+import dotenv from 'dotenv';
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 // AbuseIPDB API Configuration
-const ABUSEIPDB_API_KEY = 'd4366640f7df6758e063f46021fd42ad698fa559e29060447349900d288b07d68fe240b1dc6bdc1e';
+const ABUSEIPDB_API_KEY = process.env.ABUSEIPDB_API_KEY || '';
 const ABUSEIPDB_BASE_URL = 'https://api.abuseipdb.com/api/v2';
 
 // Enhanced CORS configuration

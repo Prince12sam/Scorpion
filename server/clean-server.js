@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import os from 'os';
 import { SecurityScanner } from '../cli/lib/scanner.js';
 import { NetworkRecon } from '../cli/lib/recon.js';
 import { ThreatIntel } from '../cli/lib/threat-intel.js';
@@ -27,19 +28,29 @@ app.get('/api/health', (req, res) => {
 
 // Dashboard metrics
 app.get('/api/dashboard/metrics', (req, res) => {
+  const cpus = os.cpus();
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const cpuLoad = cpus.reduce((acc, cpu) => {
+    const times = cpu.times;
+    const idle = times.idle;
+    const total = Object.values(times).reduce((a, b) => a + b, 0);
+    return acc + (1 - idle / total);
+  }, 0) / cpus.length;
+
   res.json({
     metrics: {
-      systemHealth: { 
-        cpu: Math.floor(Math.random() * 30) + 10, 
-        memory: Math.floor(Math.random() * 40) + 30, 
-        disk: Math.floor(Math.random() * 20) + 10, 
-        network: Math.floor(Math.random() * 15) + 5 
+      systemHealth: {
+        cpu: Math.round(cpuLoad * 100),
+        memory: Math.round(((totalMem - freeMem) / totalMem) * 100),
+        disk: null,
+        network: null
       },
-      securityMetrics: { 
-        intrusionsDetected: 0, 
-        vulnerabilities: 0, 
-        fimAlerts: 0, 
-        complianceScore: 100 
+      securityMetrics: {
+        intrusionsDetected: 0,
+        vulnerabilities: 0,
+        fimAlerts: 0,
+        complianceScore: 100
       },
       recentScans: 0,
       activeMonitoring: true
@@ -49,12 +60,22 @@ app.get('/api/dashboard/metrics', (req, res) => {
 
 // System health
 app.get('/api/system/health', (req, res) => {
+  const cpus = os.cpus();
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const cpuLoad = cpus.reduce((acc, cpu) => {
+    const times = cpu.times;
+    const idle = times.idle;
+    const total = Object.values(times).reduce((a, b) => a + b, 0);
+    return acc + (1 - idle / total);
+  }, 0) / cpus.length;
+
   res.json({
-    cpu: Math.floor(Math.random() * 30) + 10,
-    memory: Math.floor(Math.random() * 40) + 30,
-    disk: Math.floor(Math.random() * 20) + 10,
-    network: Math.floor(Math.random() * 15) + 5,
-    uptime: process.uptime(),
+    cpu: Math.round(cpuLoad * 100),
+    memory: Math.round(((totalMem - freeMem) / totalMem) * 100),
+    disk: null,
+    network: null,
+    uptime: os.uptime(),
     status: 'healthy'
   });
 });
@@ -68,12 +89,22 @@ app.get('/api/monitoring/alerts', (req, res) => {
 });
 
 app.get('/api/monitoring/metrics', (req, res) => {
+  const cpus = os.cpus();
+  const totalMem = os.totalmem();
+  const freeMem = os.freemem();
+  const cpuLoad = cpus.reduce((acc, cpu) => {
+    const times = cpu.times;
+    const idle = times.idle;
+    const total = Object.values(times).reduce((a, b) => a + b, 0);
+    return acc + (1 - idle / total);
+  }, 0) / cpus.length;
+
   res.json({
-    cpu: Math.floor(Math.random() * 30) + 10,
-    memory: Math.floor(Math.random() * 40) + 30,
-    disk: Math.floor(Math.random() * 20) + 10,
-    network: Math.floor(Math.random() * 15) + 5,
-    uptime: process.uptime(),
+    cpu: Math.round(cpuLoad * 100),
+    memory: Math.round(((totalMem - freeMem) / totalMem) * 100),
+    disk: null,
+    network: null,
+    uptime: os.uptime(),
     connections: 0
   });
 });
@@ -86,8 +117,8 @@ app.get('/api/monitoring/log-sources', (req, res) => {
 
 app.get('/api/monitoring/performance', (req, res) => {
   res.json({
-    responseTime: Math.floor(Math.random() * 50) + 25,
-    throughput: Math.floor(Math.random() * 500) + 250,
+    responseTime: null,
+    throughput: null,
     errorRate: 0,
     availability: 100.0
   });
