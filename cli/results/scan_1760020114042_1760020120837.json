@@ -1,0 +1,107 @@
+{
+  "scanId": "1760020114042",
+  "target": {
+    "target": "127.0.0.1",
+    "scanType": "quick",
+    "ports": "1-200",
+    "technique": "tcp-connect"
+  },
+  "timestamp": "2025-10-09T14:28:34.042Z",
+  "type": "normal",
+  "vulnerabilities": [],
+  "openPorts": [
+    {
+      "port": 135,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "22ms"
+    },
+    {
+      "port": 445,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "29ms"
+    },
+    {
+      "port": 902,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "2ms"
+    },
+    {
+      "port": 912,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "26ms"
+    }
+  ],
+  "services": [
+    {
+      "port": 135,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "22ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "Connection timeout",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 445,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "29ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "read ECONNRESET",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 902,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "2ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": null,
+      "error": "read ECONNRESET",
+      "vulnerabilities": [],
+      "exploits": []
+    },
+    {
+      "port": 912,
+      "status": "open",
+      "technique": "tcp-connect",
+      "responseTime": "26ms",
+      "name": "Unknown",
+      "version": "unknown",
+      "banner": "220 VMware Authentication Daemon Version 1.0, ServerDaemonProtocol:SOAP, MKSDisplayProtocol:VNC , , , \r\n530 Please login with USER and PASS.\r\n530 Please login with USER and PASS.",
+      "product": null,
+      "extraInfo": [],
+      "vulnerabilities": [],
+      "exploits": []
+    }
+  ],
+  "summary": {
+    "totalVulnerabilities": 0,
+    "criticalVulns": 0,
+    "highVulns": 0,
+    "mediumVulns": 0,
+    "lowVulns": 0,
+    "openPorts": 4,
+    "services": 4,
+    "riskScore": 0
+  },
+  "osFingerprint": {
+    "detectedOS": "Windows",
+    "confidence": 50,
+    "evidence": [
+      "135/tcp service detected",
+      "445/tcp service detected"
+    ]
+  }
+}

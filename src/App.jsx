@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { motion, AnimatePresence } from 'framer-motion';
 import Sidebar from '@/components/Sidebar';
@@ -21,10 +21,22 @@ import NetworkDiscovery from '@/components/NetworkDiscovery';
 import BruteForceTools from '@/components/BruteForceTools';
 import APIStatus from '@/components/APIStatus';
 import { Toaster } from '@/components/ui/toaster';
+import Login from '@/components/Login';
+import { isAuthenticated, installFetchAuthInterceptor } from '@/lib/auth';
 
 function App() {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [authed, setAuthed] = useState(isAuthenticated());
+
+  useEffect(() => {
+    if (authed) {
+      installFetchAuthInterceptor();
+    }
+    const onLogout = () => setAuthed(false);
+    window.addEventListener('scorpion-auth-logout', onLogout);
+    return () => window.removeEventListener('scorpion-auth-logout', onLogout);
+  }, [authed]);
 
   const renderActiveSection = () => {
     const sections = {
@@ -56,7 +68,9 @@ function App() {
         <title>🦂 Scorpion Security Platform | Advanced Cybersecurity Suite</title>
         <meta name="description" content="Scorpion Security Platform: Advanced cybersecurity suite with vulnerability scanning, threat intelligence, file integrity monitoring, and comprehensive security tools." />
       </Helmet>
-      
+      {!authed ? (
+        <Login onSuccess={() => setAuthed(true)} />
+      ) : (
       <div className="min-h-screen bg-slate-950 text-white cyber-grid">
         <div className="flex">
           <Sidebar 
@@ -64,6 +78,7 @@ function App() {
             setActiveSection={setActiveSection}
             collapsed={sidebarCollapsed}
             setCollapsed={setSidebarCollapsed}
+            onLogout={() => setAuthed(false)}
           />
           
           <main className={`flex-1 transition-all duration-300 ${
@@ -88,6 +103,7 @@ function App() {
         <APIStatus />
         <Toaster />
       </div>
+      )}
     </>
   );
 }

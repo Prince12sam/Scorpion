@@ -1,6 +1,6 @@
 import path from 'node:path';
 import react from '@vitejs/plugin-react';
-import { createLogger, defineConfig } from 'vite';
+import { createLogger, defineConfig, loadEnv } from 'vite';
 import inlineEditPlugin from './plugins/visual-editor/vite-plugin-react-inline-editor.js';
 import editModeDevPlugin from './plugins/visual-editor/vite-plugin-edit-mode.js';
 import iframeRouteRestorationPlugin from './plugins/vite-plugin-iframe-route-restoration.js';
@@ -201,7 +201,11 @@ logger.error = (msg, options) => {
 	loggerError(msg, options);
 }
 
-export default defineConfig({
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '');
+  const apiProxyTarget = env.VITE_API_URL || process.env.VITE_API_URL || 'http://localhost:3001';
+  
+  return {
 	customLogger: logger,
 	plugins: [
 		...(isDev ? [inlineEditPlugin(), editModeDevPlugin(), iframeRouteRestorationPlugin()] : []),
@@ -214,6 +218,14 @@ export default defineConfig({
 			'Cross-Origin-Embedder-Policy': 'credentialless',
 		},
 		allowedHosts: true,
+			proxy: {
+				'/api': {
+					target: apiProxyTarget,
+					changeOrigin: true,
+					secure: false,
+					ws: true
+				}
+			}
 	},
 		optimizeDeps: {
 			include: ['framer-motion']
@@ -234,4 +246,5 @@ export default defineConfig({
 			]
 		}
 	}
+  };
 });

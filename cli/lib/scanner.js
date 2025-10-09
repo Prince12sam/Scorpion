@@ -107,33 +107,69 @@ export class SecurityScanner {
         const exploitFramework = new ExploitFramework();
         
         // Auto-select payloads based on discovered vulnerabilities
-        const payloadPlan = await exploitFramework.autoSelectPayloads(results.vulnerabilities, target, options);
-        results.payloadRecommendations = payloadPlan;
+        const rawPlan = await exploitFramework.autoSelectPayloads(results.vulnerabilities, target, options);
+
+        // Normalize to a summary object compatible with CLI expectations
+        let planSummary;
+        if (Array.isArray(rawPlan)) {
+          const criticalFirst = rawPlan.filter(e => (e?.vulnerability?.severity || '').toLowerCase() === 'critical');
+          const quickWins = rawPlan.slice(0, Math.min(rawPlan.length, 5));
+          const persistentAccess = [];
+          const recommendations = rawPlan.map(e => ({
+            vulnerability: (e?.vulnerability?.title || e?.vulnerability?.type || 'unknown').toString(),
+            port: e?.vulnerability?.port || 'n/a',
+            successRate: Math.min(95, 50 + Math.round((e.priority || 0) / 2)),
+            impact: e?.technique || 'payload',
+            shellPotential: false,
+            dataExfiltration: false,
+            payloads: [e.payload].filter(Boolean)
+          }));
+          planSummary = {
+            vulnerabilities: results.vulnerabilities.length,
+            criticalFirst,
+            quickWins,
+            persistentAccess,
+            massExploitPlan: {
+              totalPayloads: rawPlan.length,
+              estimatedDuration: 'N/A',
+              riskLevel: rawPlan.length > 0 ? 'LOW' : 'NONE'
+            },
+            recommendations
+          };
+        } else {
+          // If a complex object is returned by a different framework version, pass through
+          planSummary = rawPlan;
+        }
+
+        results.payloadRecommendations = planSummary;
         
         console.log(`🎯 Generated exploitation plan:`);
-        console.log(`   Critical vulnerabilities: ${chalk.red(payloadPlan.criticalFirst.length)}`);
-        console.log(`   Quick win opportunities: ${chalk.yellow(payloadPlan.quickWins.length)}`);
-        console.log(`   Persistent access vectors: ${chalk.blue(payloadPlan.persistentAccess.length)}`);
-        console.log(`   Total payloads ready: ${payloadPlan.massExploitPlan.totalPayloads}`);
-        console.log(`   Estimated duration: ${payloadPlan.massExploitPlan.estimatedDuration}`);
-        console.log(`   Risk level: ${chalk.red(payloadPlan.massExploitPlan.riskLevel)}`);
+        const p = planSummary || {};
+        const cf = Array.isArray(p.criticalFirst) ? p.criticalFirst.length : 0;
+        const qw = Array.isArray(p.quickWins) ? p.quickWins.length : 0;
+        const pa = Array.isArray(p.persistentAccess) ? p.persistentAccess.length : 0;
+        const mp = p.massExploitPlan || { totalPayloads: 0, estimatedDuration: 'N/A', riskLevel: 'NONE' };
+        console.log(`   Critical vulnerabilities: ${chalk.red(cf)}`);
+        console.log(`   Quick win opportunities: ${chalk.yellow(qw)}`);
+        console.log(`   Persistent access vectors: ${chalk.blue(pa)}`);
+        console.log(`   Total payloads ready: ${mp.totalPayloads}`);
+        console.log(`   Estimated duration: ${mp.estimatedDuration}`);
+        console.log(`   Risk level: ${chalk.red(mp.riskLevel)}`);
         
-        // Display payload recommendations for each vulnerability
-        if (payloadPlan.recommendations.length > 0) {
+        // Display a compact recommendations list (top 3)
+        const recs = Array.isArray(p.recommendations) ? p.recommendations.slice(0, 3) : [];
+        if (recs.length > 0) {
           console.log(`\n🎯 PAYLOAD RECOMMENDATIONS:`);
-          payloadPlan.recommendations.forEach((rec, index) => {
-            console.log(`${index + 1}. ${chalk.cyan(rec.vulnerability.toUpperCase())} vulnerability on port ${rec.port}`);
-            console.log(`   Success Rate: ${chalk.green(rec.successRate + '%')}`);
-            console.log(`   Impact: ${rec.impact}`);
-            console.log(`   Shell Potential: ${rec.shellPotential ? chalk.red('HIGH') : chalk.green('LOW')}`);
-            console.log(`   Data Exfiltration: ${rec.dataExfiltration ? chalk.red('POSSIBLE') : chalk.green('UNLIKELY')}`);
-            console.log(`   Recommended Payloads: ${rec.payloads.length} available`);
-            
-            // Show top 3 payloads for each vulnerability
-            if (rec.payloads.length > 0) {
+          recs.forEach((rec, index) => {
+            console.log(`${index + 1}. ${chalk.cyan((rec.vulnerability || '').toString().toUpperCase())} on port ${rec.port}`);
+            console.log(`   Success Rate: ${chalk.green((rec.successRate || 0) + '%')}`);
+            console.log(`   Impact: ${rec.impact || 'payload'}`);
+            const payloads = Array.isArray(rec.payloads) ? rec.payloads : [];
+            if (payloads.length > 0) {
               console.log(`   Top Payloads:`);
-              rec.payloads.slice(0, 3).forEach((payload, pIndex) => {
-                const truncated = payload.length > 80 ? payload.substring(0, 80) + '...' : payload;
+              payloads.slice(0, 3).forEach((payload, pIndex) => {
+                const str = typeof payload === 'string' ? payload : JSON.stringify(payload);
+                const truncated = str.length > 80 ? str.substring(0, 80) + '...' : str;
                 console.log(`     ${pIndex + 1}. ${chalk.yellow(truncated)}`);
               });
             }

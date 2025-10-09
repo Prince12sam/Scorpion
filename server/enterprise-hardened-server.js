@@ -19,6 +19,7 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import { body, validationResult, param } from 'express-validator';
 import dotenv from 'dotenv';
+import { SecurityScanner } from '../cli/lib/scanner.js';
 
 dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -74,9 +75,11 @@ class ScorpionEnterpriseServer {
       securityScore: 98
     };
     
-    this.activeScans = new Map();
-    this.activeSessions = new Map();
+  this.activeScans = new Map();
+  this.activeSessions = new Map();
     this.rateLimitStore = new Map();
+  this.userStore = this.loadUsersFromEnv();
+  this.scanner = new SecurityScanner();
     
     this.initializeSecurity();
     this.setupMiddleware();
@@ -325,6 +328,19 @@ class ScorpionEnterpriseServer {
     return { accessToken, refreshToken, sessionId: payload.sessionId };
   }
 
+  // Helper: get user by ID from env-based store (placeholder for DB lookup)
+  async getUserById(id) {
+    try {
+      if (!this.userStore || this.userStore.size === 0) return null;
+      for (const [, user] of this.userStore.entries()) {
+        if (String(user.id) === String(id)) return user;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
   // Enterprise Token Validation
   authenticateEnterpriseToken = async (req, res, next) => {
     try {
@@ -495,31 +511,10 @@ class ScorpionEnterpriseServer {
         try {
           const { username, password, twoFactorCode } = req.body;
 
-          // Mock user database (replace with real database)
-          const users = {
-            'admin': {
-              id: 1,
-              username: 'admin',
-              email: 'admin@scorpion.enterprise',
-              passwordHash: await bcrypt.hash('SecurePassword123!', 12),
-              role: 'Admin',
-              permissions: ['*'],
-              twoFactorEnabled: false,
-              securityLevel: 'ENTERPRISE'
-            },
-            'analyst': {
-              id: 2,
-              username: 'analyst',
-              email: 'analyst@scorpion.enterprise',
-              passwordHash: await bcrypt.hash('AnalystPass456!', 12),
-              role: 'SecurityAnalyst',
-              permissions: ['scan', 'monitor', 'report'],
-              twoFactorEnabled: false,
-              securityLevel: 'ENTERPRISE'
-            }
-          };
-
-          const user = users[username];
+          if (!this.userStore || this.userStore.size === 0) {
+            return res.status(503).json({ error: 'Authentication not configured', securityLevel: 'ENTERPRISE' });
+          }
+          const user = this.userStore.get(username);
           if (!user) {
             logger.warn(`🚨 Login attempt with invalid username: ${username}`, req.securityContext);
             return res.status(401).json({ 
@@ -621,6 +616,33 @@ class ScorpionEnterpriseServer {
       }
     );
 
+    // Token refresh (enterprise)
+    this.app.post('/api/auth/refresh', async (req, res) => {
+      try {
+        const { refreshToken } = req.body || {};
+        if (!refreshToken) {
+          return res.status(401).json({ error: 'Refresh token required', securityLevel: 'ENTERPRISE' });
+        }
+
+        const decoded = jwt.verify(refreshToken, process.env.JWT_SECRET);
+        if (decoded.type !== 'refresh') {
+          return res.status(403).json({ error: 'Invalid token type', securityLevel: 'ENTERPRISE' });
+        }
+
+        const user = await this.getUserById(decoded.id);
+        if (!user) {
+          return res.status(403).json({ error: 'User not found', securityLevel: 'ENTERPRISE' });
+        }
+
+        const tokens = this.generateEnterpriseToken(user, req);
+        res.json({ tokens, securityLevel: 'ENTERPRISE' });
+
+      } catch (error) {
+        logger.error('🚨 Enterprise token refresh error:', error);
+        res.status(403).json({ error: 'Invalid refresh token', securityLevel: 'ENTERPRISE' });
+      }
+    });
+
     // Enterprise Vulnerability Scan
     this.app.post('/api/security/scan',
       this.authenticateEnterpriseToken,
@@ -656,16 +678,26 @@ class ScorpionEnterpriseServer {
             ...req.securityContext
           });
 
-          // Simulate advanced scanning
-          setTimeout(() => {
-            const activeScan = this.activeScans.get(scanId);
-            if (activeScan) {
-              activeScan.status = 'completed';
-              activeScan.progress = 100;
-              activeScan.results = this.generateEnterpriseResults(target, scanType);
-              activeScan.endTime = Date.now();
-            }
-          }, this.getScanDuration(scanType));
+          // Execute real scan
+          this.scanner.scan(target, { type: scanType })
+            .then(results => {
+              const activeScan = this.activeScans.get(scanId);
+              if (activeScan) {
+                activeScan.status = 'completed';
+                activeScan.progress = 100;
+                activeScan.results = results;
+                activeScan.endTime = Date.now();
+              }
+            })
+            .catch(error => {
+              const activeScan = this.activeScans.get(scanId);
+              if (activeScan) {
+                activeScan.status = 'failed';
+                activeScan.error = error.message;
+                activeScan.endTime = Date.now();
+              }
+              logger.error('Enterprise scan error:', error);
+            });
 
           res.json({
             scanId,
@@ -673,8 +705,8 @@ class ScorpionEnterpriseServer {
             securityLevel: 'ENTERPRISE',
             target,
             scanType,
-            estimatedDuration: scan.estimatedDuration,
-            message: `Enterprise ${scanType} scan started for ${target}`
+            estimatedDuration: null,
+            message: `Enterprise scan started for ${target}`
           });
 
         } catch (error) {
@@ -792,53 +824,27 @@ class ScorpionEnterpriseServer {
   }
 
   getActiveThreatData() {
-    // Return real threat data based on blocked attacks and security events
-    const threats = [];
-    
-    // Add threats based on actual blocked attacks
-    if (this.securityMetrics.blockedAttacks > 0) {
-      // Create threat markers for recent blocked attacks
-      // This would be populated from real security logs in production
-      const recentBlocks = Math.min(this.securityMetrics.blockedAttacks, 5);
-      
-      for (let i = 0; i < recentBlocks; i++) {
-        threats.push({
-          id: `blocked-attack-${i}`,
-          country: 'Unknown',
-          lat: Math.random() * 180 - 90, // Random for demo - would be real geo data
-          lng: Math.random() * 360 - 180,
-          type: 'Blocked Attack',
-          ip: 'Filtered',
-          severity: 'medium',
-          timestamp: new Date(Date.now() - (i * 60000)).toISOString(),
-          threats: 1
-        });
-      }
-    }
-    
-    return threats;
+    // Production: return empty unless backed by real logs/intel
+    return [];
   }
 
   getSystemHealth() {
-    const memUsage = process.memoryUsage();
-    const totalMem = memUsage.heapTotal + memUsage.external;
-    const usedMem = memUsage.heapUsed;
-    const memoryPercentage = Math.round((usedMem / totalMem) * 100);
-    
-    // Calculate CPU usage based on active connections and processing
-    const cpuUsage = Math.min(15 + (this.activeSessions.size * 2) + (this.activeScans.size * 5), 80);
-    
-    // Disk usage - estimate based on log files and active operations
-    const diskUsage = Math.min(10 + (this.securityMetrics.totalScans * 0.1), 50);
-    
-    // Network usage based on active connections
-    const networkUsage = Math.min(5 + (this.activeSessions.size * 3), 60);
-    
+    // Use OS-derived CPU and memory; disk/network left null unless implemented
+    const os = require('os');
+    const cpus = os.cpus();
+    const totalMem = os.totalmem();
+    const freeMem = os.freemem();
+    const cpuLoad = cpus.reduce((acc, cpu) => {
+      const times = cpu.times;
+      const idle = times.idle;
+      const total = Object.values(times).reduce((a, b) => a + b, 0);
+      return acc + (1 - idle / total);
+    }, 0) / cpus.length;
     return {
-      cpu: Math.round(cpuUsage),
-      memory: memoryPercentage,
-      disk: Math.round(diskUsage),
-      network: Math.round(networkUsage)
+      cpu: Math.round(cpuLoad * 100),
+      memory: Math.round(((totalMem - freeMem) / totalMem) * 100),
+      disk: null,
+      network: null
     };
   }
 
@@ -866,48 +872,52 @@ class ScorpionEnterpriseServer {
     return estimates[scanType] || '5 minutes';
   }
 
-  generateEnterpriseResults(target, scanType) {
-    return {
-      target,
-      scanType,
-      securityLevel: 'ENTERPRISE',
-      vulnerabilities: [
-        {
-          id: 'CVE-2024-0001',
-          severity: 'CRITICAL',
-          title: 'Enterprise-Grade Remote Code Execution',
-          description: 'Advanced RCE vulnerability detected with enterprise analysis',
-          port: 22,
-          service: 'SSH',
-          confidence: 0.95,
-          enterpriseAnalysis: true,
-          mitigation: 'Apply enterprise security patches immediately'
-        },
-        {
-          id: 'CVE-2024-0002',
-          severity: 'HIGH',
-          title: 'Advanced Authentication Bypass',
-          description: 'Enterprise-level authentication vulnerability',
-          port: 443,
-          service: 'HTTPS',
-          confidence: 0.88,
-          enterpriseAnalysis: true,
-          mitigation: 'Implement enterprise authentication controls'
-        }
-      ],
-      enterpriseInsights: {
-        threatIntelligence: 'Active threat campaign detected',
-        riskScore: 85,
-        complianceImpact: 'High - NIST framework violations detected',
-        businessImpact: 'Critical - Immediate action required'
-      },
-      recommendations: [
-        'Implement enterprise security controls',
-        'Enable advanced threat protection',
-        'Update to enterprise-grade security patches',
-        'Deploy enterprise monitoring solutions'
-      ]
-    };
+  // Deprecated: canned enterprise scan results removed
+
+  // Env-based user store (placeholder for DB)
+  loadUsersFromEnv() {
+    const map = new Map();
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@scorpion.enterprise';
+    const adminRole = process.env.ADMIN_ROLE || 'Admin';
+    const adminPerms = (process.env.ADMIN_PERMISSIONS || '*').split(',').map(p => p.trim());
+    const adminTotp = process.env.ADMIN_TOTP_SECRET;
+    const adminHash = process.env.ADMIN_PASSWORD_HASH;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminUsername && (adminHash || adminPassword)) {
+      const passwordHash = adminHash || bcrypt.hashSync(adminPassword, 12);
+      map.set(adminUsername, {
+        id: 1,
+        username: adminUsername,
+        email: adminEmail,
+        passwordHash,
+        role: adminRole,
+        permissions: adminPerms,
+        twoFactorEnabled: !!adminTotp,
+        twoFactorSecret: adminTotp
+      });
+    }
+    const analystUsername = process.env.ANALYST_USERNAME;
+    const analystEmail = process.env.ANALYST_EMAIL || 'analyst@scorpion.enterprise';
+    const analystRole = process.env.ANALYST_ROLE || 'SecurityAnalyst';
+    const analystPerms = (process.env.ANALYST_PERMISSIONS || 'scan,monitor,report').split(',').map(p => p.trim());
+    const analystHash = process.env.ANALYST_PASSWORD_HASH;
+    const analystPassword = process.env.ANALYST_PASSWORD;
+    const analystTotp = process.env.ANALYST_TOTP_SECRET;
+    if (analystUsername && (analystHash || analystPassword)) {
+      const passwordHash = analystHash || bcrypt.hashSync(analystPassword, 12);
+      map.set(analystUsername, {
+        id: 2,
+        username: analystUsername,
+        email: analystEmail,
+        passwordHash,
+        role: analystRole,
+        permissions: analystPerms,
+        twoFactorEnabled: !!analystTotp,
+        twoFactorSecret: analystTotp
+      });
+    }
+    return map;
   }
 
   // WebSocket setup
@@ -976,10 +986,22 @@ class ScorpionEnterpriseServer {
 
   // Start server
   start() {
-    const PORT = process.env.PORT || 3002;
+    // Resolve port with precedence: SCORPION_PORT > VITE_API_URL port > PORT > 3002
+    let resolvedPort = 3002;
+    if (process.env.SCORPION_PORT) {
+      resolvedPort = Number(process.env.SCORPION_PORT) || 3002;
+    } else if (process.env.VITE_API_URL) {
+      try {
+        const url = new URL(process.env.VITE_API_URL);
+        if (url.port) resolvedPort = Number(url.port) || resolvedPort;
+      } catch {}
+    } else if (process.env.PORT) {
+      resolvedPort = Number(process.env.PORT) || 3002;
+    }
+    const PORT = resolvedPort;
     
     this.server.listen(PORT, () => {
-      logger.info(`
+  logger.info(`
 🦂 ====================================================
    SCORPION SECURITY PLATFORM - ENTERPRISE EDITION
    ====================================================

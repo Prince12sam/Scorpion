@@ -20,7 +20,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-const Sidebar = ({ activeSection, setActiveSection, collapsed, setCollapsed }) => {
+import { clearTokens } from '@/lib/auth';
+
+const Sidebar = ({ activeSection, setActiveSection, collapsed, setCollapsed, onLogout }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Security Dashboard', icon: Shield },
     { id: 'recon', label: 'Recon & Discovery', icon: Network },
@@ -66,6 +68,7 @@ const Sidebar = ({ activeSection, setActiveSection, collapsed, setCollapsed }) =
           </motion.div>
         )}
         
+        <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="icon"
@@ -74,6 +77,17 @@ const Sidebar = ({ activeSection, setActiveSection, collapsed, setCollapsed }) =
         >
           {collapsed ? <Menu className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </Button>
+        {!collapsed && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-slate-300 border-slate-600 hover:bg-slate-800"
+            onClick={() => { clearTokens(); onLogout?.(); }}
+          >
+            Logout
+          </Button>
+        )}
+        </div>
       </div>
 
       <nav className="p-2 space-y-1 overflow-y-auto h-[calc(100vh-140px)]">

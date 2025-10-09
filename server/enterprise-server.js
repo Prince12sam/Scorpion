@@ -23,6 +23,7 @@ import speakeasy from 'speakeasy';
 import QRCode from 'qrcode';
 import { body, validationResult, param, query } from 'express-validator';
 import dotenv from 'dotenv';
+import { SecurityScanner } from '../cli/lib/scanner.js';
 
 // Load environment variables
 dotenv.config();
@@ -110,6 +111,9 @@ class ScorpionSecurityPlatform {
       securityAlerts: 0,
       lastSecurityUpdate: new Date().toISOString()
     };
+    // Real scanner and user store
+    this.scanner = new SecurityScanner();
+    this.userStore = this.loadUsersFromEnv();
     
     this.initializeSecurity();
     this.setupMiddleware();
@@ -611,8 +615,10 @@ class ScorpionSecurityPlatform {
       async (req, res) => {
         try {
           const { username, password, twoFactorCode } = req.body;
-
-          // Simulate user lookup (replace with database)
+          // Lookup user from configured store (env/db integration point)
+          if (!this.userStore || this.userStore.size === 0) {
+            return res.status(503).json({ error: 'Authentication not configured' });
+          }
           const user = await this.getUserByUsername(username);
           if (!user) {
             logger.warn(`Login attempt with invalid username: ${username}`);
@@ -633,7 +639,7 @@ class ScorpionSecurityPlatform {
           }
 
           // Check 2FA if enabled
-          if (user.twoFactorEnabled) {
+          if (user.twoFactorEnabled && user.twoFactorSecret) {
             if (!twoFactorCode) {
               return res.status(200).json({ 
                 requiresTwoFactor: true,
@@ -765,42 +771,62 @@ class ScorpionSecurityPlatform {
     return codes;
   }
 
-  // Mock user methods (replace with database implementation)
-  async getUserByUsername(username) {
-    // Simulate database lookup
-    const users = {
-      'admin': {
+  // User store from environment (replace with real database in production deployments)
+  loadUsersFromEnv() {
+    const map = new Map();
+    const adminUsername = process.env.ADMIN_USERNAME;
+    const adminEmail = process.env.ADMIN_EMAIL || 'admin@scorpion.local';
+    const adminRole = process.env.ADMIN_ROLE || 'Admin';
+    const adminPerms = (process.env.ADMIN_PERMISSIONS || '*').split(',').map(p => p.trim());
+    const adminTotp = process.env.ADMIN_TOTP_SECRET;
+    const adminHash = process.env.ADMIN_PASSWORD_HASH;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminUsername && (adminHash || adminPassword)) {
+      const passwordHash = adminHash || bcrypt.hashSync(adminPassword, 12);
+      map.set(adminUsername, {
         id: 1,
-        username: 'admin',
-        email: 'admin@scorpion.local',
-        passwordHash: await bcrypt.hash('SecurePassword123!', 12),
-        role: 'Admin',
-        permissions: ['*'],
-        twoFactorEnabled: true,
-        twoFactorSecret: 'JBSWY3DPEHPK3PXP'
-      },
-      'analyst': {
+        username: adminUsername,
+        email: adminEmail,
+        passwordHash,
+        role: adminRole,
+        permissions: adminPerms,
+        twoFactorEnabled: !!adminTotp,
+        twoFactorSecret: adminTotp
+      });
+    }
+    const analystUsername = process.env.ANALYST_USERNAME;
+    const analystEmail = process.env.ANALYST_EMAIL || 'analyst@scorpion.local';
+    const analystRole = process.env.ANALYST_ROLE || 'SecurityAnalyst';
+    const analystPerms = (process.env.ANALYST_PERMISSIONS || 'scan,monitor,report').split(',').map(p => p.trim());
+    const analystHash = process.env.ANALYST_PASSWORD_HASH;
+    const analystPassword = process.env.ANALYST_PASSWORD;
+    const analystTotp = process.env.ANALYST_TOTP_SECRET;
+    if (analystUsername && (analystHash || analystPassword)) {
+      const passwordHash = analystHash || bcrypt.hashSync(analystPassword, 12);
+      map.set(analystUsername, {
         id: 2,
-        username: 'analyst',
-        email: 'analyst@scorpion.local',
-        passwordHash: await bcrypt.hash('AnalystPass456!', 12),
-        role: 'SecurityAnalyst',
-        permissions: ['scan', 'monitor', 'report'],
-        twoFactorEnabled: false
-      }
-    };
-    
-    return users[username];
+        username: analystUsername,
+        email: analystEmail,
+        passwordHash,
+        role: analystRole,
+        permissions: analystPerms,
+        twoFactorEnabled: !!analystTotp,
+        twoFactorSecret: analystTotp
+      });
+    }
+    return map;
+  }
+
+  async getUserByUsername(username) {
+    return this.userStore?.get(username);
   }
 
   async getUserById(id) {
-    // Simulate database lookup by ID
-    const users = await Promise.all([
-      this.getUserByUsername('admin'),
-      this.getUserByUsername('analyst')
-    ]);
-    
-    return users.find(user => user && user.id === id);
+    if (!this.userStore) return null;
+    for (const user of this.userStore.values()) {
+      if (user.id === id) return user;
+    }
+    return null;
   }
 
   // ===============================
@@ -814,25 +840,12 @@ class ScorpionSecurityPlatform {
       (req, res) => {
         res.json({
           securityOverview: {
-            threatLevel: 'LOW',
+            threatLevel: 'UNKNOWN',
             activeScans: this.activeScans.size,
             blockedAttacks: this.securityMetrics.blockedAttacks,
-            lastThreatDetected: new Date().toISOString()
+            lastThreatDetected: null
           },
-          recentEvents: [
-            {
-              type: 'AUTHENTICATION',
-              severity: 'INFO',
-              message: 'Successful admin login',
-              timestamp: new Date().toISOString()
-            },
-            {
-              type: 'RATE_LIMIT',
-              severity: 'WARN',
-              message: 'Rate limit exceeded from IP',
-              timestamp: new Date().toISOString()
-            }
-          ],
+          recentEvents: [],
           systemHardening: {
             httpsEnabled: !!this.httpsServer,
             sessionSecure: true,
@@ -841,7 +854,7 @@ class ScorpionSecurityPlatform {
             advancedLogging: true,
             twoFactorAvailable: true,
             deviceFingerprinting: true,
-            securityScore: 95
+            securityScore: null
           }
         });
       }
@@ -878,22 +891,32 @@ class ScorpionSecurityPlatform {
             ip: req.ip
           });
 
-          // Simulate advanced scanning
-          setTimeout(() => {
-            const scan = this.activeScans.get(scanId);
-            if (scan) {
-              scan.status = 'completed';
-              scan.results = this.generateAdvancedScanResults(target, scanType);
-              scan.endTime = Date.now();
-              this.securityMetrics.totalScans++;
-            }
-          }, 5000);
+          // Run real scanner asynchronously
+          this.scanner.scan(target, { type: scanType })
+            .then(results => {
+              const scan = this.activeScans.get(scanId);
+              if (scan) {
+                scan.status = 'completed';
+                scan.results = results;
+                scan.endTime = Date.now();
+                this.securityMetrics.totalScans++;
+              }
+            })
+            .catch(err => {
+              const scan = this.activeScans.get(scanId);
+              if (scan) {
+                scan.status = 'failed';
+                scan.error = err.message;
+                scan.endTime = Date.now();
+              }
+              logger.error('Scanner error:', err);
+            });
 
           res.json({
             scanId,
             status: 'initiated',
-            estimatedDuration: this.getEstimatedScanDuration(scanType),
-            message: `Advanced ${scanType} scan started for ${target}`
+            estimatedDuration: null,
+            message: `Scan started for ${target}`
           });
 
         } catch (error) {
@@ -922,58 +945,7 @@ class ScorpionSecurityPlatform {
     );
   }
 
-  generateAdvancedScanResults(target, scanType) {
-    return {
-      target,
-      scanType,
-      vulnerabilities: [
-        {
-          id: 'CVE-2023-1234',
-          severity: 'HIGH',
-          title: 'Remote Code Execution',
-          description: 'Potential RCE vulnerability detected',
-          port: 22,
-          service: 'SSH',
-          confidence: 0.85,
-          mitigation: 'Update SSH server to latest version'
-        },
-        {
-          id: 'CVE-2023-5678',
-          severity: 'MEDIUM',
-          title: 'Information Disclosure',
-          description: 'Server version information exposed',
-          port: 80,
-          service: 'HTTP',
-          confidence: 0.95,
-          mitigation: 'Configure server to hide version information'
-        }
-      ],
-      openPorts: [22, 80, 443, 3000],
-      services: [
-        { port: 22, service: 'OpenSSH 8.9', version: '8.9p1' },
-        { port: 80, service: 'Apache', version: '2.4.52' },
-        { port: 443, service: 'Apache SSL', version: '2.4.52' },
-        { port: 3000, service: 'Node.js', version: '18.x' }
-      ],
-      recommendations: [
-        'Update all services to latest versions',
-        'Implement proper firewall rules',
-        'Enable fail2ban for SSH protection',
-        'Configure SSL/TLS properly'
-      ]
-    };
-  }
-
-  getEstimatedScanDuration(scanType) {
-    const durations = {
-      'quick': '30 seconds',
-      'normal': '2 minutes',
-      'deep': '10 minutes',
-      'custom': '5 minutes',
-      'stealth': '15 minutes'
-    };
-    return durations[scanType] || '5 minutes';
-  }
+  // Deprecated: canned scan results removed in production build
 
   // Additional route setups (monitoring, compliance, etc.)
   setupVulnerabilityRoutes() {
@@ -982,39 +954,56 @@ class ScorpionSecurityPlatform {
       this.authenticateAdvancedToken,
       this.requirePermission('vuln.view'),
       (req, res) => {
+        // Summarize from latest completed scan if available
+        const scans = Array.from(this.activeScans.values()).filter(s => s.status === 'completed' && s.results?.vulnerabilities);
+        const latest = scans.sort((a,b) => (b.endTime||0) - (a.endTime||0))[0];
+        const vulns = latest?.results?.vulnerabilities || [];
+        const countBy = (sev) => vulns.filter(v => (v.severity || '').toLowerCase() === sev).length;
+        const summary = {
+          critical: countBy('critical'),
+          high: countBy('high'),
+          medium: countBy('medium'),
+          low: countBy('low')
+        };
+        const total = vulns.length;
         res.json({
-          critical: 2,
-          high: 8,
-          medium: 15,
-          low: 23,
-          total: 48,
-          lastUpdated: new Date().toISOString(),
-          trending: [
-            { cve: 'CVE-2023-1234', severity: 'CRITICAL', trend: 'increasing' },
-            { cve: 'CVE-2023-5678', severity: 'HIGH', trend: 'stable' }
-          ]
+          ...summary,
+          total,
+          lastUpdated: latest?.endTime ? new Date(latest.endTime).toISOString() : null,
+          trending: []
         });
       }
     );
   }
 
   setupMonitoringRoutes() {
-    // Real-time monitoring data
+    // Real-time monitoring data (no mock values)
     this.app.get('/api/monitoring/realtime',
       this.authenticateAdvancedToken,
       this.requirePermission('monitor.view'),
-      (req, res) => {
+      async (req, res) => {
+        const os = await import('os');
+        const cpus = os.cpus();
+        const totalMem = os.totalmem();
+        const freeMem = os.freemem();
+        const cpuLoad = cpus.reduce((acc, cpu) => {
+          const times = cpu.times;
+          const idle = times.idle;
+          const total = Object.values(times).reduce((a, b) => a + b, 0);
+          return acc + (1 - idle / total);
+        }, 0) / cpus.length;
+
         res.json({
           systemHealth: {
-            cpu: Math.floor(Math.random() * 30) + 20,
-            memory: Math.floor(Math.random() * 40) + 40,
-            disk: Math.floor(Math.random() * 20) + 10,
-            network: Math.floor(Math.random() * 50) + 30,
-            load: [1.2, 1.5, 1.8]
+            cpu: Math.round(cpuLoad * 100),
+            memory: Math.round(((totalMem - freeMem) / totalMem) * 100),
+            disk: null,
+            network: null,
+            load: []
           },
           securityEvents: this.securityMetrics,
-          activeConnections: Math.floor(Math.random() * 100) + 50,
-          threatDetections: 3
+          activeConnections: this.wss?.clients?.size || 0,
+          threatDetections: 0
         });
       }
     );
@@ -1028,19 +1017,10 @@ class ScorpionSecurityPlatform {
       (req, res) => {
         res.json({
           framework: req.body.framework || 'NIST',
-          overallScore: 87,
-          categories: [
-            { name: 'Access Control', score: 92, status: 'COMPLIANT' },
-            { name: 'Data Protection', score: 88, status: 'COMPLIANT' },
-            { name: 'Incident Response', score: 76, status: 'NEEDS_IMPROVEMENT' },
-            { name: 'Security Training', score: 95, status: 'COMPLIANT' }
-          ],
-          recommendations: [
-            'Improve incident response procedures',
-            'Implement additional monitoring controls',
-            'Update security policies'
-          ],
-          lastAssessment: new Date().toISOString()
+          overallScore: null,
+          categories: [],
+          recommendations: [],
+          lastAssessment: null
         });
       }
     );
@@ -1052,32 +1032,17 @@ class ScorpionSecurityPlatform {
       this.authenticateAdvancedToken,
       this.requirePermission('user.view'),
       (req, res) => {
-        res.json({
-          users: [
-            {
-              id: 1,
-              username: 'admin',
-              email: 'admin@scorpion.local',
-              role: 'Admin',
-              status: 'Active',
-              lastLogin: new Date().toISOString(),
-              twoFactorEnabled: true,
-              permissions: ['*']
-            },
-            {
-              id: 2,
-              username: 'analyst',
-              email: 'analyst@scorpion.local',
-              role: 'SecurityAnalyst',
-              status: 'Active',
-              lastLogin: new Date(Date.now() - 86400000).toISOString(),
-              twoFactorEnabled: false,
-              permissions: ['scan', 'monitor', 'report']
-            }
-          ],
-          total: 2,
-          active: 2
-        });
+        const users = this.userStore ? Array.from(this.userStore.values()).map(u => ({
+          id: u.id,
+          username: u.username,
+          email: u.email,
+          role: u.role,
+          status: 'Active',
+          lastLogin: null,
+          twoFactorEnabled: !!u.twoFactorEnabled,
+          permissions: u.permissions || []
+        })) : [];
+        res.json({ users, total: users.length, active: users.length });
       }
     );
 
@@ -1088,35 +1053,27 @@ class ScorpionSecurityPlatform {
       this.handleValidationErrors,
       async (req, res) => {
         try {
-          const { name, email, role, permissions } = req.body;
-          
-          // Generate secure password
-          const tempPassword = crypto.randomBytes(12).toString('base64');
-          const passwordHash = await bcrypt.hash(tempPassword, 12);
-
-          // Simulate user creation
-          const newUser = {
-            id: Date.now(),
-            name,
-            email,
-            role,
-            permissions: permissions || [],
-            status: 'Active',
-            createdAt: new Date().toISOString(),
-            tempPassword // Send via secure channel in real implementation
-          };
-
-          logger.info(`User created: ${email}`, {
-            createdBy: req.user.username,
-            userId: newUser.id
-          });
-
-          res.status(201).json({
-            success: true,
-            user: newUser,
-            message: 'User created successfully'
-          });
-
+          if (process.env.ALLOW_IN_MEMORY_USERS === 'true') {
+            const { name, email, role, permissions } = req.body;
+            const username = email?.split('@')[0] || name?.toLowerCase().replace(/\s+/g, '_');
+            const id = Date.now();
+            const newUser = {
+              id,
+              username,
+              email,
+              role,
+              permissions: permissions || [],
+              status: 'Active',
+              createdAt: new Date().toISOString(),
+              twoFactorEnabled: false
+            };
+            if (!this.userStore) this.userStore = new Map();
+            this.userStore.set(username, { ...newUser, passwordHash: bcrypt.hashSync(crypto.randomBytes(12).toString('base64'), 12) });
+            logger.info(`User created (in-memory): ${email}`, { createdBy: req.user.username, userId: id });
+            res.status(201).json({ success: true, user: newUser, message: 'User created (in-memory)' });
+          } else {
+            res.status(501).json({ error: 'User creation not enabled. Configure persistent user store.' });
+          }
         } catch (error) {
           logger.error('User creation error:', error);
           res.status(500).json({ error: 'User creation failed' });

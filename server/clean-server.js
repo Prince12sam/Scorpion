@@ -1,6 +1,10 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import os from 'os';
 import { SecurityScanner } from '../cli/lib/scanner.js';
 import { NetworkRecon } from '../cli/lib/recon.js';
@@ -8,13 +12,20 @@ import { ThreatIntel } from '../cli/lib/threat-intel.js';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Middleware
 app.use(cors({
   origin: ['http://localhost:5173', 'http://localhost:3000', 'http://127.0.0.1:5173'],
   credentials: true
 }));
+app.use(helmet());
+app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 app.use(express.json());
+
+// Serve built frontend if available (production)
+const distPath = path.join(__dirname, '..', 'dist');
+app.use(express.static(distPath));
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -349,6 +360,60 @@ app.post('/api/password/analyze', async (req, res) => {
   }
 });
 
+// Threat Intelligence helpers for UI
+app.get('/api/threat-intel/iocs', (req, res) => {
+  res.json({ iocs: [], timestamp: new Date().toISOString() });
+});
+
+app.get('/api/threat-feeds/status', (req, res) => {
+  res.json({ success: true, running: false, sources: [] });
+});
+
+app.post('/api/threat-feeds/start', (req, res) => {
+  res.json({ success: true, running: true });
+});
+
+app.post('/api/threat-feeds/stop', (req, res) => {
+  res.json({ success: true, running: false });
+});
+
+app.get('/api/threat-map/live', (req, res) => {
+  res.json({ threats: [], lastUpdated: new Date().toISOString() });
+});
+
+// Reports endpoints
+app.get('/api/reports/list', (req, res) => {
+  res.json({ reports: [] });
+});
+
+app.post('/api/reports/generate', (req, res) => {
+  res.json({ success: true, reportId: Date.now().toString(), status: 'queued' });
+});
+
+// Password endpoints expected by UI
+app.post('/api/password/generate', (req, res) => {
+  const { length = 16, includeSymbols = true } = req.body || {};
+  const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+  const lower = 'abcdefghijkmnopqrstuvwxyz';
+  const digits = '23456789';
+  const symbols = '!@#$%^&*()-_=+[]{};:,.?';
+  const charset = upper + lower + digits + (includeSymbols ? symbols : '');
+  let password = '';
+  for (let i = 0; i < Math.max(8, Math.min(128, length)); i++) {
+    const idx = Math.floor(Math.random() * charset.length);
+    password += charset.charAt(idx);
+  }
+  res.json({ password });
+});
+
+app.post('/api/password/breach', (req, res) => {
+  res.json({ breached: false, count: 0, sources: [] });
+});
+
+app.post('/api/password/crack', (req, res) => {
+  res.json({ success: false, message: 'Cracking is disabled in this build' });
+});
+
 // Get scan status
 app.get('/api/scanner/status/:scanId', (req, res) => {
   const { scanId } = req.params;
@@ -359,6 +424,11 @@ app.get('/api/scanner/status/:scanId', (req, res) => {
     progress: 100,
     message: 'Scan completed successfully'
   });
+});
+
+// Fallback to SPA index.html for non-API routes
+app.get(/^(?!\/api\/).*/, (req, res) => {
+  res.sendFile(path.join(distPath, 'index.html'));
 });
 
 // Create HTTP server
