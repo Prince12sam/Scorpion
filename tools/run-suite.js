@@ -25,9 +25,26 @@ function parseArgs(argv){
 function mdReport(r){
   const l=[]; l.push(`# Scorpion Unified Report`,''); l.push(`- Target: ${r.target}`); l.push(`- Time: ${new Date().toISOString()}`,'');
   l.push('## Scan Summary');
-  const s=r.scan||{}; l.push(`- OS Guess: ${s.os?.name||'N/A'} (${s.os?.confidence??'N/A'}%)`);
+  const s=r.scan||{};
+  const osName = s.osFingerprint?.detectedOS || s.os?.name || 'N/A';
+  const osConf = s.osFingerprint?.confidence ?? s.os?.confidence ?? 'N/A';
+  l.push(`- OS Guess: ${osName} (${osConf}%)`);
   l.push('- Open Ports:');
-  if(Array.isArray(s.openPorts)&&s.openPorts.length){ for(const p of s.openPorts) l.push(`  - ${p.port}/${p.protocol||'tcp'} ${p.state||''} ${p.service?`(${p.service})`:''}`);} else l.push('  - None');
+  if(Array.isArray(s.openPorts)&&s.openPorts.length){
+    for(const p of s.openPorts){
+      const state = p.status || p.state || 'open';
+      const proto = p.protocol || 'tcp';
+      const svc = p.service || p.name || '';
+      l.push(`  - ${p.port}/${proto} ${state}${svc?` (${svc})`:''}`);
+    }
+  } else l.push('  - None');
+  if(Array.isArray(s.services)&&s.services.length){
+    l.push('- Services:');
+    for(const sv of s.services){
+      const ver = sv.version && sv.version!=='unknown' ? ` v${sv.version}`:'';
+      l.push(`  - ${sv.port}/tcp ${sv.name||sv.service||'Unknown'}${ver}`);
+    }
+  }
   l.push('- Vulnerabilities:');
   if(Array.isArray(s.vulnerabilities)&&s.vulnerabilities.length){ for(const v of s.vulnerabilities) l.push(`  - [${v.severity||'UNKNOWN'}] ${v.title||v.name||''}${v.cve?` (CVE: ${v.cve})`:''}`);} else l.push('  - None');
   l.push('', '## Threat Intel');
@@ -47,7 +64,8 @@ async function main(){
   }
   const scanner=new SecurityScanner(); const intel=new ThreatIntel();
   const [scan,intelRes] = await Promise.all([
-    scanner.scan({ target: args.target, scanType: args.type, ports: args.ports, technique: args.technique }),
+    // Pass target as string and align option keys with SecurityScanner
+    scanner.scan(args.target, { ports: args.ports, type: args.type, technique: args.technique }),
     (args.target.match(/^\d+\.\d+\.\d+\.\d+$/) ? intel.checkIP(args.target) : intel.checkDomain(args.target))
   ]);
   let recon=null; if(args.doRecon){ const r=new NetworkRecon(); recon=await r.discover(args.target, { dns:true, whois:false, ports:false, subdomain:false }); }

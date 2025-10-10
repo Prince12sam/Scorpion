@@ -174,6 +174,13 @@ setup_scorpion() {
     echo -e "${CYAN}Running platform setup...${NC}"
     npm run setup
     
+    # Ensure scripts are executable
+    echo -e "${CYAN}Setting executable permissions on scripts...${NC}"
+    chmod +x ./start-scorpion.sh || true
+    chmod +x ./install-unix.sh || true
+    chmod +x ./cli/scorpion.js || true
+    chmod +x ./tools/run-*.js || true
+
     # Create symlinks or aliases
     echo -e "${CYAN}Creating command aliases...${NC}"
     

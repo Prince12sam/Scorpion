@@ -1,0 +1,38 @@
+name: Linux CI
+
+on:
+  push:
+    branches: [ main, '**' ]
+  pull_request:
+    branches: [ '**' ]
+
+jobs:
+  platform-check:
+    name: Ubuntu platform test (Node ${{ matrix.node-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [ 18.x, 20.x ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Show Node and npm versions
+        run: |
+          node -v
+          npm -v
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run cross-platform compatibility test (no network scans)
+        run: npm run test:platform
+        env:
+          CI: true

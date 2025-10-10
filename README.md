@@ -20,82 +20,86 @@ npm install && npm run dev:full
 
 ### **Option 2: Manual Setup**
 ```bash
-# Clone and install
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/Prince12sam/Scorpion)
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
-npm install
+**🌍 Professional-Grade Global Threat-Hunting & Vulnerability Assessment Platform**
 
 # Start backend server (Terminal 1)
-npm run server
+### **Option 2: Manual Setup**
 
 # Start web interface (Terminal 2) 
-npm run dev
+**🌐 Access the Platform:**
 
 # Or use CLI directly
-npm run cli --help
+### 🔍 **Vulnerability Scanner**
 ```
 
-**🌐 Access the Platform:**
+### 🧠 **Threat Intelligence**
 - **Web Interface:** http://localhost:5173
 - **API Server:** http://localhost:3001
-- **CLI:** `npm run cli [command]`
-
+### 👁️ **File Integrity Monitoring** (Web UI)
+This feature has been moved to the web interface to keep the CLI focused on discovery/exploitation.
 ## ✨ Features
 
-### 🔍 **Vulnerability Scanner**
-- Port scanning with service detection
+### � **Password Security** (Web UI)
+Password breach checks, analysis, and cracking workflows are available in the web interface.
 - Web application security testing
 - SSL/TLS configuration analysis
-- Custom vulnerability database
-- Multiple scan types (Quick, Normal, Deep, Custom)
+### 📊 **Professional Reporting** (Web UI)
+Generate executive and technical reports from the web interface.
 
 ### 🕵️ **Network Reconnaissance**
-- DNS enumeration
+## 🧩 Installation & Setup
 - WHOIS lookup
 - Subdomain discovery
-- Geolocation analysis
+### **Manual Installation**
 - HTTP header analysis
 - Certificate information
-
+### **Platform Verification**
 ### 🧠 **Threat Intelligence**
 - IP reputation checking
-- Domain analysis
+## 💻 CLI Usage (Discovery/Exploit)
 - File hash verification
 - IOC (Indicators of Compromise) database
-- Integration with VirusTotal, AbuseIPDB, Shodan
+### Global Install
+```bash
+npm install -g
+```
+
+### Basic Commands
 - Real-time threat feed updates
 
-### 👁️ **File Integrity Monitoring**
+#### Vulnerability Scanning
 - Baseline creation and comparison
 - Real-time file monitoring
-- Tamper detection
+#### Threat Intelligence
 - Integrity reporting
 - Critical file protection
+#### OWASP Top 10 Exploit Probes (Reconnaissance)
+```bash
+# Full OWASP Top 10 non-destructive probes
+scorpion exploit -t https://target.com --payload owasp-top10 --mode reconnaissance -o results.json
 
-### 🔐 **Password Security**
-- Hash cracking with wordlists
-- Breach database checking (Have I Been Pwned)
-- Secure password generation
-- Password strength analysis
-- Common password detection
-
-### 📊 **Professional Reporting**
-- Multiple output formats (JSON, XML, CSV, HTML)
-- Executive summaries
+# Focused probes
+scorpion exploit -t https://target.com --payload sql-injection
+scorpion exploit -t https://target.com --payload xss
+scorpion exploit -t https://target.com --payload path-traversal
+```
 - Detailed technical reports
 - Real-time dashboard
-
+### **Penetration Testing**
 ## � Installation & Setup
 
-### **Prerequisites**
+### **Security Monitoring**
 - Node.js >= 16.0.0
 - npm package manager
-- Git
+### **Threat Hunting**
 
 ### **One-Command Installation** ⚡
-```bash
+### **Compliance Auditing** (Web UI)
 git clone https://github.com/Prince12sam/Scorpion.git
-cd Scorpion
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 npm install && npm start
 ```
 

@@ -62,14 +62,7 @@ class ScorpionServer {
   }
 
   setupRoutes() {
-    // Health check
-    this.app.get('/api/health', (req, res) => {
-      res.json({ 
-        status: 'healthy', 
-        timestamp: new Date().toISOString(),
-        version: '1.0.0'
-      });
-    });
+    // (duplicate handlers removed)
 
     // Security scanning routes
     this.app.post('/api/scan', this.handleScan.bind(this));
@@ -142,18 +135,7 @@ class ScorpionServer {
     this.app.get('/api/health/system', this.getSystemHealth.bind(this));
     this.app.get('/api/system/health', this.getSystemHealthData.bind(this));
     
-    // Report generation routes
-    this.app.post('/api/reports/generate', this.generateQuickReport.bind(this));
-    
-    // Threat intelligence routes
-    this.app.post('/api/threat-intel/update', this.updateThreatIntelligence.bind(this));
-    
-    // File Integrity Monitor routes
-    this.app.get('/api/fim/watched', this.getWatchedFiles.bind(this));
-    this.app.post('/api/fim/add', this.addWatchedFile.bind(this));
-    this.app.post('/api/fim/remove', this.removeWatchedFile.bind(this));
-    this.app.post('/api/fim/start', this.toggleFileMonitoring.bind(this));
-    this.app.post('/api/fim/check', this.runIntegrityCheck.bind(this));
+  // (removed duplicate report/threat-intel/FIM routes)
     
     // Compliance routes
     this.app.post('/api/compliance/assess', this.runComplianceAssessment.bind(this));
@@ -1270,37 +1252,7 @@ class ScorpionServer {
     }
   }
 
-  async generateQuickReport(req, res) {
-    try {
-      const { type = 'quick' } = req.body;
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const filename = `security_report_${timestamp}.json`;
-      
-      res.json({
-        filename,
-        type,
-        generated: new Date().toISOString(),
-        status: 'completed'
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
-
-  async updateThreatIntelligence(req, res) {
-    try {
-      const updateCount = Math.floor(Math.random() * 100) + 50;
-      
-      res.json({
-        count: updateCount,
-        updated: new Date().toISOString(),
-        sources: ['VirusTotal', 'AlienVault', 'EmergingThreats'],
-        status: 'completed'
-      });
-    } catch (error) {
-      res.status(500).json({ error: error.message });
-    }
-  }
+  // duplicate quick report and updateThreatIntelligence handlers removed
 
   getIPGeolocation(ip) {
     // Simple geolocation based on IP prefixes

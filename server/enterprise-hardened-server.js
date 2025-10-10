@@ -437,7 +437,21 @@ class ScorpionEnterpriseServer {
   validationRules = {
     login: [
       body('username').isLength({ min: 3, max: 50 }).matches(/^[a-zA-Z0-9_-]+$/),
-      body('password').isLength({ min: 8 }).matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/),
+      // Allow simpler passwords in dev unless ENFORCE_PASSWORD_COMPLEXITY=true
+      body('password').custom((value) => {
+        const minLen = 8;
+        if (typeof value !== 'string' || value.length < minLen) {
+          throw new Error(`Password must be at least ${minLen} characters`);
+        }
+        const enforce = (process.env.ENFORCE_PASSWORD_COMPLEXITY || '').toLowerCase() === 'true';
+        if (enforce) {
+          const strong = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])/;
+          if (!strong.test(value)) {
+            throw new Error('Password must include uppercase, lowercase, number, and symbol');
+          }
+        }
+        return true;
+      }),
       body('twoFactorCode').optional().isLength({ min: 6, max: 6 }).isNumeric()
     ],
     scan: [
