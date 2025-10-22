@@ -9,7 +9,6 @@ import https from 'https';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
-import csrf from 'csurf';
 import { SecurityConfig } from '../cli/lib/security-config.js';
 import { SecurityValidator } from '../cli/lib/security-validator.js';
 import { SecurityScanner } from '../cli/lib/scanner.js';
@@ -115,16 +114,26 @@ class ScorpionServer {
     }));
     this.app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-    // CSRF protection for state-changing operations
-    const csrfProtection = csrf({ 
-      cookie: this.securityConfig.getSecureCookieConfig(),
-      ignoreMethods: ['GET', 'HEAD', 'OPTIONS'] // Allow safe methods without CSRF
+    // Alternative CSRF protection using custom headers
+    this.app.use((req, res, next) => {
+      if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+        const customHeader = req.get('X-Requested-With');
+        if (!customHeader || customHeader !== 'XMLHttpRequest') {
+          const referer = req.get('Referer');
+          const origin = req.get('Origin');
+          const host = req.get('Host');
+          
+          if (!referer && !origin) {
+            return res.status(403).json({ error: 'CSRF protection: Missing referer/origin header' });
+          }
+          
+          if (origin && !origin.includes(host)) {
+            return res.status(403).json({ error: 'CSRF protection: Invalid origin' });
+          }
+        }
+      }
+      next();
     });
-    
-    // Apply CSRF protection to dangerous endpoints
-    this.app.use('/api/scanner/', csrfProtection);
-    this.app.use('/api/exploit/', csrfProtection);
-    this.app.use('/api/users/', csrfProtection);
     
     // Static files
     const distPath = path.join(__dirname, '..', 'dist');
@@ -221,9 +230,9 @@ class ScorpionServer {
     this.app.post('/api/settings', this.saveSettings.bind(this));
     this.app.get('/api/settings', this.getSettings.bind(this));
 
-    // CSRF token endpoint
+    // Security token endpoint (for compatibility)
     this.app.get('/api/csrf-token', (req, res) => {
-      res.json({ csrfToken: req.csrfToken() });
+      res.json({ csrfToken: 'not-required' });
     });
 
     // Serve React app for all other routes
