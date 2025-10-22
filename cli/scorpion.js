@@ -78,6 +78,7 @@ program
 	.option('-A', 'Aggressive detection: enable service/version detection')
 	.option('-O', 'OS detection')
 	.option('-v, --verbose', 'Increase verbosity')
+	.option('--stealth <level>', 'Stealth level: low, medium, high, ninja', 'medium')
 	.option('--output-mode <mode>', 'Output mode: nmap, json', 'nmap')
 	.option('-o, --output <file>', 'Output file (JSON if specified)')
 	.action(async (options) => {
@@ -100,7 +101,8 @@ program
 				type: options.type,
 				technique,
 				aggressive: !!options.A,
-				osDetect: !!options.O
+				osDetect: !!options.O,
+				stealthLevel: options.stealth || 'medium'
 			});
 
 			spinner.succeed(`Scan completed! Found ${results.openPorts?.length || 0} open ports`);

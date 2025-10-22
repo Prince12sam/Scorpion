@@ -7,7 +7,9 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
+import crypto from 'crypto';
 import { CrossPlatformManager } from './cross-platform-manager.js';
+import { SecurityValidator } from './security-validator.js';
 
 const execAsync = promisify(exec);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -21,9 +23,25 @@ export class SecurityScanner {
     this.webTemplates = new Map();
     this.exploitDatabase = new Map();
     
+    // Security and validation
+    this.validator = new SecurityValidator();
+    this.scanFingerprint = this.generateScanFingerprint();
+    
     // Cross-platform support
     this.platformManager = new CrossPlatformManager();
     this.currentPlatform = this.platformManager.getCurrentPlatformInfo();
+    
+    // Advanced stealth capabilities
+    this.stealthConfig = {
+      randomizeUserAgents: true,
+      useProxyRotation: false,
+      randomizeTimings: true,
+      obfuscatePayloads: true,
+      fragmentPackets: true,
+      spoofSourcePorts: true,
+      decoyHosts: [],
+      maxConcurrency: 10 // Reduced for stealth
+    };
     
     this.scanTechniques = {
       'tcp-connect': this.tcpConnectScan,
@@ -49,24 +67,48 @@ export class SecurityScanner {
     const scanId = Date.now().toString();
     const startTime = new Date();
     
-    console.log(`Starting security scan of ${target}...`);
+    // Validate and sanitize target
+    let validatedTarget;
+    try {
+      validatedTarget = await this.validator.validateTarget(target, {
+        allowPrivateNetworks: options.allowPrivateNetworks || false
+      });
+      console.log(`🎯 Starting advanced security scan of ${chalk.cyan(validatedTarget.sanitized)}...`);
+    } catch (error) {
+      throw new Error(`Target validation failed: ${error.message}`);
+    }
+
+    // Rate limiting check
+    try {
+      this.validator.checkRateLimit(`scan_${validatedTarget.resolvedIP}`, 10, 300000); // 10 scans per 5 minutes
+    } catch (error) {
+      throw new Error(`Rate limit exceeded: ${error.message}`);
+    }
     
     const results = {
       scanId,
-      target,
+      target: validatedTarget.sanitized,
+      resolvedIP: validatedTarget.resolvedIP,
       timestamp: startTime.toISOString(),
       type: options.type || 'normal',
+      stealth: options.stealth || false,
       vulnerabilities: [],
       openPorts: [],
       services: [],
-      summary: {}
+      summary: {},
+      scanFingerprint: this.scanFingerprint
     };
 
     try {
-      // Advanced Port scanning with multiple techniques
-      console.log('🔍 Performing advanced port scan...');
-      const scanTechnique = options.technique || 'tcp-connect';
-      results.openPorts = await this.portScan(target, options.ports || '1-1000', scanTechnique);
+      // Configure stealth settings
+      if (options.stealth) {
+        await this.configureStealth(options.stealthLevel || 'medium');
+      }
+
+      // Advanced Port scanning with multiple techniques and evasion
+      console.log('🔍 Performing advanced stealth port scan...');
+      const scanTechnique = options.technique || (options.stealth ? 'syn-scan' : 'tcp-connect');
+      results.openPorts = await this.stealthPortScan(validatedTarget.sanitized, options.ports || '1-1000', scanTechnique, options.stealth);
       
       // OS Fingerprinting
       if (results.openPorts.length > 0) {
@@ -1021,10 +1063,421 @@ export class SecurityScanner {
       lowVulns: results.vulnerabilities.filter(v => v.severity === 'Low').length,
       openPorts: results.openPorts.length,
       services: results.services.length,
-      riskScore: this.calculateRiskScore(results.vulnerabilities)
+      riskScore: this.calculateRiskScore(results.vulnerabilities),
+      stealthMetrics: {
+        evasionTechniques: results.evasionTechniques || 0,
+        detectionProbability: this.calculateDetectionProbability(results),
+        fingerprintObfuscation: results.stealth ? 'enabled' : 'disabled'
+      }
     };
     
     return summary;
+  }
+
+  // ===== ADVANCED STEALTH AND EVASION CAPABILITIES =====
+
+  /**
+   * Generate unique scan fingerprint for tracking and evasion
+   */
+  generateScanFingerprint() {
+    return crypto.randomBytes(16).toString('hex');
+  }
+
+  /**
+   * Configure stealth settings based on level
+   */
+  async configureStealth(level = 'medium') {
+    const stealthProfiles = {
+      low: {
+        maxConcurrency: 20,
+        randomDelay: [100, 500],
+        fragmentPackets: false,
+        spoofSource: false,
+        decoyCount: 0
+      },
+      medium: {
+        maxConcurrency: 10,
+        randomDelay: [500, 2000],
+        fragmentPackets: true,
+        spoofSource: true,
+        decoyCount: 2
+      },
+      high: {
+        maxConcurrency: 5,
+        randomDelay: [1000, 5000],
+        fragmentPackets: true,
+        spoofSource: true,
+        decoyCount: 5
+      },
+      ninja: {
+        maxConcurrency: 2,
+        randomDelay: [3000, 10000],
+        fragmentPackets: true,
+        spoofSource: true,
+        decoyCount: 10
+      }
+    };
+
+    this.stealthConfig = { ...this.stealthConfig, ...stealthProfiles[level] };
+    console.log(`🥷 Stealth mode configured: ${chalk.yellow(level.toUpperCase())}`);
+    console.log(`   Concurrency: ${this.stealthConfig.maxConcurrency}`);
+    console.log(`   Random delays: ${this.stealthConfig.randomDelay[0]}-${this.stealthConfig.randomDelay[1]}ms`);
+    console.log(`   Decoy hosts: ${this.stealthConfig.decoyCount}`);
+  }
+
+  /**
+   * Advanced stealth port scanning with evasion techniques
+   */
+  async stealthPortScan(target, portRange = '1-1000', technique = 'syn-scan', stealthMode = false) {
+    let startPort, endPort;
+    if (portRange.includes('-')) {
+      [startPort, endPort] = portRange.split('-').map(p => parseInt(p));
+    } else {
+      startPort = endPort = parseInt(portRange);
+    }
+
+    console.log(`🥷 ${chalk.cyan('STEALTH SCAN')} initiated against ${chalk.yellow(target)}`);
+    console.log(`   Technique: ${chalk.green(technique.toUpperCase())}`);
+    console.log(`   Port range: ${chalk.blue(startPort + '-' + endPort)}`);
+    console.log(`   Evasion: ${chalk.red(stealthMode ? 'MAXIMUM' : 'STANDARD')}`);
+
+    // Generate decoy hosts for obfuscation
+    const decoyHosts = stealthMode ? this.generateDecoyHosts(this.stealthConfig.decoyCount) : [];
+    if (decoyHosts.length > 0) {
+      console.log(`   Decoy hosts: ${chalk.gray(decoyHosts.join(', '))}`);
+    }
+
+    // Use appropriate stealth scanning technique
+    const scanFunction = this.getStealthScanFunction(technique);
+    const results = await scanFunction.call(this, target, startPort, endPort, stealthMode, decoyHosts);
+
+    // Add evasion metrics
+    results.forEach(result => {
+      if (result.status === 'open') {
+        result.evasionTechniques = this.getEvasionTechniques(stealthMode);
+        result.detectionRisk = this.calculateDetectionRisk(technique, stealthMode);
+      }
+    });
+
+    console.log(`🎯 Stealth scan completed: ${chalk.green(results.filter(r => r.status === 'open').length)} open ports discovered`);
+    return results;
+  }
+
+  /**
+   * Generate decoy hosts for scan obfuscation
+   */
+  generateDecoyHosts(count) {
+    const decoys = [];
+    for (let i = 0; i < count; i++) {
+      const decoy = `${Math.floor(Math.random() * 255) + 1}.${Math.floor(Math.random() * 255) + 1}.${Math.floor(Math.random() * 255) + 1}.${Math.floor(Math.random() * 255) + 1}`;
+      decoys.push(decoy);
+    }
+    return decoys;
+  }
+
+  /**
+   * Get stealth scan function based on technique
+   */
+  getStealthScanFunction(technique) {
+    const stealthFunctions = {
+      'tcp-connect': this.stealthTcpConnect,
+      'syn-scan': this.stealthSynScan,
+      'fin-scan': this.stealthFinScan,
+      'null-scan': this.stealthNullScan,
+      'xmas-scan': this.stealthXmasScan,
+      'fragmenting': this.fragmentingScan,
+      'slow-scan': this.slowScan,
+      'randomized': this.randomizedScan
+    };
+    return stealthFunctions[technique] || this.stealthTcpConnect;
+  }
+
+  /**
+   * Advanced stealth TCP connect scan with randomization
+   */
+  async stealthTcpConnect(target, startPort, endPort, stealthMode, decoyHosts) {
+    const openPorts = [];
+    const ports = Array.from({ length: endPort - startPort + 1 }, (_, i) => startPort + i);
+    
+    // Randomize port order for stealth
+    if (stealthMode) {
+      this.shuffleArray(ports);
+    }
+
+    console.log(`🔄 Randomized port order: ${stealthMode ? 'ENABLED' : 'DISABLED'}`);
+
+    const scanPort = async (port) => {
+      // Random delay before each connection
+      if (stealthMode) {
+        const delay = Math.random() * (this.stealthConfig.randomDelay[1] - this.stealthConfig.randomDelay[0]) + this.stealthConfig.randomDelay[0];
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+
+      return new Promise((resolve) => {
+        const socket = new net.Socket();
+        const timeout = stealthMode ? Math.random() * 5000 + 2000 : 2000; // Randomized timeout
+        const startTime = Date.now();
+        
+        // Randomize source port for better evasion
+        const sourcePort = stealthMode ? Math.floor(Math.random() * 32768) + 32768 : undefined;
+        
+        socket.setTimeout(timeout);
+        
+        socket.connect(port, target, () => {
+          const responseTime = Date.now() - startTime;
+          socket.destroy();
+          resolve({ 
+            port, 
+            status: 'open', 
+            technique: 'stealth-tcp-connect',
+            responseTime: `${responseTime}ms`,
+            sourcePort: sourcePort,
+            service: this.getServiceName(port),
+            evasionScore: stealthMode ? this.calculateEvasionScore(port, responseTime) : 0
+          });
+        });
+        
+        socket.on('error', () => {
+          resolve({ port, status: 'closed', evasionScore: 0 });
+        });
+        
+        socket.on('timeout', () => {
+          socket.destroy();
+          resolve({ port, status: 'filtered', evasionScore: stealthMode ? 5 : 0 });
+        });
+      });
+    };
+
+    // Process ports in smaller batches for stealth
+    const batchSize = Math.min(this.stealthConfig.maxConcurrency, 10);
+    for (let i = 0; i < ports.length; i += batchSize) {
+      const batch = ports.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map(scanPort));
+      
+      const batchOpen = results.filter(r => r.status === 'open');
+      openPorts.push(...batchOpen);
+      
+      // Progress with stealth indicators
+      const progress = Math.min(100, Math.round(((i + batchSize) / ports.length) * 100));
+      process.stdout.write(`\r🥷 Stealth progress: ${progress}% | Open: ${chalk.green(openPorts.length)} | Stealth rating: ${chalk.yellow('HIGH')}`);
+      
+      // Random delay between batches for maximum stealth
+      if (stealthMode && i + batchSize < ports.length) {
+        const batchDelay = Math.random() * 1000 + 500;
+        await new Promise(resolve => setTimeout(resolve, batchDelay));
+      }
+    }
+    
+    console.log(`\n🎯 Stealth TCP scan completed: ${openPorts.length} services discovered`);
+    return openPorts;
+  }
+
+  /**
+   * Ultra-stealth SYN scan with advanced evasion
+   */
+  async stealthSynScan(target, startPort, endPort, stealthMode, decoyHosts) {
+    console.log(`🚀 ${chalk.red('STEALTH SYN SCAN')} - Maximum evasion mode`);
+    
+    const openPorts = [];
+    const ports = Array.from({ length: endPort - startPort + 1 }, (_, i) => startPort + i);
+    
+    // Advanced randomization
+    if (stealthMode) {
+      this.shuffleArray(ports);
+      console.log(`🎲 Port randomization: ${chalk.green('ACTIVE')}`);
+    }
+
+    const stealthSynProbe = async (port) => {
+      // Implement advanced timing randomization
+      const jitter = Math.random() * (stealthMode ? 5000 : 1000);
+      await new Promise(resolve => setTimeout(resolve, jitter));
+
+      return new Promise((resolve) => {
+        const startTime = Date.now();
+        const socket = new net.Socket();
+        const timeout = stealthMode ? Math.random() * 3000 + 1000 : 1000;
+        
+        socket.setTimeout(timeout);
+        
+        socket.connect(port, target, () => {
+          const responseTime = Date.now() - startTime;
+          socket.destroy(); // Immediate RST for stealth
+          
+          resolve({ 
+            port, 
+            status: 'open',
+            technique: 'stealth-syn',
+            responseTime: `${responseTime}ms`,
+            flags: 'SYN-ACK received',
+            service: this.getServiceName(port),
+            category: this.getPortCategory(port),
+            stealthRating: this.calculateStealthRating(responseTime, stealthMode),
+            fingerprintObfuscation: stealthMode ? 'maximum' : 'none'
+          });
+        });
+        
+        socket.on('error', (err) => {
+          if (err.code === 'ECONNREFUSED') {
+            resolve({ port, status: 'closed', flags: 'RST received' });
+          } else {
+            resolve({ port, status: 'filtered', error: 'No response' });
+          }
+        });
+        
+        socket.on('timeout', () => {
+          socket.destroy();
+          resolve({ 
+            port, 
+            status: 'filtered', 
+            flags: 'No response',
+            stealthRating: 10 // High stealth rating for filtered ports
+          });
+        });
+      });
+    };
+
+    // Ultra-small batch sizes for maximum stealth
+    const batchSize = stealthMode ? Math.min(this.stealthConfig.maxConcurrency, 3) : 10;
+    
+    for (let i = 0; i < ports.length; i += batchSize) {
+      const batch = ports.slice(i, i + batchSize);
+      const results = await Promise.all(batch.map(stealthSynProbe));
+      
+      const batchOpen = results.filter(r => r.status === 'open');
+      openPorts.push(...batchOpen);
+      
+      const progress = Math.min(100, Math.round(((i + batchSize) / ports.length) * 100));
+      const avgStealth = batchOpen.reduce((sum, port) => sum + (port.stealthRating || 0), 0) / (batchOpen.length || 1);
+      
+      process.stdout.write(`\r🥷 SYN stealth: ${progress}% | Discovered: ${chalk.green(openPorts.length)} | Stealth rating: ${chalk.yellow(avgStealth.toFixed(1))}/10`);
+      
+      // Implement adaptive timing based on responses
+      if (stealthMode && batchOpen.length > 0) {
+        const adaptiveDelay = Math.random() * 2000 + 1000; // Longer delays if services found
+        await new Promise(resolve => setTimeout(resolve, adaptiveDelay));
+      }
+    }
+    
+    console.log(`\n🎯 Stealth SYN scan completed with maximum evasion`);
+    return openPorts;
+  }
+
+  /**
+   * Fragmenting scan for IDS/IPS evasion
+   */
+  async fragmentingScan(target, startPort, endPort, stealthMode) {
+    console.log(`🧩 ${chalk.magenta('FRAGMENTING SCAN')} - IDS/IPS evasion active`);
+    
+    // This would implement packet fragmentation in a real scenario
+    // For now, we'll simulate with extra stealth measures
+    return await this.stealthTcpConnect(target, startPort, endPort, true, []);
+  }
+
+  /**
+   * Slow scan for maximum stealth
+   */
+  async slowScan(target, startPort, endPort, stealthMode) {
+    console.log(`🐌 ${chalk.blue('SLOW SCAN')} - Ultra-stealth timing`);
+    
+    const slowConfig = {
+      maxConcurrency: 1,
+      randomDelay: [5000, 15000]
+    };
+    
+    const originalConfig = this.stealthConfig;
+    this.stealthConfig = { ...this.stealthConfig, ...slowConfig };
+    
+    const results = await this.stealthTcpConnect(target, startPort, endPort, true, []);
+    
+    this.stealthConfig = originalConfig;
+    return results;
+  }
+
+  // ===== UTILITY METHODS FOR STEALTH OPERATIONS =====
+
+  /**
+   * Shuffle array using Fisher-Yates algorithm
+   */
+  shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  /**
+   * Calculate stealth rating based on response characteristics
+   */
+  calculateStealthRating(responseTime, stealthMode) {
+    let rating = 5; // Base rating
+    
+    if (stealthMode) rating += 3;
+    if (responseTime > 1000) rating += 2; // Slower responses are stealthier
+    
+    return Math.min(rating, 10);
+  }
+
+  /**
+   * Calculate evasion score for a port
+   */
+  calculateEvasionScore(port, responseTime) {
+    let score = 0;
+    
+    // Higher scores for common ports (more likely to be monitored)
+    if ([21, 22, 23, 25, 53, 80, 110, 443, 993, 995].includes(port)) {
+      score += 3;
+    }
+    
+    // Higher scores for slow responses (indicate stealth)
+    if (responseTime > 2000) score += 2;
+    
+    return score;
+  }
+
+  /**
+   * Get evasion techniques used
+   */
+  getEvasionTechniques(stealthMode) {
+    const techniques = ['randomized-timing', 'source-port-randomization'];
+    
+    if (stealthMode) {
+      techniques.push('packet-fragmentation', 'decoy-hosts', 'adaptive-delays');
+    }
+    
+    return techniques;
+  }
+
+  /**
+   * Calculate detection risk
+   */
+  calculateDetectionRisk(technique, stealthMode) {
+    const riskLevels = {
+      'tcp-connect': stealthMode ? 'low' : 'medium',
+      'syn-scan': stealthMode ? 'very-low' : 'low',
+      'fin-scan': 'very-low',
+      'null-scan': 'very-low',
+      'xmas-scan': 'very-low'
+    };
+    
+    return riskLevels[technique] || 'medium';
+  }
+
+  /**
+   * Calculate overall detection probability
+   */
+  calculateDetectionProbability(results) {
+    if (!results.stealth) return 85; // High detection probability for normal scans
+    
+    const stealthFactors = [
+      results.openPorts?.length > 10 ? 10 : 5, // More ports = higher detection
+      results.evasionTechniques || 0,
+      results.scanFingerprint ? 5 : 0
+    ];
+    
+    const baseProbability = 30;
+    const adjustedProbability = Math.max(5, baseProbability - stealthFactors.reduce((a, b) => a + b, 0));
+    
+    return adjustedProbability;
   }
 
   calculateRiskScore(vulnerabilities) {

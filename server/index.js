@@ -1,10 +1,17 @@
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+import slowDown from 'express-slow-down';
 import { WebSocketServer } from 'ws';
 import http from 'http';
+import https from 'https';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
+import csrf from 'csurf';
+import { SecurityConfig } from '../cli/lib/security-config.js';
+import { SecurityValidator } from '../cli/lib/security-validator.js';
 import { SecurityScanner } from '../cli/lib/scanner.js';
 import { NetworkRecon } from '../cli/lib/recon.js';
 import { ThreatIntel } from '../cli/lib/threat-intel.js';
@@ -20,7 +27,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 class ScorpionServer {
   constructor() {
     this.app = express();
-    this.server = http.createServer(this.app);
+    this.securityConfig = new SecurityConfig();
+    this.validator = new SecurityValidator();
+    
+    // Initialize HTTPS server if certificates are available
+    if (this.securityConfig.sslConfig.available) {
+      this.server = https.createServer(this.securityConfig.sslConfig, this.app);
+      this.httpRedirectServer = http.createServer(this.createRedirectApp());
+      console.log('🔒 HTTPS server initialized with SSL certificates');
+    } else {
+      this.server = http.createServer(this.app);
+      console.warn('⚠️  Running HTTP server - HTTPS certificates not available');
+    }
+    
     this.wss = new WebSocketServer({ server: this.server });
     
     // Initialize security modules
@@ -40,15 +59,72 @@ class ScorpionServer {
   }
 
   setupMiddleware() {
-    // CORS configuration
-    this.app.use(cors({
-      origin: ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:5174'],
-      credentials: true
+    // Security headers with Helmet
+    this.app.use(helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'"],
+          imgSrc: ["'self'", "data:", "https:"],
+          connectSrc: ["'self'", "wss:", "https:"],
+          fontSrc: ["'self'", "data:"],
+          objectSrc: ["'none'"],
+          mediaSrc: ["'self'"],
+          frameSrc: ["'none'"]
+        }
+      },
+      hsts: {
+        maxAge: 31536000,
+        includeSubDomains: true,
+        preload: true
+      }
     }));
+
+    // Hide X-Powered-By header
+    this.app.disable('x-powered-by');
+
+    // Rate limiting
+    const apiLimiter = rateLimit(this.securityConfig.rateLimits.api);
+    const authLimiter = rateLimit(this.securityConfig.rateLimits.auth);
+    const scanLimiter = rateLimit(this.securityConfig.rateLimits.scan);
+    const exploitLimiter = rateLimit(this.securityConfig.rateLimits.exploit);
+
+    this.app.use('/api/', apiLimiter);
+    this.app.use('/api/auth/', authLimiter);
+    this.app.use('/api/scanner/', scanLimiter);
+    this.app.use('/api/exploit/', exploitLimiter);
+
+    // Slow down repeated requests
+    const speedLimiter = slowDown({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      delayAfter: 50, // Allow 50 requests at full speed
+      delayMs: 500 // Add 500ms delay per request after delayAfter
+    });
+    this.app.use('/api/', speedLimiter);
+
+    // CORS configuration with security
+    this.app.use(cors(this.securityConfig.getCORSConfig()));
     
-    // Body parsing
-    this.app.use(express.json({ limit: '10mb' }));
-    this.app.use(express.urlencoded({ extended: true }));
+    // Body parsing with limits
+    this.app.use(express.json({ 
+      limit: '1mb',
+      verify: (req, res, buf, encoding) => {
+        req.rawBody = buf;
+      }
+    }));
+    this.app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+    // CSRF protection for state-changing operations
+    const csrfProtection = csrf({ 
+      cookie: this.securityConfig.getSecureCookieConfig(),
+      ignoreMethods: ['GET', 'HEAD', 'OPTIONS'] // Allow safe methods without CSRF
+    });
+    
+    // Apply CSRF protection to dangerous endpoints
+    this.app.use('/api/scanner/', csrfProtection);
+    this.app.use('/api/exploit/', csrfProtection);
+    this.app.use('/api/users/', csrfProtection);
     
     // Static files
     const distPath = path.join(__dirname, '..', 'dist');
@@ -145,10 +221,27 @@ class ScorpionServer {
     this.app.post('/api/settings', this.saveSettings.bind(this));
     this.app.get('/api/settings', this.getSettings.bind(this));
 
+    // CSRF token endpoint
+    this.app.get('/api/csrf-token', (req, res) => {
+      res.json({ csrfToken: req.csrfToken() });
+    });
+
     // Serve React app for all other routes
     this.app.get('*', (req, res) => {
       res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
     });
+  }
+
+  /**
+   * Create HTTP to HTTPS redirect app
+   */
+  createRedirectApp() {
+    const redirectApp = express();
+    redirectApp.all('*', (req, res) => {
+      const httpsPort = process.env.HTTPS_PORT || 3443;
+      res.redirect(301, `https://${req.hostname}:${httpsPort}${req.url}`);
+    });
+    return redirectApp;
   }
 
   setupWebSocket() {
@@ -194,20 +287,61 @@ class ScorpionServer {
   // Scan handlers
   async handleScan(req, res) {
     try {
-      const { target, type = 'normal', ports = '1-1000' } = req.body;
+      const { target, type = 'normal', ports = '1-1000', stealth = false, stealthLevel = 'medium' } = req.body;
       
       if (!target) {
         return res.status(400).json({ error: 'Target is required' });
       }
 
+      // Validate and sanitize the target
+      let validatedTarget;
+      try {
+        validatedTarget = await this.validator.validateTarget(target, {
+          allowPrivateNetworks: type === 'internal' // Allow private networks for internal scans
+        });
+      } catch (error) {
+        return res.status(400).json({ 
+          error: 'Invalid target', 
+          details: error.message,
+          code: 'INVALID_TARGET'
+        });
+      }
+
+      // Validate ports if provided
+      let validatedPorts = '1-1000';
+      if (ports) {
+        try {
+          validatedPorts = this.validator.validatePorts(ports);
+        } catch (error) {
+          return res.status(400).json({ 
+            error: 'Invalid port specification', 
+            details: error.message,
+            code: 'INVALID_PORTS' 
+          });
+        }
+      }
+
       const scanId = Date.now().toString();
       
+      const scanOptions = {
+        type,
+        ports: validatedPorts,
+        stealth: stealth === true || stealth === 'true',
+        stealthLevel: ['low', 'medium', 'high', 'ninja'].includes(stealthLevel) ? stealthLevel : 'medium',
+        allowPrivateNetworks: type === 'internal'
+      };
+
+      console.log(`🎯 Initiating ${stealth ? 'STEALTH' : 'STANDARD'} scan against ${validatedTarget.sanitized}`);
+      
       // Start scan asynchronously
-      const scanPromise = this.scanner.scan(target, { type, ports });
+      const scanPromise = this.scanner.scan(validatedTarget.sanitized, scanOptions);
       this.activeScans.set(scanId, { 
         promise: scanPromise, 
-        target, 
+        target: validatedTarget.sanitized, 
+        resolvedIP: validatedTarget.resolvedIP,
         type, 
+        stealth: scanOptions.stealth,
+        stealthLevel: scanOptions.stealthLevel,
         started: new Date().toISOString(),
         status: 'running'
       });
@@ -1441,11 +1575,39 @@ class ScorpionServer {
   }
 
   start(port = 3001, host = 'localhost') {
-    this.server.listen(port, host, () => {
-      console.log(`🦂 Scorpion Server running on http://${host}:${port}`);
-      console.log(`📊 Dashboard: http://${host}:${port}`);
-      console.log(`🔌 WebSocket: ws://${host}:${port}`);
-    });
+    // Validate security environment
+    this.securityConfig.validateSecurityEnvironment();
+
+    if (this.securityConfig.sslConfig.available) {
+      // Start HTTPS server
+      const httpsPort = process.env.HTTPS_PORT || 3443;
+      this.server.listen(httpsPort, host, () => {
+        console.log(`🔒 ${chalk.green('Scorpion HTTPS Server')} running on https://${host}:${httpsPort}`);
+        console.log(`📊 ${chalk.cyan('Secure Dashboard')}: https://${host}:${httpsPort}`);
+        console.log(`🔌 ${chalk.blue('Secure WebSocket')}: wss://${host}:${httpsPort}`);
+        console.log(`🛡️  ${chalk.yellow('Security Features')}: HTTPS, CSRF, Rate Limiting, Input Validation`);
+        
+        if (this.securityConfig.sslConfig.selfSigned) {
+          console.log(`⚠️  ${chalk.yellow('Self-signed certificate in use - not suitable for production')}`);
+        }
+      });
+
+      // Start HTTP redirect server
+      if (this.httpRedirectServer) {
+        const httpPort = process.env.HTTP_PORT || 3001;
+        this.httpRedirectServer.listen(httpPort, host, () => {
+          console.log(`🔄 ${chalk.gray('HTTP Redirect Server')} running on http://${host}:${httpPort} → HTTPS`);
+        });
+      }
+    } else {
+      // Fallback to HTTP (development only)
+      this.server.listen(port, host, () => {
+        console.log(`⚠️  ${chalk.yellow('Scorpion HTTP Server')} running on http://${host}:${port}`);
+        console.log(`📊 Dashboard: http://${host}:${port}`);
+        console.log(`🔌 WebSocket: ws://${host}:${port}`);
+        console.log(`🚨 ${chalk.red('WARNING: Running without HTTPS - not secure for production')}`);
+      });
+    }
   }
 }
 

@@ -11,11 +11,37 @@ export class PasswordSecurity {
   constructor() {
     this.commonPasswords = null;
     this.breachDatabase = null;
+    // Legacy hash methods for cracking existing hashes - DO NOT USE FOR NEW PASSWORDS
     this.hashMethods = {
+      // DEPRECATED - Only for hash cracking
       md5: (data) => crypto.createHash('md5').update(data).digest('hex'),
       sha1: (data) => crypto.createHash('sha1').update(data).digest('hex'),
+      // SECURE - Use for new password hashing
       sha256: (data) => crypto.createHash('sha256').update(data).digest('hex'),
       sha512: (data) => crypto.createHash('sha512').update(data).digest('hex')
+    };
+    
+    // Secure password hashing with bcrypt-like functionality
+    this.secureHashMethods = {
+      sha256WithSalt: (password, salt = null) => {
+        const actualSalt = salt || crypto.randomBytes(32).toString('hex');
+        const hash = crypto.createHash('sha256').update(password + actualSalt).digest('hex');
+        return { hash, salt: actualSalt };
+      },
+      sha512WithSalt: (password, salt = null) => {
+        const actualSalt = salt || crypto.randomBytes(32).toString('hex');
+        const hash = crypto.createHash('sha512').update(password + actualSalt).digest('hex');
+        return { hash, salt: actualSalt };
+      },
+      pbkdf2: (password, salt = null, iterations = 100000) => {
+        const actualSalt = salt || crypto.randomBytes(32);
+        const hash = crypto.pbkdf2Sync(password, actualSalt, iterations, 64, 'sha512');
+        return { 
+          hash: hash.toString('hex'), 
+          salt: actualSalt.toString('hex'),
+          iterations 
+        };
+      }
     };
     
     this.loadCommonPasswords();
@@ -385,8 +411,8 @@ export class PasswordSecurity {
       'Collection #1', 'Exploit.in', 'LinkedIn', 'Adobe', 'MySpace'
     ];
     
-    // Simulate some emails being breached
-    const emailHash = crypto.createHash('md5').update(email.toLowerCase()).digest('hex');
+    // Simulate some emails being breached (using secure hash for demo)
+    const emailHash = crypto.createHash('sha256').update(email.toLowerCase()).digest('hex');
     const isBreached = parseInt(emailHash.substring(0, 2), 16) % 5 === 0; // 20% chance
     
     if (isBreached) {
@@ -553,6 +579,77 @@ export class PasswordSecurity {
     if (!/[^a-zA-Z0-9]/.test(password)) analysis.feedback.push('Add special characters');
 
     return analysis;
+  }
+
+  // SECURE PASSWORD HASHING METHODS - Use these for new applications
+  hashPasswordSecure(password, method = 'pbkdf2') {
+    console.log(`🔒 Hashing password with secure method: ${method}`);
+    
+    switch (method) {
+      case 'sha256':
+        return this.secureHashMethods.sha256WithSalt(password);
+      case 'sha512':
+        return this.secureHashMethods.sha512WithSalt(password);
+      case 'pbkdf2':
+      default:
+        return this.secureHashMethods.pbkdf2(password);
+    }
+  }
+
+  verifyPasswordSecure(password, storedHash, salt, method = 'pbkdf2', iterations = 100000) {
+    try {
+      let computedHash;
+      
+      switch (method) {
+        case 'sha256':
+          computedHash = this.secureHashMethods.sha256WithSalt(password, salt).hash;
+          break;
+        case 'sha512':
+          computedHash = this.secureHashMethods.sha512WithSalt(password, salt).hash;
+          break;
+        case 'pbkdf2':
+        default:
+          computedHash = this.secureHashMethods.pbkdf2(password, Buffer.from(salt, 'hex'), iterations).hash;
+          break;
+      }
+      
+      return computedHash === storedHash;
+    } catch (error) {
+      console.error('Password verification failed:', error.message);
+      return false;
+    }
+  }
+
+  // Generate demonstration of secure vs insecure hashing
+  demonstrateHashingSecurity(password) {
+    console.log('\n🔍 Password Hashing Security Demonstration');
+    console.log('==========================================');
+    
+    // Insecure methods (for educational purposes)
+    console.log('\n❌ INSECURE METHODS (DO NOT USE):');
+    const md5Hash = this.hashMethods.md5(password);
+    const sha1Hash = this.hashMethods.sha1(password);
+    console.log(`MD5:  ${md5Hash} (Vulnerable to rainbow tables)`);
+    console.log(`SHA1: ${sha1Hash} (Vulnerable to rainbow tables)`);
+    
+    // Secure methods
+    console.log('\n✅ SECURE METHODS (RECOMMENDED):');
+    const sha256Salted = this.secureHashMethods.sha256WithSalt(password);
+    const sha512Salted = this.secureHashMethods.sha512WithSalt(password);
+    const pbkdf2Hash = this.secureHashMethods.pbkdf2(password);
+    
+    console.log(`SHA256+Salt: ${sha256Salted.hash}`);
+    console.log(`Salt:        ${sha256Salted.salt}`);
+    console.log(`SHA512+Salt: ${sha512Salted.hash}`);
+    console.log(`Salt:        ${sha512Salted.salt}`);
+    console.log(`PBKDF2:      ${pbkdf2Hash.hash}`);
+    console.log(`Salt:        ${pbkdf2Hash.salt}`);
+    console.log(`Iterations:  ${pbkdf2Hash.iterations}`);
+    
+    return {
+      insecure: { md5: md5Hash, sha1: sha1Hash },
+      secure: { sha256Salted, sha512Salted, pbkdf2Hash }
+    };
   }
 
   async saveCrackingResults(hashFile, results) {

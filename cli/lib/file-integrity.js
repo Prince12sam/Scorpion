@@ -396,7 +396,8 @@ export class FileIntegrity extends EventEmitter {
   }
 
   getBaselineFilePath(targetPath) {
-    const hash = crypto.createHash('md5').update(targetPath).digest('hex');
+    // Use SHA-256 for secure path hashing
+    const hash = crypto.createHash('sha256').update(targetPath).digest('hex');
     const baselineDir = path.join(process.cwd(), '.scorpion', 'baselines');
     return path.join(baselineDir, `baseline_${hash}.json`);
   }
@@ -407,7 +408,7 @@ export class FileIntegrity extends EventEmitter {
       await fs.mkdir(reportDir, { recursive: true });
       
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-      const hash = crypto.createHash('md5').update(targetPath).digest('hex').substring(0, 8);
+      const hash = crypto.createHash('sha256').update(targetPath).digest('hex').substring(0, 16);
       const reportFile = path.join(reportDir, `integrity_report_${hash}_${timestamp}.json`);
       
       await fs.writeFile(reportFile, JSON.stringify(changes, null, 2));
@@ -422,7 +423,7 @@ export class FileIntegrity extends EventEmitter {
       const logDir = path.join(process.cwd(), '.scorpion', 'logs');
       await fs.mkdir(logDir, { recursive: true });
       
-      const hash = crypto.createHash('md5').update(targetPath).digest('hex').substring(0, 8);
+      const hash = crypto.createHash('sha256').update(targetPath).digest('hex').substring(0, 16);
       const logFile = path.join(logDir, `fim_${hash}.log`);
       
       const logEntry = `${change.timestamp} - ${change.type.toUpperCase()}: ${change.file}\n`;

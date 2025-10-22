@@ -1,0 +1,69 @@
+{
+  "scanId": "1761101398746",
+  "target": "dubizzle.com",
+  "resolvedIP": "45.60.242.176",
+  "timestamp": "2025-10-22T02:49:58.746Z",
+  "type": "deep",
+  "stealth": false,
+  "vulnerabilities": [],
+  "openPorts": [
+    {
+      "port": 80,
+      "status": "open",
+      "technique": "stealth-tcp-connect",
+      "responseTime": "35ms",
+      "service": "HTTP",
+      "evasionScore": 0,
+      "evasionTechniques": [
+        "randomized-timing",
+        "source-port-randomization"
+      ],
+      "detectionRisk": "medium"
+    }
+  ],
+  "services": [
+    {
+      "port": 80,
+      "status": "open",
+      "technique": "stealth-tcp-connect",
+      "responseTime": "35ms",
+      "service": "HTTP",
+      "evasionScore": 0,
+      "evasionTechniques": [
+        "randomized-timing",
+        "source-port-randomization"
+      ],
+      "detectionRisk": "medium",
+      "name": "HTTP",
+      "version": "unknown",
+      "banner": "HTTP/1.1 301 Moved Permanently\r\nLocation: https://dubizzle.com/\r\nContent-Length: 0\r\nConnection: close",
+      "product": null,
+      "extraInfo": [],
+      "vulnerabilities": [],
+      "exploits": []
+    }
+  ],
+  "summary": {
+    "totalVulnerabilities": 0,
+    "criticalVulns": 0,
+    "highVulns": 0,
+    "mediumVulns": 0,
+    "lowVulns": 0,
+    "openPorts": 1,
+    "services": 1,
+    "riskScore": 0,
+    "stealthMetrics": {
+      "evasionTechniques": 0,
+      "detectionProbability": 85,
+      "fingerprintObfuscation": "disabled"
+    }
+  },
+  "scanFingerprint": "bcbb5142a24e3b174942001a585c2621",
+  "osFingerprint": {
+    "detectedOS": "Linux",
+    "confidence": 33.33333333333333,
+    "evidence": [
+      "80/tcp service detected"
+    ]
+  }
+}
