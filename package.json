@@ -13,7 +13,7 @@
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
-    "server": "node server/simple-web-server.js",
+    "server": "node server/clean-server.js",
     "cli": "node cli/scorpion.js",
     "setup": "node cross-platform-installer.js",
     "postinstall": "npm run build",
@@ -39,9 +39,9 @@
     "install:macos": "node cross-platform-installer.js && echo 'Scorpion installed successfully on macOS!'",
     "install:linux": "node cross-platform-installer.js && echo 'Scorpion installed successfully on Linux!'",
     "install:cross-platform": "node cross-platform-installer.js",
-    "start:windows": "start-windows.bat",
-    "start:linux": "./start-unix.sh",
-    "start:unix": "./start-unix.sh"
+    "start:windows": "start-scorpion-windows.bat",
+    "start:linux": "./start-scorpion-linux.sh",
+    "start:unix": "./start-scorpion-linux.sh"
   },
   "dependencies": {
     "@prisma/client": "^6.16.2",

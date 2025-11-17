@@ -1,105 +1,132 @@
 # Scorpion Security Platform 🦂
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/Prince12sam/Scorpion)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
+[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/Prince12sam/Scorpion)
+[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 
-**🌍 Professional-Grade Global Threat-Hunting & Vulnerability Assessment Platform**
-
-Scorpion is an enterprise-ready security platform offering comprehensive vulnerability scanning, real-time threat intelligence, and advanced security testing capabilities. Built for security professionals, penetration testers, and enterprise security teams.
+**🌍 Enterprise-Grade Threat-Hunting & Security Assessment Platform**
 
 ## 🚀 Quick Start
 
-### **Option 1: One-Command Setup (Recommended)**
+### Windows
 ```bash
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
-npm install && npm run dev:full
+install-windows.bat
+start-scorpion.bat
 ```
 
-### **Option 2: Manual Setup**
+### Linux
 ```bash
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/Prince12sam/Scorpion)
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
-**🌍 Professional-Grade Global Threat-Hunting & Vulnerability Assessment Platform**
-
-# Start backend server (Terminal 1)
-### **Option 2: Manual Setup**
-
-# Start web interface (Terminal 2) 
-**🌐 Access the Platform:**
-
-# Or use CLI directly
-### 🔍 **Vulnerability Scanner**
+chmod +x install-linux.sh start-scorpion-linux.sh
+./install-linux.sh
+./start-scorpion-linux.sh
 ```
 
-### 🧠 **Threat Intelligence**
-- **Web Interface:** http://localhost:5173
-- **API Server:** http://localhost:3001
-### 👁️ **File Integrity Monitoring** (Web UI)
-This feature has been moved to the web interface to keep the CLI focused on discovery/exploitation.
+### Access
+- **Web Interface**: http://localhost:5173
+- **API**: http://localhost:3001
+- **Login**: `admin` / `admin` (EASY_LOGIN mode for local development)
+
 ## ✨ Features
 
-### � **Password Security** (Web UI)
-Password breach checks, analysis, and cracking workflows are available in the web interface.
-- Web application security testing
-- SSL/TLS configuration analysis
-### 📊 **Professional Reporting** (Web UI)
-Generate executive and technical reports from the web interface.
+### 🌐 Web Interface
+- 🎯 **API Testing**: REST API security testing with automated vulnerability detection
+- 🌐 **Network Discovery**: Port scanning, service enumeration, asset inventory
+- 🔍 **Threat Hunting**: OWASP Top 10 exploit testing and security assessment
+- 👥 **User Management**: Multi-user support with role-based access control
+- ⚙️ **Settings**: Configure VirusTotal, AbuseIPDB, and Shodan integrations
+- 📊 **Monitoring**: Real-time security event tracking and alerting
 
-### 🕵️ **Network Reconnaissance**
-## 🧩 Installation & Setup
-- WHOIS lookup
-- Subdomain discovery
-### **Manual Installation**
-- HTTP header analysis
-- Certificate information
-### **Platform Verification**
-### 🧠 **Threat Intelligence**
-- IP reputation checking
-## 💻 CLI Usage (Discovery/Exploit)
-- File hash verification
-- IOC (Indicators of Compromise) database
-### Global Install
+### 💻 CLI Tool
 ```bash
-npm install -g
+npm link
+scorpion --help
+```
+Nmap-style security discovery with comprehensive OWASP Top 10 exploit testing capabilities.
+Nmap-style security discovery with comprehensive OWASP Top 10 exploit testing capabilities.
+
+## 🛠️ Configuration
+
+### Production Mode
+Edit `.env` to disable EASY_LOGIN:
+```env
+EASY_LOGIN=false
+JWT_SECRET=your-secure-random-secret-here
+PORT=3001
+VIRUSTOTAL_API_KEY=your-virustotal-key
+ABUSEIPDB_API_KEY=your-abuseipdb-key
+SHODAN_API_KEY=your-shodan-key
 ```
 
-### Basic Commands
-- Real-time threat feed updates
+## 🏗️ Architecture
 
-#### Vulnerability Scanning
-- Baseline creation and comparison
-- Real-time file monitoring
-#### Threat Intelligence
-- Integrity reporting
-- Critical file protection
-#### OWASP Top 10 Exploit Probes (Reconnaissance)
-```bash
-# Full OWASP Top 10 non-destructive probes
-scorpion exploit -t https://target.com --payload owasp-top10 --mode reconnaissance -o results.json
+- **Backend**: Node.js + Express + JWT authentication
+- **Frontend**: React 18 + Vite + Tailwind CSS + Radix UI
+- **CLI**: Commander.js-based security toolkit
+- **Threat Intel**: VirusTotal, AbuseIPDB, Shodan integration
+- **Storage**: File-based persistence with JSON storage
 
-# Focused probes
-scorpion exploit -t https://target.com --payload sql-injection
-scorpion exploit -t https://target.com --payload xss
-scorpion exploit -t https://target.com --payload path-traversal
+## 🔒 Security Features
+
+- ✅ JWT access & refresh token authentication
+- ✅ Rate limiting on all API endpoints
+- ✅ Helmet.js security headers
+- ✅ CORS protection with configurable origins
+- ✅ Input validation and sanitization
+- ✅ Secure file-based persistence
+- ✅ EASY_LOGIN mode for local development only
+
+## 📁 Project Structure
+
 ```
-- Detailed technical reports
-- Real-time dashboard
-### **Penetration Testing**
-## � Installation & Setup
+scorpion/
+├── cli/                    # Command-line interface
+│   ├── scorpion.js        # Main CLI entry point
+│   ├── lib/               # Security modules
+│   │   ├── scanner.js     # Vulnerability scanner
+│   │   ├── recon.js       # Network reconnaissance
+│   │   └── threat-intel.js # Threat intelligence
+│   └── data/              # Storage for scan results
+├── server/                # Backend API server
+│   └── clean-server.js   # Express.js with all routes
+├── src/                   # React frontend
+│   ├── App.jsx           # Main application
+│   └── components/       # UI components
+└── public/               # Static assets
+```
 
-### **Security Monitoring**
-- Node.js >= 16.0.0
-- npm package manager
-### **Threat Hunting**
+## 🎯 Use Cases
 
-### **One-Command Installation** ⚡
-### **Compliance Auditing** (Web UI)
-git clone https://github.com/Prince12sam/Scorpion.git
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+### Security Assessment
+- Web application vulnerability scanning
+- Network discovery and asset inventory
+- OWASP Top 10 threat hunting
+
+### Threat Intelligence
+- IP/domain reputation checking with VirusTotal
+- Abuse monitoring with AbuseIPDB
+- IoT/infrastructure discovery with Shodan
+
+### Compliance & Auditing
+- Multi-user security testing workflows
+- Role-based access control
+- Audit logging and reporting
+
+## 📜 License
+
+MIT License - see [LICENSE](LICENSE) file
+
+## ⚠️ Disclaimer
+
+For authorized security testing only. Users are responsible for compliance with applicable laws.
+
+---
+
+**Built for security professionals by security engineers** 🦂
 npm install && npm start
 ```
 
