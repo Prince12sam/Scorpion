@@ -1,6 +1,6 @@
 // Simple auth token helpers for Scorpion UI
 
-const ACCESS_TOKEN_KEY = 'scorpion_access_token';
+const ACCESS_TOKEN_KEY = process.env.ACCESS_TOKEN_KEY || 'scorpion_access_token';
 const REFRESH_TOKEN_KEY = 'scorpion_refresh_token';
 
 export function getAccessToken() {

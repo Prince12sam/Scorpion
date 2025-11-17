@@ -25,7 +25,12 @@ const PORT = process.env.PORT || 3001;
 // Auth config
 const ADMIN_USER = process.env.SCORPION_ADMIN_USER || 'admin';
 let ADMIN_PASS = process.env.SCORPION_ADMIN_PASSWORD || '';
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-insecure-change-me';
+const JWT_SECRET = process.env.JWT_SECRET || (() => {
+  if (process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET must be set in production environment');
+  }
+  return crypto.randomBytes(64).toString('hex');
+})();
 const EASY_LOGIN = String(process.env.EASY_LOGIN || '').toLowerCase() === 'true';
 
 if (!process.env.SCORPION_ADMIN_PASSWORD) {

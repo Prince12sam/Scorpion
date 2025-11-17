@@ -1,0 +1,68 @@
+{
+  "platform": "win32",
+  "arch": "x64",
+  "nodeVersion": "v22.16.0",
+  "tests": [
+    {
+      "name": "Node.js Version",
+      "status": "passed",
+      "details": "v22.16.0"
+    },
+    {
+      "name": "File System Permissions",
+      "status": "passed"
+    },
+    {
+      "name": "Memory Usage",
+      "status": "passed",
+      "details": "35MB RSS"
+    },
+    {
+      "name": "Platform Script Exists",
+      "status": "passed",
+      "details": "F:\\Testing_Tool\\start-windows.bat"
+    },
+    {
+      "name": "Dependencies Installed",
+      "status": "passed"
+    },
+    {
+      "name": "Package.json Validation",
+      "status": "passed",
+      "details": "scorpion-security-platform v1.0.1"
+    },
+    {
+      "name": "CLI Help",
+      "status": "passed"
+    },
+    {
+      "name": "CLI Module: scan",
+      "status": "passed"
+    },
+    {
+      "name": "CLI Module: recon",
+      "status": "passed"
+    },
+    {
+      "name": "CLI Module: password",
+      "status": "passed"
+    },
+    {
+      "name": "CLI Module: fim",
+      "status": "passed"
+    },
+    {
+      "name": "CLI Module: threat-intel",
+      "status": "passed"
+    },
+    {
+      "name": "Server Startup",
+      "status": "failed",
+      "error": "spawn EINVAL"
+    }
+  ],
+  "startTime": "2025-11-03T02:30:49.311Z",
+  "success": false,
+  "endTime": "2025-11-03T02:30:51.021Z",
+  "duration": 1710
+}

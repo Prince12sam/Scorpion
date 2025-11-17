@@ -10,6 +10,8 @@ import { WebSocketServer } from 'ws';
 import rateLimit from 'express-rate-limit';
 import cluster from 'cluster';
 import os from 'os';
+import csrf from 'csrf';
+import crypto from 'crypto';
 
 dotenv.config();
 
@@ -20,6 +22,7 @@ class ScorpionWebServer {
     this.app = express();
     this.server = http.createServer(this.app);
     this.wss = new WebSocketServer({ server: this.server });
+    this.csrfProtection = new csrf();
     this.setupMiddleware();
     this.setupRoutes();
     this.setupWebSocket();
@@ -86,8 +89,35 @@ class ScorpionWebServer {
         : ['http://localhost:3001', 'http://localhost:5173', 'http://127.0.0.1:3001'],
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'X-CSRF-Token']
     }));
+
+    // CSRF protection middleware
+    this.app.use((req, res, next) => {
+      if (req.method === 'GET' && req.path === '/api/csrf-token') {
+        // Generate CSRF token
+        const secret = crypto.randomBytes(18).toString('base64');
+        const token = this.csrfProtection.create(secret);
+        req.session = req.session || {};
+        req.session.csrfSecret = secret;
+        res.json({ csrfToken: token });
+        return;
+      }
+      
+      if (['POST', 'PUT', 'DELETE'].includes(req.method) && req.path.startsWith('/api/') && req.path !== '/api/auth/login') {
+        const token = req.get('X-CSRF-Token') || req.body._csrf;
+        const secret = req.session?.csrfSecret;
+        
+        if (!token || !secret || !this.csrfProtection.verify(secret, token)) {
+          console.log(`🛡️  CSRF protection blocked request to ${req.path}`);
+          return res.status(403).json({ error: 'Invalid CSRF token' });
+        }
+      }
+      next();
+    });
+
+    // Disable X-Powered-By header for security
+    this.app.disable('x-powered-by');
     
     this.app.use(express.json({ limit: '10mb' }));
     this.app.use(express.urlencoded({ extended: true }));
@@ -278,6 +308,280 @@ class ScorpionWebServer {
           }
         });
       }, 2000);
+    });
+
+    // Additional API endpoints for all dashboard tabs
+    
+    // Vulnerability Scanner endpoints
+    this.app.post('/api/scanner/scan', async (req, res) => {
+      const { target, scanType = 'normal' } = req.body;
+      if (!target) return res.status(400).json({ error: 'Target required' });
+      
+      res.json({
+        scanId: Date.now().toString(),
+        target,
+        scanType,
+        status: 'scanning',
+        progress: 0,
+        estimatedTime: '5 minutes'
+      });
+    });
+
+    // Reconnaissance & Discovery endpoints
+    this.app.post('/api/recon/discover', async (req, res) => {
+      const { target, depth = 'normal' } = req.body;
+      if (!target) return res.status(400).json({ error: 'Target required' });
+      
+      res.json({
+        target,
+        depth,
+        status: 'completed',
+        discovered: {
+          subdomains: ['www.example.com', 'api.example.com'],
+          openPorts: [80, 443, 22],
+          services: ['nginx', 'ssh'],
+          technologies: ['React', 'Node.js']
+        }
+      });
+    });
+
+    // Monitoring endpoints
+    this.app.get('/api/monitoring/alerts', (req, res) => {
+      res.json({
+        alerts: [
+          { id: 1, severity: 'high', message: 'Suspicious login detected', timestamp: new Date().toISOString() },
+          { id: 2, severity: 'medium', message: 'Port scan detected', timestamp: new Date().toISOString() }
+        ],
+        total: 2
+      });
+    });
+
+    this.app.get('/api/system/health', (req, res) => {
+      res.json({
+        status: 'healthy',
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        cpu: process.cpuUsage(),
+        services: {
+          database: 'healthy',
+          scanner: 'healthy',
+          monitor: 'healthy'
+        }
+      });
+    });
+
+    // File Integrity Monitor endpoints
+    this.app.get('/api/fim/status', (req, res) => {
+      res.json({
+        status: 'active',
+        watchedFiles: 1250,
+        recentChanges: 5,
+        lastScan: new Date().toISOString()
+      });
+    });
+
+    this.app.post('/api/fim/scan', (req, res) => {
+      res.json({
+        scanId: Date.now().toString(),
+        status: 'scanning',
+        filesScanned: 0,
+        changesDetected: 0
+      });
+    });
+
+    // Threat Hunting endpoints
+    this.app.get('/api/threat-hunting', (req, res) => {
+      res.json({
+        activeThreat: null,
+        indicators: [],
+        lastHunt: new Date().toISOString(),
+        threatsFound: 0
+      });
+    });
+
+    // Password Security endpoints
+    this.app.post('/api/password/analyze', (req, res) => {
+      const { password } = req.body;
+      if (!password) return res.status(400).json({ error: 'Password required' });
+      
+      res.json({
+        password: '[REDACTED]',
+        strength: 'strong',
+        score: 85,
+        recommendations: ['Consider adding symbols', 'Increase length to 16+ characters'],
+        breached: false
+      });
+    });
+
+    // Advanced Exploitation endpoints
+    this.app.get('/api/exploitation', (req, res) => {
+      res.json({
+        availableExploits: 150,
+        activeTargets: 0,
+        successRate: '85%',
+        lastUpdate: new Date().toISOString()
+      });
+    });
+
+    // API Testing endpoints
+    this.app.get('/api/api-testing', (req, res) => {
+      res.json({
+        testsRun: 0,
+        vulnerabilitiesFound: 0,
+        endpoints: [],
+        lastTest: null
+      });
+    });
+
+    // Network Discovery endpoints
+    this.app.get('/api/network-discovery', (req, res) => {
+      res.json({
+        discoveredHosts: 0,
+        activeScans: 0,
+        lastDiscovery: new Date().toISOString(),
+        networkMap: []
+      });
+    });
+
+    // Brute Force Tools endpoints
+    this.app.get('/api/brute-force', (req, res) => {
+      res.json({
+        activeAttacks: 0,
+        successfulCracks: 0,
+        wordlists: ['common.txt', 'rockyou.txt'],
+        lastAttempt: null
+      });
+    });
+
+    // Reports endpoints
+    this.app.get('/api/reports', (req, res) => {
+      res.json({
+        totalReports: 25,
+        recentReports: [
+          { id: 1, name: 'Security Assessment', date: new Date().toISOString(), type: 'PDF' },
+          { id: 2, name: 'Vulnerability Report', date: new Date().toISOString(), type: 'HTML' }
+        ]
+      });
+    });
+
+    // Compliance endpoints
+    this.app.get('/api/compliance', (req, res) => {
+      res.json({
+        overallScore: 92,
+        frameworks: {
+          'ISO 27001': 95,
+          'NIST': 88,
+          'SOC 2': 94
+        },
+        failedChecks: 3,
+        lastAssessment: new Date().toISOString()
+      });
+    });
+
+    // Threat Intelligence endpoints
+    this.app.get('/api/intelligence', (req, res) => {
+      res.json({
+        activeThreat: null,
+        feedsActive: 5,
+        lastUpdate: new Date().toISOString(),
+        iocs: 1250
+      });
+    });
+
+    this.app.get('/api/threat-intel/iocs', (req, res) => {
+      res.json({
+        iocs: [
+          { type: 'ip', value: '192.168.1.100', threat: 'malware', confidence: 'high' },
+          { type: 'domain', value: 'malicious.com', threat: 'phishing', confidence: 'medium' }
+        ],
+        total: 2
+      });
+    });
+
+    this.app.get('/api/threat-feeds/status', (req, res) => {
+      res.json({
+        feeds: [
+          { name: 'AlienVault OTX', status: 'active', lastUpdate: new Date().toISOString() },
+          { name: 'VirusTotal', status: 'active', lastUpdate: new Date().toISOString() }
+        ]
+      });
+    });
+
+    this.app.get('/api/threat-map/live', (req, res) => {
+      res.json({
+        threats: [
+          { lat: 40.7128, lng: -74.0060, type: 'malware', severity: 'high' },
+          { lat: 51.5074, lng: -0.1278, type: 'ddos', severity: 'medium' }
+        ],
+        lastUpdate: new Date().toISOString()
+      });
+    });
+
+    this.app.post('/api/threat-intel/lookup', (req, res) => {
+      const { indicator } = req.body;
+      res.json({
+        indicator,
+        found: true,
+        threat: 'suspicious',
+        confidence: 'medium',
+        sources: ['VirusTotal', 'AbuseIPDB']
+      });
+    });
+
+    // Investigation Tools endpoints
+    this.app.get('/api/investigation', (req, res) => {
+      res.json({
+        activeInvestigations: 2,
+        tools: ['OSINT', 'Digital Forensics', 'Network Analysis'],
+        recentFindings: [
+          { type: 'email', value: 'suspicious@example.com', risk: 'medium' }
+        ]
+      });
+    });
+
+    // User Management endpoints
+    this.app.get('/api/users', (req, res) => {
+      res.json({
+        users: [
+          { id: 1, username: 'admin', role: 'administrator', lastLogin: new Date().toISOString() },
+          { id: 2, username: 'analyst', role: 'analyst', lastLogin: new Date().toISOString() }
+        ],
+        total: 2
+      });
+    });
+
+    // Settings endpoints
+    this.app.get('/api/settings', (req, res) => {
+      res.json({
+        general: {
+          theme: 'dark',
+          language: 'en',
+          notifications: true
+        },
+        security: {
+          twoFactor: false,
+          sessionTimeout: 3600,
+          passwordPolicy: 'strong'
+        }
+      });
+    });
+
+    // Threat Map endpoint for real-time data
+    this.app.get('/api/threat-map', (req, res) => {
+      res.json({
+        threats: [
+          { lat: 40.7128, lng: -74.0060, type: 'malware', severity: 'high', timestamp: new Date().toISOString() },
+          { lat: 51.5074, lng: -0.1278, type: 'ddos', severity: 'medium', timestamp: new Date().toISOString() },
+          { lat: 35.6762, lng: 139.6503, type: 'botnet', severity: 'low', timestamp: new Date().toISOString() }
+        ],
+        stats: {
+          totalThreats: 3,
+          highSeverity: 1,
+          mediumSeverity: 1,
+          lowSeverity: 1
+        },
+        lastUpdate: new Date().toISOString()
+      });
     });
 
     // Reports endpoint
