@@ -28,7 +28,7 @@ const Sidebar = ({ activeSection, setActiveSection, collapsed, setCollapsed, onL
     { id: 'recon', label: 'Recon & Discovery', icon: Network },
     { id: 'scanner', label: 'Vulnerability Scanner', icon: Search },
     { id: 'monitoring', label: 'Monitoring Center', icon: Activity },
-    { id: 'fim', label: 'File Integrity', icon: FileCheck2 },
+    { id: 'fim', label: 'AI Pentest Agent', icon: FileCheck2 },
     { id: 'threat-hunting', label: 'Threat Hunting', icon: Globe },
     { id: 'password-security', label: 'Password Security', icon: KeyRound },
     { id: 'exploitation', label: 'Advanced Exploitation', icon: AlertTriangle },

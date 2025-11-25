@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pentesting Agent Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            padding: 20px;
+            margin: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #22d3ee;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(100, 116, 139, 0.3);
+        }
+        .test-section h2 {
+            color: #38bdf8;
+            margin-top: 0;
+        }
+        button {
+            background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+        }
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .result {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #22c55e;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .info {
+            color: #3b82f6;
+        }
+        input {
+            background: #1e293b;
+            border: 1px solid #475569;
+            color: #e2e8f0;
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-right: 10px;
+            width: 300px;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .status.running {
+            background: #0891b2;
+            color: white;
+        }
+        .status.success {
+            background: #22c55e;
+            color: white;
+        }
+        .status.error {
+            background: #ef4444;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Pentesting Agent - API Test Suite</h1>
+
+        <!-- Health Check -->
+        <div class="test-section">
+            <h2>1. Server Health Check</h2>
+            <button onclick="testHealth()">Test Health Endpoint</button>
+            <div id="health-result" class="result"></div>
+        </div>
+
+        <!-- Reconnaissance Test -->
+        <div class="test-section">
+            <h2>2. Reconnaissance Phase</h2>
+            <input type="text" id="recon-target" placeholder="Enter target (e.g., google.com)" value="google.com">
+            <button onclick="testRecon()">Run Reconnaissance</button>
+            <div id="recon-result" class="result"></div>
+        </div>
+
+        <!-- Enumeration Test -->
+        <div class="test-section">
+            <h2>3. Enumeration Phase</h2>
+            <input type="text" id="enum-target" placeholder="Enter target IP" value="127.0.0.1">
+            <input type="text" id="enum-ports" placeholder="Ports (e.g., 80,443)" value="80,3001">
+            <button onclick="testEnumeration()">Run Port Scan</button>
+            <div id="enum-result" class="result"></div>
+        </div>
+
+        <!-- Vulnerability Scan Test -->
+        <div class="test-section">
+            <h2>4. Vulnerability Discovery</h2>
+            <input type="text" id="vuln-target" placeholder="Enter target" value="127.0.0.1">
+            <button onclick="testVulnScan()">Scan Vulnerabilities</button>
+            <div id="vuln-result" class="result"></div>
+        </div>
+
+        <!-- Exploitation Test -->
+        <div class="test-section">
+            <h2>5. Exploitation Phase</h2>
+            <select id="exploit-mode">
+                <option value="stealth">Stealth Mode</option>
+                <option value="aggressive">Aggressive Mode</option>
+                <option value="surgical" selected>Surgical Mode</option>
+            </select>
+            <button onclick="testExploitation()">Run Exploitation</button>
+            <div id="exploit-result" class="result"></div>
+        </div>
+
+        <!-- Full Agent Test -->
+        <div class="test-section">
+            <h2>6. Full AI Agent Workflow</h2>
+            <input type="text" id="full-target" placeholder="Enter target" value="127.0.0.1">
+            <button onclick="runFullAgent()" id="full-agent-btn">Launch Full AI Agent</button>
+            <div id="full-result" class="result"></div>
+        </div>
+
+        <!-- Defense Systems -->
+        <div class="test-section">
+            <h2>7. Defense Systems</h2>
+            <button onclick="testFixMisconfig()">Test Fix Misconfigurations</button>
+            <button onclick="testAutoDefense(true)">Enable Auto-Defense</button>
+            <button onclick="testAutoDefense(false)">Disable Auto-Defense</button>
+            <div id="defense-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3001/api';
+
+        function log(elementId, message, type = 'info') {
+            const el = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+            el.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function clearLog(elementId) {
+            document.getElementById(elementId).innerHTML = '';
+        }
+
+        async function testHealth() {
+            clearLog('health-result');
+            log('health-result', '🔍 Testing server health...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                log('health-result', '✅ Server is healthy!', 'success');
+                log('health-result', JSON.stringify(data, null, 2), 'success');
+            } catch (error) {
+                log('health-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRecon() {
+            const target = document.getElementById('recon-target').value;
+            clearLog('recon-result');
+            log('recon-result', `🔍 Running reconnaissance on ${target}...`, 'info');
+            try {
+                const response = await fetch(`${API_BASE}/ai-pentest/reconnaissance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, mode: 'stealth' })
+                });
+                const data = await response.json();
+                log('recon-result', '✅ Reconnaissance complete!', 'success');
+                log('recon-result', `DNS: ${data.dns?.hostname || 'N/A'}`, 'info');
+                log('recon-result', `IPs: ${data.dns?.ips?.join(', ') || 'N/A'}`, 'info');
+                log('recon-result', `Location: ${data.geo?.country || 'Unknown'}, ${data.geo?.city || 'Unknown'}`, 'info');
+                log('recon-result', `ISP: ${data.geo?.isp || 'Unknown'}`, 'info');
+            } catch (error) {
+                log('recon-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testEnumeration() {
+            const target = document.getElementById('enum-target').value;
+            const ports = document.getElementById('enum-ports').value;
+            clearLog('enum-result');
+            log('enum-result', `🌐 Enumerating ports on ${target}...`, 'info');
+            try {
+                const response = await fetch(`${API_BASE}/ai-pentest/enumerate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, ports })
+                });
+                const data = await response.json();
+                log('enum-result', `✅ Found ${data.openPorts?.length || 0} open ports!`, 'success');
+                data.openPorts?.forEach(port => {
+                    log('enum-result', `  ├─ Port ${port.port}/tcp OPEN [${port.service}]`, 'info');
+                });
+            } catch (error) {
+                log('enum-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testVulnScan() {
+            const target = document.getElementById('vuln-target').value;
+            clearLog('vuln-result');
+            log('vuln-result', `🐛 Scanning for vulnerabilities on ${target}...`, 'info');
+            try {
+                const response = await fetch(`${API_BASE}/ai-pentest/scan-vulns`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        target,
+                        ports: [{ port: 80 }, { port: 22 }, { port: 3306 }]
+                    })
+                });
+                const data = await response.json();
+                log('vuln-result', `✅ Found ${data.vulnerabilities?.length || 0} vulnerabilities!`, 'success');
+                log('vuln-result', `Critical: ${data.summary?.critical || 0} | High: ${data.summary?.high || 0} | Medium: ${data.summary?.medium || 0}`, 'info');
+                data.vulnerabilities?.forEach(vuln => {
+                    const emoji = vuln.severity === 'CRITICAL' ? '🔴' : vuln.severity === 'HIGH' ? '🟠' : '🟡';
+                    log('vuln-result', `  ${emoji} [${vuln.severity}] ${vuln.name} (${vuln.cve})`, 'info');
+                });
+            } catch (error) {
+                log('vuln-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testExploitation() {
+            const mode = document.getElementById('exploit-mode').value;
+            clearLog('exploit-result');
+            log('exploit-result', `⚡ Running exploitation in ${mode} mode...`, 'info');
+            
+            const mockVulns = [
+                { name: 'SQL Injection', severity: 'CRITICAL', exploitable: true, port: 80 },
+                { name: 'SSH Weak Auth', severity: 'HIGH', exploitable: true, port: 22 }
+            ];
+            
+            try {
+                const response = await fetch(`${API_BASE}/ai-pentest/exploit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        target: '127.0.0.1',
+                        vulnerabilities: mockVulns,
+                        mode
+                    })
+                });
+                const data = await response.json();
+                log('exploit-result', `✅ Exploitation complete: ${data.successful || 0} successful, ${data.failed || 0} failed`, 'success');
+                data.results?.forEach(result => {
+                    if (result.success) {
+                        log('exploit-result', `  ✓ ${result.exploit}: ${result.output}`, 'success');
+                    } else {
+                        log('exploit-result', `  ✗ ${result.exploit}: ${result.output}`, 'error');
+                    }
+                });
+            } catch (error) {
+                log('exploit-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function runFullAgent() {
+            const target = document.getElementById('full-target').value;
+            const btn = document.getElementById('full-agent-btn');
+            btn.disabled = true;
+            clearLog('full-result');
+            
+            log('full-result', `🤖 AI Pentesting Agent initialized`, 'success');
+            log('full-result', `🎯 Target: ${target}`, 'info');
+
+            try {
+                // Phase 1: Reconnaissance
+                log('full-result', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+                log('full-result', '🔍 Phase 1: Reconnaissance...', 'info');
+                const recon = await fetch(`${API_BASE}/ai-pentest/reconnaissance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, mode: 'surgical' })
+                });
+                const reconData = await recon.json();
+                log('full-result', `✅ DNS: ${reconData.dns?.hostname || 'N/A'}`, 'success');
+                log('full-result', `✅ Location: ${reconData.geo?.country || 'Unknown'}`, 'success');
+
+                // Phase 2: Enumeration
+                log('full-result', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+                log('full-result', '🌐 Phase 2: Enumeration...', 'info');
+                const enum = await fetch(`${API_BASE}/ai-pentest/enumerate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, ports: '80,443,22,3001' })
+                });
+                const enumData = await enum.json();
+                log('full-result', `✅ Found ${enumData.openPorts?.length || 0} open ports`, 'success');
+
+                // Phase 3: Vulnerability Discovery
+                log('full-result', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+                log('full-result', '🐛 Phase 3: Vulnerability Discovery...', 'info');
+                const vuln = await fetch(`${API_BASE}/ai-pentest/scan-vulns`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target, ports: enumData.openPorts })
+                });
+                const vulnData = await vuln.json();
+                log('full-result', `✅ Found ${vulnData.vulnerabilities?.length || 0} vulnerabilities`, 'success');
+
+                // Phase 4: Exploitation
+                if (vulnData.vulnerabilities?.length > 0) {
+                    log('full-result', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+                    log('full-result', '⚡ Phase 4: Exploitation...', 'info');
+                    const exploit = await fetch(`${API_BASE}/ai-pentest/exploit`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ target, vulnerabilities: vulnData.vulnerabilities, mode: 'surgical' })
+                    });
+                    const exploitData = await exploit.json();
+                    log('full-result', `✅ ${exploitData.successful || 0} exploits successful`, 'success');
+
+                    // Phase 5: Post-Exploitation
+                    if (exploitData.successful > 0) {
+                        log('full-result', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+                        log('full-result', '💀 Phase 5: Post-Exploitation...', 'info');
+                        const post = await fetch(`${API_BASE}/ai-pentest/post-exploit`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ target, sessions: exploitData.sessions })
+                        });
+                        const postData = await post.json();
+                        log('full-result', `✅ Established ${postData.shells?.length || 0} shell sessions`, 'success');
+                        log('full-result', `✅ Privilege: ${postData.privilege}`, 'success');
+
+                        // Phase 6: Exfiltration
+                        log('full-result', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+                        log('full-result', '📤 Phase 6: Data Exfiltration...', 'info');
+                        const exfil = await fetch(`${API_BASE}/ai-pentest/exfiltrate`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ target, shells: postData.shells })
+                        });
+                        const exfilData = await exfil.json();
+                        log('full-result', `✅ Exfiltrated ${exfilData.data?.length || 0} files`, 'success');
+                    }
+                }
+
+                log('full-result', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
+                log('full-result', '🎉 AI Pentesting Agent completed all phases!', 'success');
+
+            } catch (error) {
+                log('full-result', `❌ Agent error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async function testFixMisconfig() {
+            clearLog('defense-result');
+            log('defense-result', '🔧 Testing misconfiguration fixes...', 'info');
+            try {
+                const response = await fetch(`${API_BASE}/ai-pentest/fix-misconfig`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        target: '127.0.0.1',
+                        discoveries: {
+                            vulnerabilities: [
+                                { name: 'SQL Injection' },
+                                { name: 'XSS' },
+                                { name: 'Missing Security Headers' }
+                            ]
+                        }
+                    })
+                });
+                const data = await response.json();
+                log('defense-result', `✅ Fixed ${data.fixed || 0} misconfigurations`, 'success');
+                data.fixes?.forEach(fix => {
+                    log('defense-result', `  ✓ ${fix.issue}: ${fix.action}`, 'info');
+                });
+            } catch (error) {
+                log('defense-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testAutoDefense(enabled) {
+            clearLog('defense-result');
+            log('defense-result', `🛡️ ${enabled ? 'Enabling' : 'Disabling'} auto-defense...`, 'info');
+            try {
+                const response = await fetch(`${API_BASE}/ai-pentest/auto-defense`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ enabled, target: '127.0.0.1' })
+                });
+                const data = await response.json();
+                log('defense-result', `✅ Auto-defense ${enabled ? 'activated' : 'deactivated'}!`, 'success');
+                if (data.rules) {
+                    data.rules.forEach(rule => {
+                        log('defense-result', `  ├─ ${rule.type}: ${rule.action} [${rule.status}]`, 'info');
+                    });
+                }
+            } catch (error) {
+                log('defense-result', `❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                testHealth();
+            }, 500);
+        });
+    </script>
+</body>
+</html>
