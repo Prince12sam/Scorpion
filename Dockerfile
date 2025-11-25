@@ -1,9 +1,11 @@
-# Scorpion Security Platform - Production Docker Image
-FROM node:18-alpine AS base
+# Scorpion Security Platform - Multi-Platform Docker Image
+# Supports: Linux (all flavors), Windows containers, ARM64, AMD64
+FROM node:22-alpine AS base
 
-# Install system dependencies for security tools
+# Install system dependencies for security tools and CLI operations
 RUN apk add --no-cache \
     nmap \
+    nmap-scripts \
     curl \
     wget \
     openssl \
@@ -12,7 +14,13 @@ RUN apk add --no-cache \
     python3 \
     py3-pip \
     build-base \
-    linux-headers
+    linux-headers \
+    bash \
+    net-tools \
+    iputils \
+    bind-tools \
+    tcpdump \
+    socat
 
 WORKDIR /app
 
@@ -51,24 +59,27 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/.env.example ./.env
 COPY --from=builder /app/README.md ./
 
-# Create necessary directories
-RUN mkdir -p /app/results /app/reports /app/logs && \
+# Create necessary directories with proper permissions
+RUN mkdir -p /app/results /app/reports /app/logs /app/cli/results /app/cli/data && \
     chown -R scorpion:scorpion /app
 
 # Switch to non-root user
 USER scorpion
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:3001/api/health || exit 1
 
-# Environment variables
-ENV NODE_ENV=production
-ENV PORT=3001
-ENV HOST=0.0.0.0
+# Environment variables with secure defaults
+ENV NODE_ENV=production \
+    PORT=3001 \
+    HOST=0.0.0.0 \
+    EASY_LOGIN=true \
+    SCORPION_ADMIN_USER=admin \
+    SCORPION_ADMIN_PASSWORD=admin
 
-# Expose port
-EXPOSE 3001
+# Expose ports (API and Vite if needed)
+EXPOSE 3001 5173
 
 # Start the application
-CMD ["node", "server/simple-web-server.js"]
+CMD ["node", "server/clean-server.js"]

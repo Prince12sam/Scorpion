@@ -1,0 +1,57 @@
+# Scorpion Security Platform - Windows Docker Container
+# For Windows Server containers (requires Windows Server 2019+ or Windows 10/11 Pro with containers)
+
+FROM mcr.microsoft.com/windows/servercore:ltsc2022 AS base
+
+# Install Chocolatey package manager
+RUN powershell -Command \
+    Set-ExecutionPolicy Bypass -Scope Process -Force; \
+    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; \
+    iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+# Install Node.js and other dependencies
+RUN choco install -y nodejs-lts curl wget nmap git python3
+
+WORKDIR C:\\app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies
+RUN npm ci --only=production && npm cache clean --force
+
+# Build stage
+FROM base AS builder
+COPY . .
+RUN npm ci
+RUN npm run build
+
+# Production stage
+FROM base AS production
+
+# Copy built application
+COPY --from=builder C:\\app\\dist C:\\app\\dist\\
+COPY --from=builder C:\\app\\cli C:\\app\\cli\\
+COPY --from=builder C:\\app\\server C:\\app\\server\\
+COPY --from=builder C:\\app\\package*.json C:\\app\\
+COPY --from=builder C:\\app\\node_modules C:\\app\\node_modules\\
+
+# Create directories
+RUN powershell -Command New-Item -ItemType Directory -Force -Path C:\\app\\logs, C:\\app\\reports, C:\\app\\results, C:\\app\\cli\\results, C:\\app\\cli\\data
+
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=3001
+ENV EASY_LOGIN=true
+ENV SCORPION_ADMIN_USER=admin
+ENV SCORPION_ADMIN_PASSWORD=admin
+
+# Expose port
+EXPOSE 3001
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD powershell -Command "try { Invoke-WebRequest -Uri http://localhost:3001/api/health -UseBasicParsing -TimeoutSec 5 | Out-Null; exit 0 } catch { exit 1 }"
+
+# Start application
+CMD ["node", "server\\clean-server.js"]
