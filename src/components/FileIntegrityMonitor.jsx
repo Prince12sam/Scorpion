@@ -63,7 +63,8 @@ const AIPentestAgent = () => {
     setIsAgentRunning(true);
     setAgentLogs([]);
     setScanProgress(0);
-    addLog(`🤖 AI Pentesting Agent initialized`, 'success');
+    addLog(`🤖 AI Pentesting Agent initialized - REAL MODE`, 'success');
+    addLog(`⚠️  WARNING: Using REAL exploitation techniques`, 'warning');
     addLog(`🎯 Target: ${targetIp} | Mode: ${attackMode}`, 'info');
 
     try {

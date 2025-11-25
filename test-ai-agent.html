@@ -320,12 +320,12 @@
                 // Phase 2: Enumeration
                 log('full-result', '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'info');
                 log('full-result', '🌐 Phase 2: Enumeration...', 'info');
-                const enum = await fetch(`${API_BASE}/ai-pentest/enumerate`, {
+                const enumResponse = await fetch(`${API_BASE}/ai-pentest/enumerate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ target, ports: '80,443,22,3001' })
                 });
-                const enumData = await enum.json();
+                const enumData = await enumResponse.json();
                 log('full-result', `✅ Found ${enumData.openPorts?.length || 0} open ports`, 'success');
 
                 // Phase 3: Vulnerability Discovery
