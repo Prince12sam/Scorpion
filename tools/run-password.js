@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { PasswordSecurity } from '../cli/lib/password-security.js';
+import { resolveSafePath, ensureSafeDirectory } from '../cli/lib/path-guard.js';
 
 function parseArgs(argv){
   const a={ mode:'help', hashFile:'', wordlist:'', email:'', password:'', out:'reports' };
@@ -35,12 +36,14 @@ function mdStrength(r){ const l=[]; l.push(`# Scorpion Password Strength`,''); l
 async function main(){
   const args=parseArgs(process.argv); if(args.mode==='help'){ help(); process.exit(0); }
   const ps=new PasswordSecurity();
-  const outDir = args.out || 'reports';
+  const outputRoot = ensureSafeDirectory(args.out || 'reports', { description: 'output directory' });
   const stamp = Date.now();
   if(args.mode==='crack'){
     if(!args.hashFile){ help(); process.exit(1); }
-    const res = await ps.crackHashes(args.hashFile, args.wordlist || null);
-    const base = path.join(outDir, `password_crack_${stamp}`);
+    const hashFilePath = resolveSafePath(args.hashFile, { mustExist: true, description: 'hash file' });
+    const wordlistPath = args.wordlist ? resolveSafePath(args.wordlist, { mustExist: true, description: 'wordlist file' }) : null;
+    const res = await ps.crackHashes(hashFilePath, wordlistPath);
+    const base = path.join(outputRoot, `password_crack_${stamp}`);
     writeOut(base, res, mdCrack(res));
     console.log('✅ Crack results:', `${base}.json`);
     return;
@@ -48,7 +51,7 @@ async function main(){
   if(args.mode==='breach'){
     if(!args.email){ help(); process.exit(1); }
     const res = await ps.checkBreach(args.email);
-    const base = path.join(outDir, `password_breach_${stamp}`);
+    const base = path.join(outputRoot, `password_breach_${stamp}`);
     writeOut(base, res, mdBreach(res));
     console.log('✅ Breach results:', `${base}.json`);
     return;
@@ -56,7 +59,7 @@ async function main(){
   if(args.mode==='strength'){
     if(!args.password){ help(); process.exit(1); }
     const res = ps.analyzePasswordStrength(args.password);
-    const base = path.join(outDir, `password_strength_${stamp}`);
+    const base = path.join(outputRoot, `password_strength_${stamp}`);
     writeOut(base, res, mdStrength(res));
     console.log('✅ Strength results:', `${base}.json`);
     return;

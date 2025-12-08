@@ -11,11 +11,16 @@ export class PasswordSecurity {
   constructor() {
     this.commonPasswords = null;
     this.breachDatabase = null;
+    this.allowLegacyHashing = String(process.env.SCORPION_ALLOW_LEGACY_HASHING || '').toLowerCase() === 'true';
+    if (!this.allowLegacyHashing) {
+      console.log('ℹ️  Legacy hash cracking (MD5/SHA1) disabled. Set SCORPION_ALLOW_LEGACY_HASHING=true to enable.');
+    }
+
     // Legacy hash methods for cracking existing hashes - DO NOT USE FOR NEW PASSWORDS
     this.hashMethods = {
-      // DEPRECATED - Only for hash cracking
-      md5: (data) => crypto.createHash('md5').update(data).digest('hex'),
-      sha1: (data) => crypto.createHash('sha1').update(data).digest('hex'),
+      // DEPRECATED - Only for hash cracking (requires explicit opt-in)
+      md5: (data) => this.digestLegacy('MD5', data),
+      sha1: (data) => this.digestLegacy('SHA-1', data),
       // SECURE - Use for new password hashing
       sha256: (data) => crypto.createHash('sha256').update(data).digest('hex'),
       sha512: (data) => crypto.createHash('sha512').update(data).digest('hex')
@@ -83,6 +88,10 @@ export class PasswordSecurity {
       // Read hash file
       const hashData = await fs.readFile(hashFile, 'utf8');
       const hashes = this.parseHashFile(hashData);
+
+      if (!this.allowLegacyHashing && hashes.some(h => h.hash_type === 'MD5' || h.hash_type === 'SHA1')) {
+        throw new Error('Detected MD5/SHA1 hashes but SCORPION_ALLOW_LEGACY_HASHING is not enabled.');
+      }
       
       console.log(`Found ${hashes.length} hashes to crack`);
       
@@ -245,71 +254,79 @@ export class PasswordSecurity {
         return result; // Unsupported hash type
     }
 
-    // Try dictionary attack
-    for (const password of wordlist) {
-      let testHash;
-      
-      if (hashInfo.salt) {
-        // Try different salt positions
-        testHash = hashFunction(password + hashInfo.salt); // Salt after
-        if (testHash === hashInfo.hash) {
-          result.cracked = true;
-          result.password = password;
-          result.method = 'dictionary_salted';
-          return result;
-        }
-        
-        testHash = hashFunction(hashInfo.salt + password); // Salt before
-        if (testHash === hashInfo.hash) {
-          result.cracked = true;
-          result.password = password;
-          result.method = 'dictionary_salted';
-          return result;
-        }
-      } else {
-        testHash = hashFunction(password);
-        if (testHash === hashInfo.hash) {
-          result.cracked = true;
-          result.password = password;
-          result.method = 'dictionary';
-          return result;
-        }
-      }
+    if (!hashFunction) {
+      return result;
     }
 
-    // Try common transformations
-    for (const password of wordlist.slice(0, 100)) { // Limit for performance
-      const transformations = this.generatePasswordTransformations(password);
-      
-      for (const transformed of transformations) {
-        let testHash;
-        
+    const compute = async (value) => {
+      const output = await hashFunction(value);
+      return typeof output === 'string' ? output.toLowerCase() : output;
+    };
+
+    try {
+      // Try dictionary attack
+      for (const password of wordlist) {
         if (hashInfo.salt) {
-          testHash = hashFunction(transformed + hashInfo.salt);
-          if (testHash === hashInfo.hash) {
+          const after = await compute(password + hashInfo.salt);
+          if (after === hashInfo.hash) {
             result.cracked = true;
-            result.password = transformed;
-            result.method = 'dictionary_transformed_salted';
+            result.password = password;
+            result.method = 'dictionary_salted';
             return result;
           }
-          
-          testHash = hashFunction(hashInfo.salt + transformed);
-          if (testHash === hashInfo.hash) {
+
+          const before = await compute(hashInfo.salt + password);
+          if (before === hashInfo.hash) {
             result.cracked = true;
-            result.password = transformed;
-            result.method = 'dictionary_transformed_salted';
+            result.password = password;
+            result.method = 'dictionary_salted';
             return result;
           }
         } else {
-          testHash = hashFunction(transformed);
-          if (testHash === hashInfo.hash) {
+          const candidate = await compute(password);
+          if (candidate === hashInfo.hash) {
             result.cracked = true;
-            result.password = transformed;
-            result.method = 'dictionary_transformed';
+            result.password = password;
+            result.method = 'dictionary';
             return result;
           }
         }
       }
+
+      // Try common transformations
+      for (const password of wordlist.slice(0, 100)) { // Limit for performance
+        const transformations = this.generatePasswordTransformations(password);
+        
+        for (const transformed of transformations) {
+          if (hashInfo.salt) {
+            const after = await compute(transformed + hashInfo.salt);
+            if (after === hashInfo.hash) {
+              result.cracked = true;
+              result.password = transformed;
+              result.method = 'dictionary_transformed_salted';
+              return result;
+            }
+            
+            const before = await compute(hashInfo.salt + transformed);
+            if (before === hashInfo.hash) {
+              result.cracked = true;
+              result.password = transformed;
+              result.method = 'dictionary_transformed_salted';
+              return result;
+            }
+          } else {
+            const candidate = await compute(transformed);
+            if (candidate === hashInfo.hash) {
+              result.cracked = true;
+              result.password = transformed;
+              result.method = 'dictionary_transformed';
+              return result;
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.warn(`Legacy hash computation failed for ${hashInfo.hash_type}:`, error.message);
     }
 
     return result;
@@ -621,16 +638,23 @@ export class PasswordSecurity {
   }
 
   // Generate demonstration of secure vs insecure hashing
-  demonstrateHashingSecurity(password) {
+  async demonstrateHashingSecurity(password) {
     console.log('\n🔍 Password Hashing Security Demonstration');
     console.log('==========================================');
     
     // Insecure methods (for educational purposes)
     console.log('\n❌ INSECURE METHODS (DO NOT USE):');
-    const md5Hash = this.hashMethods.md5(password);
-    const sha1Hash = this.hashMethods.sha1(password);
-    console.log(`MD5:  ${md5Hash} (Vulnerable to rainbow tables)`);
-    console.log(`SHA1: ${sha1Hash} (Vulnerable to rainbow tables)`);
+    let md5Hash = null;
+    let sha1Hash = null;
+    if (this.allowLegacyHashing) {
+      md5Hash = await this.hashMethods.md5(password);
+      sha1Hash = await this.hashMethods.sha1(password);
+      console.log(`MD5:  ${md5Hash} (Vulnerable to rainbow tables)`);
+      console.log(`SHA1: ${sha1Hash} (Vulnerable to rainbow tables)`);
+    } else {
+      console.log('MD5:  disabled (set SCORPION_ALLOW_LEGACY_HASHING=true to demonstrate).');
+      console.log('SHA1: disabled (set SCORPION_ALLOW_LEGACY_HASHING=true to demonstrate).');
+    }
     
     // Secure methods
     console.log('\n✅ SECURE METHODS (RECOMMENDED):');
@@ -666,5 +690,14 @@ export class PasswordSecurity {
     } catch (error) {
       console.error('Failed to save cracking results:', error.message);
     }
+  }
+
+  async digestLegacy(algorithm, data) {
+    if (!this.allowLegacyHashing) {
+      throw new Error(`Legacy hashing disabled. Unable to compute ${algorithm}.`);
+    }
+    const buffer = Buffer.isBuffer(data) ? data : Buffer.from(String(data), 'utf8');
+    const digest = await crypto.webcrypto.subtle.digest(algorithm, buffer);
+    return Buffer.from(digest).toString('hex');
   }
 }
