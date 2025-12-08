@@ -332,16 +332,47 @@ export class SubdomainTakeover {
   }
 
   /**
-   * Enumerate common subdomains
+   * Enumerate common subdomains and filter to only existing ones
    */
   async enumerateCommonSubdomains(domain) {
     const commonPrefixes = [
       'www', 'mail', 'remote', 'blog', 'webmail', 'server', 'ns1', 'ns2',
       'smtp', 'secure', 'vpn', 'admin', 'portal', 'api', 'dev', 'staging',
-      'test', 'demo', 'app', 'cdn', 'static', 'assets', 'media', 'images'
+      'test', 'demo', 'app', 'cdn', 'static', 'assets', 'media', 'images',
+      'ftp', 'cpanel', 'webdisk', 'docs', 'store', 'shop', 'beta', 'old'
     ];
 
-    return commonPrefixes.map(prefix => `${prefix}.${domain}`);
+    console.log(chalk.cyan(`[*] Discovering active subdomains for ${domain}...`));
+    const activeSubdomains = [];
+
+    // Check each subdomain to see if it actually exists
+    for (const prefix of commonPrefixes) {
+      const subdomain = `${prefix}.${domain}`;
+      try {
+        // Try DNS resolution first (faster)
+        await resolve4(subdomain);
+        activeSubdomains.push(subdomain);
+        console.log(chalk.green(`  [✓] Found active subdomain: ${subdomain}`));
+      } catch (error) {
+        // If A record fails, try CNAME
+        try {
+          await resolveCname(subdomain);
+          activeSubdomains.push(subdomain);
+          console.log(chalk.green(`  [✓] Found subdomain with CNAME: ${subdomain}`));
+        } catch {
+          // Subdomain doesn't exist, skip it
+          console.log(chalk.gray(`  [-] Not found: ${subdomain}`));
+        }
+      }
+    }
+
+    if (activeSubdomains.length === 0) {
+      console.log(chalk.yellow(`\n  [!] No active subdomains found. Testing main domain only.`));
+      return [domain];
+    }
+
+    console.log(chalk.cyan(`\n  [*] Found ${activeSubdomains.length} active subdomain(s)\n`));
+    return activeSubdomains;
   }
 
   /**
