@@ -1,0 +1,138 @@
+{
+  "path": "./server",
+  "created": "2025-11-26T08:53:55.727Z",
+  "files": {
+    "server\\index.js": {
+      "path": "server\\index.js",
+      "size": 51880,
+      "hash": "d540c475e69f18fdf7295a5bbb6d8b15aef40d50296eb8c6468a9383106fbc42",
+      "modified": "2025-10-22T03:46:24.000Z",
+      "created": "2025-09-18T08:28:05.190Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\simple-server.js": {
+      "path": "server\\simple-server.js",
+      "size": 8210,
+      "hash": "b8d5c0aea3bff6c49436573ff6c1f338bc9bcf3431a7bac94f99cb5a4051186d",
+      "modified": "2025-09-29T03:43:50.000Z",
+      "created": "2025-09-28T15:56:51.140Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\enterprise-server.js": {
+      "path": "server\\enterprise-server.js",
+      "size": 39831,
+      "hash": "8cf42a94c3cb1f28744d018b4f2cb39434324c2294285c4069bc4c4e7ba92f84",
+      "modified": "2025-10-09T13:44:26.000Z",
+      "created": "2025-09-28T17:12:46.140Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\enterprise-hardened-server.js": {
+      "path": "server\\enterprise-hardened-server.js",
+      "size": 33810,
+      "hash": "a01b06698b41a8c2dbe36ff87e620d99cf67500299365fa49788737cc5e1d93a",
+      "modified": "2025-10-10T09:37:48.000Z",
+      "created": "2025-09-28T17:32:24.980Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\working-server.js": {
+      "path": "server\\working-server.js",
+      "size": 4329,
+      "hash": "de85992700397bc2ea8aafd029c60763c774e0804a41e879e8de67259a43881e",
+      "modified": "2025-09-29T07:20:32.000Z",
+      "created": "2025-09-29T06:42:44.530Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\quick-server.js": {
+      "path": "server\\quick-server.js",
+      "size": 15244,
+      "hash": "0d8f88b90f92171af88343cb88d018b18364236456c07d629fb09fed4aff007b",
+      "modified": "2025-10-01T19:14:38.000Z",
+      "created": "2025-09-29T07:21:34.750Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\live-threat-tracer.js": {
+      "path": "server\\live-threat-tracer.js",
+      "size": 20989,
+      "hash": "baad78077ac84ac9ee8c75f6f4d0094f64cb721596f929fb1dbbafb320c4c43e",
+      "modified": "2025-09-29T18:58:18.000Z",
+      "created": "2025-09-29T16:21:40.520Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\clean-server.js": {
+      "path": "server\\clean-server.js",
+      "size": 58839,
+      "hash": "37a6a990f29ade0d455992dc333f17bcb39d5973bebc3db0fe36f38243144892",
+      "modified": "2025-11-26T08:52:06.000Z",
+      "created": "2025-10-01T19:10:19.230Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\fixed-server.js": {
+      "path": "server\\fixed-server.js",
+      "size": 12542,
+      "hash": "c92091c47ab9341f37b5c339e5d7d99dfce590ed0ba405b491a86d182e506111",
+      "modified": "2025-10-01T20:09:18.000Z",
+      "created": "2025-10-01T20:06:44.190Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\production-server-backup.js": {
+      "path": "server\\production-server-backup.js",
+      "size": 24275,
+      "hash": "65e24a3d228d77da13a3735c6fe3bf53b04035349c74542a626659a2ae6e3587",
+      "modified": "2025-10-09T13:04:30.000Z",
+      "created": "2025-10-02T03:00:41.430Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\production-server.js": {
+      "path": "server\\production-server.js",
+      "size": 29058,
+      "hash": "de08073867e7da1b3d610e10d44c0e69e4f443b77df384e901ed010b7c46fb28",
+      "modified": "2025-10-09T13:04:30.000Z",
+      "created": "2025-10-02T03:03:59.610Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\data\\state.json": {
+      "path": "server\\data\\state.json",
+      "size": 6243,
+      "hash": "0752aae2cb0fce5f31e860bcd1b5cc1e6a5856e271337665990dd4804f9cd9d6",
+      "modified": "2025-11-26T08:53:40.000Z",
+      "created": "2025-10-10T11:24:53.380Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    },
+    "server\\simple-web-server.js": {
+      "path": "server\\simple-web-server.js",
+      "size": 21547,
+      "hash": "305a74e1fbef3688407574131fa5c11671d28aafb3c87145bacc52be85f09b9b",
+      "modified": "2025-11-03T02:42:52.000Z",
+      "created": "2025-10-22T03:31:00.550Z",
+      "permissions": "100666",
+      "uid": 0,
+      "gid": 0
+    }
+  },
+  "totalFiles": 13,
+  "totalSize": 326797
+}

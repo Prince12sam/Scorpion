@@ -8,6 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import os from 'node:os';
 import { SecurityScanner } from '../cli/lib/scanner.js';
+import { ensureSafeDirectory } from '../cli/lib/path-guard.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,10 +32,6 @@ function printHelp() {
   console.log(`\nScorpion Local Scanner (No Hosting Required)\n\n` +
     `Usage:\n  node tools/run-scan.js --target <host|ip> [--type quick|normal|deep] [--ports 1-1000] [--technique tcp-connect|syn] [--out reports]\n\n` +
     `Examples:\n  node tools/run-scan.js --target 127.0.0.1\n  node tools/run-scan.js -t example.com -y deep -p 1-65535 -k tcp-connect -o reports\n`);
-}
-
-function ensureDir(dir) {
-  fs.mkdirSync(dir, { recursive: true });
 }
 
 function toMarkdown(result) {
@@ -103,9 +100,9 @@ async function main() {
   }
 
   // Write outputs
-  ensureDir(args.out);
+  const outputRoot = ensureSafeDirectory(args.out || 'reports', { description: 'output directory' });
   const stamp = Date.now();
-  const base = path.join(args.out, `scan_${stamp}`);
+  const base = path.join(outputRoot, `scan_${stamp}`);
 
   try {
     fs.writeFileSync(`${base}.json`, JSON.stringify(result, null, 2), 'utf8');

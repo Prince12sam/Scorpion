@@ -13,6 +13,9 @@ import { ExploitFramework } from './lib/exploit-framework.js';
 import { EnterpriseVulnScanner } from './lib/enterprise-vuln-scanner.js';
 import { InternalNetworkTester } from './lib/internal-network-tester.js';
 import { AutonomousPenTester } from './lib/ai-autonomous-pentester.js';
+import { SubdomainTakeover } from './lib/subdomain-takeover.js';
+import { APISecurityTester } from './lib/api-security.js';
+import { SSLTLSAnalyzer } from './lib/ssl-analyzer.js';
 
 dotenv.config();
 
@@ -20,8 +23,8 @@ const program = new Command();
 
 program
 	.name('scorpion')
-	.description('Scorpion - Global Threat-Hunting Platform CLI (discovery-only)')
-	.version('1.0.0');
+	.description('Scorpion - CLI Security Testing & Threat-Hunting Platform')
+	.version('2.0.1');
 
 const banner = `
 ${chalk.red('╔═══════════════════════════════════════════════════════════════╗')}
@@ -252,21 +255,9 @@ program
 			}
 		} catch (error) {
 			spinner.fail(`Exploitation failed: ${error.message}`);
-			process.exit(1);
-		}
-	});
-
-// Web Interface
-program
-	.command('web')
-	.description('Start web interface')
-	.option('-p, --port <port>', 'Port number', '3000')
-	.option('--host <host>', 'Host address', 'localhost')
-	.action(async (options) => {
-		console.log(chalk.cyan(`🌐 Starting web interface on http://${options.host}:${options.port}`));
-		const { startWebServer } = await import('../server/index.js');
-		await startWebServer(options.port, options.host);
-	});
+		process.exit(1);
+	}
+});
 
 // ====== ENTERPRISE SECURITY COMMANDS ======
 program
@@ -500,6 +491,132 @@ program
 			}
 		} catch (error) {
 			spinner.fail('AI Autonomous Penetration Test failed');
+			console.error(chalk.red(`❌ Error: ${error.message}`));
+			process.exit(1);
+		}
+	});
+
+// Subdomain Takeover Detection
+program
+	.command('takeover')
+	.description('🔍 Detect subdomain takeover vulnerabilities')
+	.option('-t, --target <domain>', 'Target domain to check')
+	.option('--subdomains <file>', 'File containing list of subdomains to check')
+	.option('--check-aws', 'Check specifically for AWS S3 takeovers')
+	.option('--check-azure', 'Check specifically for Azure takeovers')
+	.option('-o, --output <file>', 'Output results to file')
+	.action(async (options) => {
+		if (!options.target) {
+			console.log(chalk.red('❌ Error: Target domain is required'));
+			process.exit(1);
+		}
+
+		const spinner = ora(`Scanning for subdomain takeover vulnerabilities on ${options.target}`).start();
+
+		try {
+			const takeover = new SubdomainTakeover();
+			let results;
+
+			if (options.checkAws) {
+				spinner.text = 'Checking AWS S3 configuration...';
+				results = await takeover.checkAWSS3(options.target);
+			} else if (options.checkAzure) {
+				spinner.text = 'Checking Azure configuration...';
+				results = await takeover.checkAzure(options.target);
+			} else if (options.subdomains) {
+				spinner.text = 'Loading subdomain list...';
+				const subdomainList = (await fs.readFile(options.subdomains, 'utf-8'))
+					.split('\n')
+					.filter(line => line.trim())
+					.map(line => line.trim());
+				spinner.text = `Checking ${subdomainList.length} subdomains...`;
+				results = await takeover.scanSubdomains(options.target, subdomainList);
+			} else {
+				spinner.text = 'Enumerating and checking common subdomains...';
+				results = await takeover.scanSubdomains(options.target);
+			}
+
+			spinner.succeed('Subdomain takeover scan completed');
+
+			if (options.output) {
+				const outputPath = options.output.endsWith('.json') ? options.output : `${options.output}.json`;
+				await fs.writeFile(outputPath, JSON.stringify(results, null, 2));
+				console.log(chalk.blue(`\n💾 Results saved to: ${outputPath}`));
+			}
+		} catch (error) {
+			spinner.fail('Subdomain takeover scan failed');
+			console.error(chalk.red(`❌ Error: ${error.message}`));
+			process.exit(1);
+		}
+	});
+
+// API Security Testing
+program
+	.command('api-test')
+	.description('🔐 Test API security (REST, GraphQL, OpenAPI/Swagger)')
+	.option('-t, --target <url>', 'Target API base URL')
+	.option('--no-discover', 'Skip API endpoint discovery')
+	.option('--no-swagger', 'Skip OpenAPI/Swagger testing')
+	.option('--no-graphql', 'Skip GraphQL testing')
+	.option('--no-auth', 'Skip authentication testing')
+	.option('--no-authz', 'Skip authorization/IDOR testing')
+	.option('--no-rate-limit', 'Skip rate limiting tests')
+	.option('--no-validation', 'Skip input validation tests')
+	.option('-o, --output <file>', 'Output results to file')
+	.action(async (options) => {
+		if (!options.target) {
+			console.log(chalk.red('❌ Error: Target API URL is required'));
+			process.exit(1);
+		}
+
+		const spinner = ora(`Testing API security for ${options.target}`).start();
+
+		try {
+			const apiTester = new APISecurityTester();
+			const results = await apiTester.testAPI(options.target, options);
+
+			spinner.succeed('API security testing completed');
+
+			if (options.output) {
+				const outputPath = options.output.endsWith('.json') ? options.output : `${options.output}.json`;
+				await fs.writeFile(outputPath, JSON.stringify(results, null, 2));
+				console.log(chalk.blue(`\n💾 Results saved to: ${outputPath}`));
+			}
+		} catch (error) {
+			spinner.fail('API security testing failed');
+			console.error(chalk.red(`❌ Error: ${error.message}`));
+			process.exit(1);
+		}
+	});
+
+// SSL/TLS Analysis
+program
+	.command('ssl-analyze')
+	.description('🔒 Deep SSL/TLS security analysis')
+	.option('-t, --target <host>', 'Target hostname')
+	.option('-p, --port <port>', 'Target port (default: 443)', '443')
+	.option('-o, --output <file>', 'Output results to file')
+	.action(async (options) => {
+		if (!options.target) {
+			console.log(chalk.red('❌ Error: Target hostname is required'));
+			process.exit(1);
+		}
+
+		const spinner = ora(`Analyzing SSL/TLS for ${options.target}:${options.port}`).start();
+
+		try {
+			const sslAnalyzer = new SSLTLSAnalyzer();
+			const results = await sslAnalyzer.analyze(options.target, parseInt(options.port));
+
+			spinner.succeed('SSL/TLS analysis completed');
+
+			if (options.output) {
+				const outputPath = options.output.endsWith('.json') ? options.output : `${options.output}.json`;
+				await fs.writeFile(outputPath, JSON.stringify(results, null, 2));
+				console.log(chalk.blue(`\n💾 Results saved to: ${outputPath}`));
+			}
+		} catch (error) {
+			spinner.fail('SSL/TLS analysis failed');
 			console.error(chalk.red(`❌ Error: ${error.message}`));
 			process.exit(1);
 		}
