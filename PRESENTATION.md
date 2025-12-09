@@ -164,7 +164,7 @@ scorpion ssl-analyze -t example.com
 
 ### 18+ Non-Destructive Security Probes
 ```bash
-scorpion exploit -t example.com --payload owasp-top10
+scorpion suite example.com --profile web --mode active --output-dir results  # Python alternative
 ```
 
 **Tests Include:**
@@ -187,8 +187,7 @@ scorpion exploit -t example.com --payload owasp-top10
 
 ### Real-Time Threat Analysis
 ```bash
-scorpion threat-intel --ip 8.8.8.8
-scorpion threat-intel --domain example.com
+Use external TI tools (VirusTotal/AbuseIPDB/Shodan) for reputation checks.
 ```
 
 **Integrated Sources:**

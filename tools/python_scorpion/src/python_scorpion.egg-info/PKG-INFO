@@ -1,0 +1,55 @@
+Metadata-Version: 2.4
+Name: python-scorpion
+Version: 0.1.0
+Summary: Scorpion security toolkit (Python heavy-weight variant)
+Author: Scorpion Team
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: typer>=0.12.0
+Requires-Dist: rich>=13.7.0
+Requires-Dist: httpx>=0.27.0
+Requires-Dist: dnspython>=2.6.1
+Requires-Dist: cryptography>=43.0.0
+Requires-Dist: uvloop>=0.20.0; platform_system != "Windows"
+
+# Python Scorpion (Heavy-weight)
+
+A Python-based, high-concurrency variant of the Scorpion security toolkit.
+
+## Features (initial)
+- Async TCP port scanner (fast, concurrent)
+- TLS/SSL analyzer (cert expiry, cipher, TLS version, HSTS)
+- Rich CLI output and JSON export
+
+## Install (Windows PowerShell)
+
+```powershell
+# From repo root
+cd "c:\Users\prince.sam_dubizzle\Downloads\open_project\tools\python_scorpion"
+
+# Create venv
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+
+# Install requirements
+pip install -U pip; pip install typer rich httpx dnspython cryptography
+
+# Editable install
+pip install -e .
+
+# Verify CLI
+scorpion --help
+```
+
+## Usage
+
+```powershell
+# Port scan 1-1024 with concurrency 300
+scorpion scan dubizzle.com --ports 1-1024 --concurrency 300 --timeout 1.0
+
+# TLS/SSL analysis and save report
+scorpion ssl-analyze google.com --port 443 --output ssl_google.json
+```
+
+## Notes
+- On Windows, `uvloop` is skipped automatically.
+- Some lint warnings in the editor will resolve once dependencies are installed in the active interpreter.

@@ -1,0 +1,6 @@
+{
+  "target": "example.com",
+  "endpoint": "https://example.com",
+  "detected": [],
+  "counts": 0
+}

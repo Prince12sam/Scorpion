@@ -1,0 +1,2 @@
+[console_scripts]
+scorpion = python_scorpion.cli:app

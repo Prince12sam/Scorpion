@@ -22,9 +22,7 @@ chmod +x install.sh
 ### Core Commands
 - `scorpion scan` - Vulnerability scanning with stealth modes
 - `scorpion recon` - Network reconnaissance and discovery  
-- `scorpion threat-intel` - Threat intelligence lookups
-- `scorpion exploit` - OWASP Top 10 exploit testing
-- `scorpion enterprise-scan` - Comprehensive enterprise assessment
+Python-first: use `scorpion` CLI for all commands. Legacy Node CLI has been removed.
 - `scorpion internal-test` - Internal network security testing
 - `scorpion ai-pentest` - AI-powered autonomous penetration testing
 - `scorpion help-advanced` - View advanced capabilities
@@ -40,7 +38,7 @@ scorpion --help
 
 # Show help for specific command
 scorpion scan --help
-scorpion exploit --help
+scorpion --help  # Python CLI help
 ```
 
 ### Vulnerability Scanning
@@ -76,52 +74,50 @@ scorpion recon -t example.com --dns --ports
 ### Exploit Testing
 ```bash
 # OWASP Top 10 testing
-scorpion exploit -t example.com --payload owasp-top10
+scorpion suite example.com --profile web --mode active --output-dir results  # Python alternative (safe active checks)
 
 # Specific vulnerability types
-scorpion exploit -t example.com --payload sql-injection
-scorpion exploit -t example.com --payload xss
-scorpion exploit -t example.com --payload ssrf
+scorpion suite example.com --profile web --mode active --output-dir results
 
 # Cloud exploits
-scorpion exploit -t example.com --payload aws
-scorpion exploit -t example.com --payload cloud
+scorpion suite example.com --profile full --mode active --output-dir results
 
 # All payloads
-scorpion exploit -t example.com --payload all
+scorpion suite example.com --profile full --output-dir results
 ```
 
 ### Threat Intelligence
 ```bash
 # Check IP reputation
-scorpion threat-intel -i 8.8.8.8
+Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
 
 # Check domain
-scorpion threat-intel -d suspicious-domain.com
+Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
 
 # Check file hash
-scorpion threat-intel -h d41d8cd98f00b204e9800998ecf8427e
+Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
 
 # List IOCs
-scorpion threat-intel --ioc
+Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
 ```
 
 ### Enterprise Assessment
 ```bash
 # Scan network range
-scorpion enterprise-scan -t 192.168.1.0/24
+scorpion suite 192.168.1.0/24 --profile full --output-dir results  # Python replacement
 
 # Multiple targets
-scorpion enterprise-scan -t 192.168.1.1 192.168.1.2
+scorpion suite 192.168.1.1 --profile full --output-dir results  # run per target
+scorpion suite 192.168.1.2 --profile full --output-dir results
 
 # Deep analysis
-scorpion enterprise-scan -t 192.168.1.0/24 --deep
+scorpion suite 192.168.1.0/24 --profile full --mode active --output-dir results
 
 # Compliance check
-scorpion enterprise-scan -t 192.168.1.0/24 --compliance PCI-DSS HIPAA
+scorpion suite 192.168.1.0/24 --profile full --output-dir results  # map to suite/report
 
 # Safe mode (no exploits)
-scorpion enterprise-scan -t 192.168.1.0/24 --safe
+scorpion suite 192.168.1.0/24 --profile full --safe-mode --output-dir results
 ```
 
 ### Internal Network Testing
@@ -178,7 +174,7 @@ SHODAN_API_KEY=your_key
 scorpion scan -t example.com -o results.json
 
 # Specify output file
-scorpion exploit -t example.com --payload owasp-top10 -o exploits.json
+scorpion suite example.com --profile web --mode active --output-dir results
 ```
 
 ## Advanced Usage
@@ -204,10 +200,10 @@ scorpion recon -t target.com --dns --whois --subdomain
 scorpion scan -t target.com --type deep --stealth high -o scan.json
 
 # Step 3: Exploit Testing  
-scorpion exploit -t target.com --payload owasp-top10 -o exploits.json
+scorpion suite target.com --profile web --mode active --output-dir results
 
 # Step 4: Threat Intelligence
-scorpion threat-intel -d target.com
+Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
 ```
 
 ### Helper Scripts

@@ -1,0 +1,18 @@
+{
+  "target": "afrimarkethub.store",
+  "dns": {
+    "cname": null,
+    "service": null
+  },
+  "http": {
+    "status_code": 403,
+    "claimable": false
+  },
+  "vulnerable": false,
+  "location": {
+    "dns_record": "CNAME",
+    "evidence": "CNAME=None, service=None, GET http://afrimarkethub.store status=403"
+  },
+  "remediation": [],
+  "severity": "info"
+}

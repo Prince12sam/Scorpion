@@ -1,0 +1,18 @@
+{
+  "github-pages": ["github.io", "pages.github.com"],
+  "heroku": ["herokudns.com"],
+  "netlify": ["netlify.com"],
+  "vercel": ["vercel-dns.com", "zeit-world"],
+  "azure": ["azurewebsites.net", "trafficmanager.net"],
+  "aws-s3": ["s3.amazonaws.com"],
+  "cloudfront": ["cloudfront.net"],
+  "fastly": ["fastly.net"],
+  "wordpress": ["wordpress.com"],
+  "blogger": ["blogspot.com", "googlehosted.com"],
+  "shopify": ["myshopify.com"],
+  "zendesk": ["zendesk.com"],
+  "tumblr": ["tumblr.com"],
+  "bitbucket": ["bitbucket.io"],
+  "readme": ["readme.io"],
+  "surge": ["surge.sh"]
+}

@@ -8,19 +8,18 @@
 
 ### Prerequisites
 
-Parrot OS comes with most tools pre-installed. You just need Node.js:
+Parrot OS comes with most tools pre-installed. You just need Python 3.10+:
 
 ```bash
-# Check if Node.js is installed
-node --version
+# Check if Python is installed
+python3 --version
 
-# If not installed or version < 16, install it:
+# If not installed or version < 3.10, install it:
 sudo apt update
-sudo apt install -y nodejs npm
+sudo apt install -y python3 python3-pip
 
 # Verify installation
-node --version  # Should show v16.0.0 or higher
-npm --version
+python3 --version  # Should show 3.10 or higher
 ```
 
 ---
@@ -37,43 +36,29 @@ git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
 ```
 
-### Step 2: Install Dependencies
+### Step 2: Install Python Scorpion CLI
 
 ```bash
-# Install all required packages
-npm install
+# Install the Python CLI (editable dev install)
+python3 -m pip install --upgrade pip
+python3 -m pip install -e tools/python_scorpion
 ```
 
-This installs:
-- axios (HTTP client)
-- chalk (colored output)
-- commander (CLI framework)
-- crypto-js (cryptography)
-- dotenv (environment variables)
-- node-forge (SSL/TLS toolkit)
-- ora (progress spinners)
-
-### Step 3: Link CLI Globally (Optional)
+### Step 3: Verify CLI
 
 ```bash
-# Make 'scorpion' command available globally
-sudo npm link
-```
-
-**OR** run directly without linking:
-```bash
-# Use node to run directly
-node cli/scorpion.js --help
-```
-
-### Step 4: Verify Installation
-
-```bash
-# If you used npm link:
+# Verify Python CLI is available
+scorpion --help
 scorpion --version
+```
 
-# OR if running directly:
-node cli/scorpion.js --version
+### Step 4: (Optional) Virtualenv
+
+```bash
+# Create and activate a venv for isolation
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -e tools/python_scorpion
 ```
 
 You should see:
@@ -93,11 +78,8 @@ You should see:
 ### Test 1: Basic Scan
 
 ```bash
-# Test with a safe target (your own server or localhost)
-scorpion scan -t scanme.nmap.org --ports 80,443
-
-# OR without npm link:
-node cli/scorpion.js scan -t scanme.nmap.org --ports 80,443
+# Test with placeholders only (do not use unauthorized targets)
+scorpion scan -t example.com --ports 80,443
 ```
 
 ### Test 2: Subdomain Takeover Check
@@ -105,8 +87,8 @@ node cli/scorpion.js scan -t scanme.nmap.org --ports 80,443
 ```bash
 scorpion takeover -t example.com
 
-# OR:
-node cli/scorpion.js takeover -t example.com
+# Output JSON to a file
+scorpion takeover -t example.com -o takeover-results.json
 ```
 
 ### Test 3: API Security Test
@@ -114,8 +96,8 @@ node cli/scorpion.js takeover -t example.com
 ```bash
 scorpion api-test -t https://api.example.com
 
-# OR:
-node cli/scorpion.js api-test -t https://api.example.com
+# Output JSON to a file
+scorpion api-test -t https://api.example.com -o api-report.json
 ```
 
 ### Test 4: SSL/TLS Analysis
@@ -123,57 +105,43 @@ node cli/scorpion.js api-test -t https://api.example.com
 ```bash
 scorpion ssl-analyze -t example.com
 
-# OR:
-node cli/scorpion.js ssl-analyze -t example.com
+# Output JSON to a file
+scorpion ssl-analyze -t example.com -o ssl-report.json
 ```
 
 ---
 
 ## ⚙️ Configuration (Optional)
 
-### Set Up API Keys
+### Set Up Config
 
-Some features work better with API keys (optional but recommended):
+Some features support optional configuration via `.env`:
 
 ```bash
 # Create .env file
 nano .env
 ```
 
-Add your API keys:
+Example `.env`:
 ```env
-# Threat Intelligence API Keys (Optional)
-VIRUSTOTAL_API_KEY=your_virustotal_key_here
-ABUSEIPDB_API_KEY=your_abuseipdb_key_here
-SHODAN_API_KEY=your_shodan_key_here
-
 # Configuration
 DEFAULT_TIMEOUT=5000
 MAX_CONCURRENT_SCANS=100
-DEFAULT_STEALTH_LEVEL=medium
 ```
-
-**Get Free API Keys:**
-- VirusTotal: https://www.virustotal.com/gui/join-us
-- AbuseIPDB: https://www.abuseipdb.com/register
-- Shodan: https://account.shodan.io/register
 
 ---
 
 ## 🔧 Troubleshooting
 
-### Issue 1: Node.js Version Too Old
+### Issue 1: Python/Pip Issues
 
 ```bash
-# Check version
-node --version
+# Ensure Python and pip are present
+python3 --version
+python3 -m pip --version
 
-# If < v16, update using NodeSource:
-curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-sudo apt install -y nodejs
-
-# Verify
-node --version  # Should show v18.x.x or higher
+# Reinstall pip if needed
+sudo apt install -y python3-pip
 ```
 
 ### Issue 2: Permission Errors
@@ -187,14 +155,12 @@ sudo chown -R $USER:$USER /usr/local/lib/node_modules
 npm install
 ```
 
-### Issue 3: npm link Fails
+### Issue 3: CLI Not Found
 
 ```bash
-# Try with sudo:
-sudo npm link
-
-# OR just run directly without linking:
-node cli/scorpion.js --help
+# Ensure install succeeded
+python3 -m pip install -e tools/python_scorpion
+which scorpion
 ```
 
 ### Issue 4: Port Scanning Requires Root
@@ -206,12 +172,12 @@ Some scans need elevated privileges:
 sudo scorpion scan -t example.com -sS -O
 
 # OR:
-sudo node cli/scorpion.js scan -t example.com -sS -O
+sudo scorpion scan -t example.com -sS -O  # Python CLI
 ```
 
 ---
 
-## 📋 All Available Commands
+## 📋 All Available Commands (Python)
 
 ```bash
 # Help
@@ -242,20 +208,14 @@ scorpion ssl-analyze -t example.com
 scorpion ssl-analyze -t example.com -p 8443
 scorpion ssl-analyze -t example.com -o ssl-report.json
 
-# Exploit Testing
-scorpion exploit -t example.com --payload owasp-top10
-scorpion exploit -t example.com --payload sql-injection
+# Web suite (safe active checks)
+scorpion suite example.com --profile web --mode active --output-dir results
 
-# Threat Intelligence
-scorpion threat-intel --ip 8.8.8.8
-scorpion threat-intel --domain example.com
-scorpion threat-intel --hash <file_hash>
-
-# Enterprise Scanning
-scorpion enterprise-scan --targets targets.txt
+# Enterprise Scanning (Python)
+scorpion suite example.com --profile full --output-dir results
 
 # AI-Powered Penetration Testing
-scorpion ai-pentest -t example.com --mode autonomous
+# Use suite/report flow and external tooling
 ```
 
 ---
@@ -268,8 +228,7 @@ scorpion ai-pentest -t example.com --mode autonomous
 # 1. Clone and install
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
-npm install
-sudo npm link
+python3 -m pip install -e tools/python_scorpion
 
 # 2. Run comprehensive tests (replace example.com with your target)
 TARGET="example.com"
@@ -289,8 +248,8 @@ scorpion api-test -t https://api.$TARGET -o api-results.json
 # SSL/TLS analysis
 scorpion ssl-analyze -t $TARGET -o ssl-results.json
 
-# OWASP Top 10 testing
-scorpion exploit -t $TARGET --payload owasp-top10
+# Active-safe web checks (Python)
+scorpion suite $TARGET --profile web --mode active --output-dir results
 
 # View results
 ls -lh *-results.json
@@ -314,8 +273,8 @@ scorpion scan -t $TARGET --ports 80,443
 nikto -h $TARGET
 
 # Use with sqlmap
-scorpion exploit -t $TARGET --payload sql-injection
-sqlmap -u "http://$TARGET/page?id=1"
+scorpion suite $TARGET --profile web --mode active --output-dir results
+sqlmap -u "http://$TARGET/page?id=1"  # with permission only
 ```
 
 ### 2. Run as Regular User
@@ -443,4 +402,4 @@ scorpion scan -t your-target.com --ports 1-1000
 
 **Version**: 2.0.1  
 **Platform**: Parrot OS / Debian / Ubuntu / Kali Linux  
-**Last Updated**: December 8, 2025
+**Last Updated**: December 9, 2025

@@ -129,9 +129,9 @@ scorpion ssl-analyze -t example.com -o ssl-report.json
 ### Core Commands
 1. `scan` - Vulnerability scanning
 2. `recon` - Network reconnaissance
-3. `threat-intel` - Threat intelligence
+3. `threat-intel` - Threat intelligence (legacy Node)
 4. `exploit` - OWASP Top 10 testing
-5. `enterprise-scan` - Enterprise assessment
+5. `suite` - Enterprise assessment
 6. `internal-test` - Internal network testing
 7. `ai-pentest` - AI-powered pentesting
 8. `help-advanced` - Advanced capabilities
@@ -169,7 +169,7 @@ scorpion recon -t target.com --dns --subdomain
 scorpion takeover -t target.com
 scorpion api-test -t https://target.com/api
 scorpion ssl-analyze -t target.com
-scorpion exploit -t target.com --payload owasp-top10
+scorpion suite target.com --profile web --mode active --output-dir results  # Python alternative
 ```
 
 ---

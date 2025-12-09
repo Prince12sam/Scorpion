@@ -1,11 +1,45 @@
 # Scorpion CLI Security Tool 🦂
 
+> Consolidation Notice (Dec 2025)
+>
+> - Primary CLI: Python Scorpion (`scorpion`) — cross‑platform, production‑ready.
+> - Python CLI is the primary and only supported entrypoint.
+> - Feature coverage: Python CLI includes scan, ssl-analyze, takeover, api-test, recon, dirbust, tech, crawl, suite/report, plus cloud, k8s, and container checks with passive/active-safe OWASP coverage.
+> - Safer by default: TLS verification on, no exploit payloads by default; active tests gated by flags.
+> - Linux Quickstart below shows install and test commands across common distros.
+
+Migration guide removed; repository is Python-only.
+
 [![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/Prince12sam/Scorpion)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
 
 **🔒 Professional Command-Line Security Testing & Threat-Hunting Platform**
+
+## Primary CLI: Python Scorpion
+
+- Install: see `tools/python_scorpion/README.md` (or run `pip install -r tools/python_scorpion/requirements.txt` and add `scorpion` to PATH if installed as console script).
+- Key commands:
+  - `scorpion scan|suite|report|ssl-analyze|takeover|api-test|recon|dirbust|tech|crawl|cloud|k8s|container`
+  - Modes: `--mode passive|active`, safety caps: `--safe-mode`, `--max-requests`, `--rate-limit`
+
+### Linux Quickstart
+
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install -y python3 python3-pip git curl
+cd ~/Scorpion
+python3 -m pip install -r tools/python_scorpion/requirements.txt
+
+# Run a passive web suite and generate report
+scorpion --no-banner suite -t example.com --profile web --mode passive --output results/
+latest=$(ls -t results/suite_example.com_*.json | head -n1)
+scorpion --no-banner report --suite "$latest" --output results/suite_example_web_passive.html
+```
+
+> Note: The Node CLI has been removed. Use the Python CLI `scorpion`.
 
 ## 🚀 Quick Start
 
@@ -14,8 +48,7 @@
 ```bash
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
-npm install
-npm link
+python -m pip install -e tools/python_scorpion
 ```
 
 ### Basic Usage
@@ -30,8 +63,10 @@ scorpion scan -t example.com --ports 1-1000
 # Network reconnaissance
 scorpion recon -t example.com --dns --whois
 
-# Run OWASP Top 10 exploits
-scorpion exploit -t example.com --payload owasp-top10
+# Active-safe web checks (Python)
+scorpion suite example.com --profile web --mode active --output-dir results
+# Use Python suite for active-safe checks
+# scorpion suite example.com --profile web --mode active --output-dir results
 ```
 
 ## ✨ Features
@@ -118,7 +153,7 @@ scorpion --help
 # Get help for specific command
 scorpion scan --help
 scorpion recon --help
-scorpion exploit --help
+scorpion --help  # Python CLI help
 
 # Show advanced exploitation capabilities
 scorpion help-advanced
@@ -232,102 +267,98 @@ scorpion ssl-analyze -t api.example.com -p 8080
 scorpion ssl-analyze -t example.com -o ssl-report.json
 ```
 
-### Exploit Testing
+### Exploit Testing (Legacy Node) and Python Alternative
 
 ```bash
 # OWASP Top 10 testing
-scorpion exploit -t example.com --payload owasp-top10
+scorpion-node exploit -t example.com --payload owasp-top10  # legacy
 
 # Test specific vulnerability types
-scorpion exploit -t example.com --payload sql-injection
-scorpion exploit -t example.com --payload xss
-scorpion exploit -t example.com --payload ssrf
+scorpion-node exploit -t example.com --payload sql-injection  # legacy
+scorpion-node exploit -t example.com --payload xss  # legacy
+scorpion-node exploit -t example.com --payload ssrf  # legacy
 
 # Test broken access control
-scorpion exploit -t example.com --payload broken-access-control
+scorpion-node exploit -t example.com --payload broken-access-control  # legacy
 
 # Cloud-specific exploits
-scorpion exploit -t example.com --payload aws
-scorpion exploit -t example.com --payload azure
-scorpion exploit -t example.com --payload gcp
-scorpion exploit -t example.com --payload cloud
+scorpion-node exploit -t example.com --payload aws  # legacy
+scorpion-node exploit -t example.com --payload azure  # legacy
+scorpion-node exploit -t example.com --payload gcp  # legacy
+scorpion-node exploit -t example.com --payload cloud  # legacy
 
 # All available payloads
-scorpion exploit -t example.com --payload all
+scorpion-node exploit -t example.com --payload all  # legacy
 
 # Target specific service
-scorpion exploit -t example.com --service http -p 8080
-scorpion exploit -t example.com --service ssh -p 22
+scorpion-node exploit -t example.com --service http -p 8080  # legacy
+scorpion-node exploit -t example.com --service ssh -p 22  # legacy
 
 # Exploitation modes
-scorpion exploit -t example.com --mode reconnaissance
-scorpion exploit -t example.com --mode proof-of-concept
-scorpion exploit -t example.com --mode full-exploitation
+scorpion-node exploit -t example.com --mode reconnaissance  # legacy
+scorpion-node exploit -t example.com --mode proof-of-concept  # legacy
+scorpion-node exploit -t example.com --mode full-exploitation  # legacy
 
 # Target specific CVE
-scorpion exploit -t example.com --vuln CVE-2021-44228
+scorpion-node exploit -t example.com --vuln CVE-2021-44228  # legacy
 
 # Output results
-scorpion exploit -t example.com --payload owasp-top10 -o exploits.json
+scorpion suite example.com --profile web --mode active --output-dir results
 ```
 
 ### Threat Intelligence
 
 ```bash
 # Check IP reputation
-scorpion threat-intel -i 8.8.8.8
-scorpion threat-intel -i 192.168.1.100
+Use external TI services (e.g., VirusTotal, AbuseIPDB, Shodan) alongside Scorpion outputs.
 
 # Check domain reputation
-scorpion threat-intel -d suspicious-domain.com
-scorpion threat-intel -d malware-site.xyz
+Example: use vendor CLI/APIs. Scorpion does not ship TI lookups.
 
 # Verify file hash (MD5, SHA-1, SHA-256)
-scorpion threat-intel -h 5d41402abc4b2a76b9719d911017c592
-scorpion threat-intel -h d41d8cd98f00b204e9800998ecf8427e
+Example: hash reputation via VirusTotal API.
 
 # List all indicators of compromise
-scorpion threat-intel --ioc
-
-# Multiple lookups
-scorpion threat-intel -i 1.2.3.4 -d example.com
+Threat intel examples removed; see `MIGRATION_NODE_TO_PYTHON.md` for guidance.
 ```
 
-### Enterprise Vulnerability Assessment
+### Enterprise Assessment (Python Suite)
 
 ```bash
 # Comprehensive enterprise scan
-scorpion enterprise-scan -t 192.168.1.0/24
+scorpion suite 192.168.1.0/24 --profile full --output-dir results
 
 # Multiple targets
-scorpion enterprise-scan -t 192.168.1.1 192.168.1.2 192.168.1.3
+scorpion suite 192.168.1.1 --profile full --output-dir results
+scorpion suite 192.168.1.2 --profile full --output-dir results
+scorpion suite 192.168.1.3 --profile full --output-dir results
 
 # Scan from file
-scorpion enterprise-scan -t targets.txt
+echo "Run suite per target in targets.txt"  # one-liner scripting recommended
 
 # Internal network only
-scorpion enterprise-scan -t 10.0.0.0/8 --internal
+scorpion suite 10.0.0.0/8 --profile full --output-dir results
 
 # External network only
-scorpion enterprise-scan -t example.com --external --no-internal
+scorpion suite example.com --profile full --output-dir results
 
 # Deep vulnerability analysis
-scorpion enterprise-scan -t 192.168.1.0/24 --deep
+scorpion suite 192.168.1.0/24 --profile full --mode active --output-dir results
 
 # Authenticated scanning
-scorpion enterprise-scan -t 192.168.1.0/24 --authenticated --credentials creds.json
+echo "Use authenticated checks via environment/headers as appropriate"
 
 # Compliance assessment
-scorpion enterprise-scan -t 192.168.1.0/24 --compliance PCI-DSS HIPAA SOC2
+echo "Map findings to compliance in reports"
 
 # Custom thread count
-scorpion enterprise-scan -t 192.168.1.0/24 --threads 50
+echo "Tune concurrency via --concurrency in Python modules"
 
 # Safe mode (no exploits)
-scorpion enterprise-scan -t 192.168.1.0/24 --safe
+scorpion suite 192.168.1.0/24 --profile full --safe-mode --output-dir results
 
 # Output results
-scorpion enterprise-scan -t 192.168.1.0/24 -o enterprise-results.json
+echo "Suite outputs per target saved under results/"
 ```
 
 ### Internal Network Security Assessment
@@ -416,6 +447,28 @@ scorpion ai-pentest -t example.com \
   --risk-tolerance medium \
   -o results.json
 ```
+
+### Python CLI (Heavy-weight)
+
+The Python high-concurrency variant lives under `tools/python_scorpion` and provides core commands for fast network and web testing.
+
+```powershell
+# Setup (Windows PowerShell)
+cd "c:\Users\prince.sam_dubizzle\Downloads\open_project\tools\python_scorpion"
+py -3.13 -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -U pip
+pip install typer rich httpx dnspython cryptography python-whois
+pip install -e .
+
+# Commands
+scorpion scan dubizzle.com --ports 1-1024 --concurrency 300 --timeout 1.0
+scorpion ssl-analyze dubizzle.com --port 443 --output ..\..\results\ssl_dubizzle_python.json
+scorpion takeover dubizzle.com --output ..\..\results\takeover_dubizzle_python.json
+scorpion api-test dubizzle.com --output ..\..\results\api_dubizzle_python.json
+scorpion recon-cmd dubizzle.com --output ..\..\results\recon_dubizzle_python.json
+```
+
+Outputs follow the enhanced reporting format with Location, Impact, Remediation, and Severity, saved under `results/`.
 
 ### Password Security
 
@@ -520,21 +573,21 @@ scorpion/
 # Comprehensive target assessment
 scorpion recon -t target.com --full
 scorpion scan -t target.com --type deep --stealth ninja
-scorpion exploit -t target.com --payload owasp-top10
+scorpion suite target.com --profile web --mode active --output-dir results
 ```
 
 ### **Security Monitoring**
 ```bash
 # Monitor critical systems with threat intelligence
-scorpion threat-intel -i 192.168.1.100
+Use vendor TI tools (VirusTotal/AbuseIPDB/Shodan) as appropriate.
 scorpion scan -t internal-server.com --type deep
 ```
 
 ### **Threat Hunting**
 ```bash
 # Investigate suspicious indicators
-scorpion threat-intel -i 192.168.1.100
-scorpion threat-intel -d suspicious.com
+scorpion-node threat-intel -i 192.168.1.100  # legacy
+scorpion-node threat-intel -d suspicious.com  # legacy
 ```
 
 ### **Compliance Auditing**
@@ -792,16 +845,16 @@ scorpion recon -t example.com --whois
 #### Threat Intelligence
 ```bash
 # Check IP reputation
-scorpion threat-intel -i 8.8.8.8
+scorpion-node threat-intel -i 8.8.8.8  # legacy
 
 # Check domain reputation
-scorpion threat-intel -d suspicious-domain.com
+scorpion-node threat-intel -d suspicious-domain.com  # legacy
 
 # Check file hash
-scorpion threat-intel -h 5d41402abc4b2a76b9719d911017c592
+scorpion-node threat-intel -h 5d41402abc4b2a76b9719d911017c592  # legacy
 
 # List current IOCs
-scorpion threat-intel --ioc
+scorpion-node threat-intel --ioc  # legacy
 ```
 
 #### Password Security
@@ -919,16 +972,14 @@ scorpion scan -t target.com --type deep -o pentest-results.html --format html
 ### **Security Monitoring**
 ```bash
 # Monitor critical systems with threat intelligence
-scorpion threat-intel -i 192.168.1.100
+scorpion-node threat-intel -i 192.168.1.100  # legacy
 scorpion scan -t internal-server.com --type deep
 ```
 
 ### **Threat Hunting**
 ```bash
 # Investigate suspicious indicators
-scorpion threat-intel -i 192.168.1.100
-scorpion threat-intel -d suspicious.com
-scorpion threat-intel --ioc
+Use vendor TI tools; Scorpion focuses on scanning, recon, SSL, API tests, and suite.
 ```
 
 ### **Compliance Auditing**

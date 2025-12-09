@@ -8,9 +8,9 @@ Quick reference for all available commands and options.
 |---------|-------------|---------|
 | `scan` | Vulnerability scanning | `scorpion scan -t example.com` |
 | `recon` | Network reconnaissance | `scorpion recon -t example.com --dns` |
-| `threat-intel` | Threat intelligence | `scorpion threat-intel -i 8.8.8.8` |
-| `exploit` | OWASP Top 10 testing | `scorpion exploit -t example.com --payload owasp-top10` |
-| `enterprise-scan` | Enterprise assessment | `scorpion enterprise-scan -t 192.168.1.0/24` |
+| `threat-intel` | Use external TI services | — |
+| `suite` | Enterprise/web active-safe checks | `scorpion suite example.com --profile web --mode active` |
+| `suite` | Unified Python suite | `scorpion suite example.com --profile full --output-dir results` |
 | `internal-test` | Internal network test | `scorpion internal-test --scope full` |
 | `ai-pentest` | AI-powered pentest | `scorpion ai-pentest -t example.com` |
 | `takeover` | Subdomain takeover detection | `scorpion takeover -t example.com` |
@@ -67,10 +67,10 @@ scorpion recon -t example.com --dns --whois --subdomain
 scorpion recon -t 192.168.1.1 --dns --ports
 ```
 
-## 🛡️ Threat Intel Command
+## 🛡️ Threat Intel Command (Legacy Node)
 
 ```bash
-scorpion threat-intel [options]
+Threat intel: use external services (VirusTotal/AbuseIPDB/Shodan)
 ```
 
 ### Options
@@ -81,16 +81,15 @@ scorpion threat-intel [options]
 
 ### Examples
 ```bash
-scorpion threat-intel -i 8.8.8.8
-scorpion threat-intel -d suspicious-domain.com
-scorpion threat-intel -h d41d8cd98f00b204e9800998ecf8427e
-scorpion threat-intel --ioc
+External TI examples omitted
+
+> Python CLI note: use external threat intel tools alongside suite outputs.
 ```
 
-## 💥 Exploit Command
+## 💥 Exploit Command (Legacy Node) and Python Alternative
 
 ```bash
-scorpion exploit [options]
+Exploit testing: use Python suite active-safe mode
 ```
 
 ### Options
@@ -113,17 +112,18 @@ scorpion exploit [options]
 
 ### Examples
 ```bash
-scorpion exploit -t example.com --payload owasp-top10
-scorpion exploit -t example.com --payload sql-injection
-scorpion exploit -t example.com --service http -p 8080
-scorpion exploit -t example.com --vuln CVE-2021-44228
-scorpion exploit -t example.com --payload cloud --mode proof-of-concept
+scorpion suite example.com --profile web --mode active
+
+Python alternative (safe active checks):
+```bash
+scorpion suite example.com --profile web --mode active --output-dir results
+```
 ```
 
-## 🏢 Enterprise Scan Command
+## 🏢 Enterprise Assessment (Python Suite)
 
 ```bash
-scorpion enterprise-scan [options]
+Use the Python `suite` command to orchestrate comprehensive assessments.
 ```
 
 ### Options
@@ -140,14 +140,13 @@ scorpion enterprise-scan [options]
 
 ### Examples
 ```bash
-scorpion enterprise-scan -t 192.168.1.0/24
-scorpion enterprise-scan -t 192.168.1.1 192.168.1.2 192.168.1.3
-scorpion enterprise-scan -t targets.txt --deep
-scorpion enterprise-scan -t 192.168.1.0/24 --compliance PCI-DSS HIPAA
-scorpion enterprise-scan -t 192.168.1.0/24 --authenticated --credentials creds.json
+scorpion suite 192.168.1.0/24 --profile full --output-dir results
+scorpion suite 192.168.1.1 --profile full --output-dir results
+scorpion suite 192.168.1.2 --profile full --output-dir results
+scorpion suite example.com --profile full --mode active --output-dir results
 ```
 
-## 🏠 Internal Test Command
+## 🏠 Internal Test Command (Legacy)
 
 ```bash
 scorpion internal-test [options]
@@ -165,16 +164,16 @@ scorpion internal-test [options]
 
 ### Examples
 ```bash
-scorpion internal-test
+Internal testing: use `suite` or targeted `scan/recon`
 scorpion internal-test --scope targeted --targets 192.168.1.0/24
 scorpion internal-test --scope stealth --depth deep
 scorpion internal-test --compliance PCI-DSS --authenticated
 ```
 
-## 🤖 AI Pentest Command
+## 🤖 AI Pentest Command (Legacy)
 
 ```bash
-scorpion ai-pentest [options]
+AI pentest: use suite/report flow + external tooling
 ```
 
 ### Options
@@ -216,7 +215,7 @@ All commands support JSON output:
 ```bash
 scorpion scan -t example.com -o results.json
 scorpion recon -t example.com --dns -o recon.json
-scorpion exploit -t example.com --payload owasp-top10 -o exploits.json
+scorpion suite example.com --profile web --mode active --output-dir results
 ```
 
 ## 🔧 Helper Scripts
@@ -393,7 +392,7 @@ scorpion --help
 scorpion scan --help
 scorpion recon --help
 scorpion exploit --help
-scorpion enterprise-scan --help
+scorpion suite --help
 scorpion internal-test --help
 scorpion ai-pentest --help
 scorpion takeover --help

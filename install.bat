@@ -35,7 +35,7 @@ if %ERRORLEVEL% NEQ 0 (
     echo ⚠️  Failed to create global symlink.
     echo.
     echo You can still use the tool locally with:
-    echo    node cli/scorpion.js
+    echo    scorpion  (Python CLI)
     echo.
     pause
     exit /b 0

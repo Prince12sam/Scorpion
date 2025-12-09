@@ -1,0 +1,24 @@
+{
+  "target": "afrimarkethub.store",
+  "port": 443,
+  "certificate": null,
+  "tls": null,
+  "security_headers": {
+    "hsts": false,
+    "headers": {},
+    "insecure_fetch": false
+  },
+  "location": {
+    "endpoint": "https://afrimarkethub.store:443",
+    "evidence": "Handshake failed; headers unavailable"
+  },
+  "errors": {
+    "handshake": "SSLCertVerificationError",
+    "detail": "[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed: unable to get local issuer certificate (_ssl.c:1020)"
+  },
+  "remediation": [
+    "Fix certificate chain/issuer; ensure full intermediate chain is served",
+    "Verify host SNI and certificate SANs match the domain"
+  ],
+  "severity": "medium"
+}

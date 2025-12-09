@@ -40,7 +40,7 @@ if [ $? -ne 0 ]; then
     echo "   sudo npm link"
     echo ""
     echo "Or use the tool locally with:"
-    echo "   node cli/scorpion.js"
+    echo "   scorpion (Python CLI)"
     exit 0
 fi
 
@@ -49,8 +49,8 @@ echo "✅ Installation complete!"
 echo ""
 echo "🚀 Quick Start:"
 echo "   scorpion --help                    # Show help"
-echo "   scorpion scan -t example.com       # Scan a target"
-echo "   scorpion recon -t example.com      # Network reconnaissance"
+echo "   scorpion scan -t example.com       # Scan a target (Python)"
+echo "   scorpion recon -t example.com      # Network reconnaissance (Python)"
 echo ""
 echo "📖 For full documentation, see README.md"
 echo ""

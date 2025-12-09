@@ -140,7 +140,7 @@ scorpion api-test -t https://api.example.com -o report.json
 
 ### Step 1: Run Scan
 ```bash
-scorpion api-test -t https://api.example.com
+scorpion api-test -t https://api.example.com -o report.json
 ```
 
 ### Step 2: Review Summary
@@ -163,7 +163,7 @@ Total Vulnerabilities: 5
 ### Step 4: Verify Fix
 ```bash
 # Re-run scan
-scorpion api-test -t https://api.example.com
+scorpion api-test -t https://api.example.com -o report.json
 
 # Should show fewer vulnerabilities
 Total Vulnerabilities: 4  ← Was 5

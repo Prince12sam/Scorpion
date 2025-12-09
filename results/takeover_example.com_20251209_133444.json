@@ -1,0 +1,18 @@
+{
+  "target": "example.com",
+  "dns": {
+    "cname": null,
+    "service": null
+  },
+  "http": {
+    "status_code": 200,
+    "claimable": false
+  },
+  "vulnerable": false,
+  "location": {
+    "dns_record": "CNAME",
+    "evidence": "CNAME=None, service=None, GET http://example.com status=200"
+  },
+  "remediation": [],
+  "severity": "info"
+}

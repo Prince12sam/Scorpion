@@ -7,65 +7,82 @@ Quick guide to clone and start using Scorpion CLI for security testing.
 ## 📋 Prerequisites
 
 **Required:**
-- Node.js version 16.0.0 or higher
-- npm (comes with Node.js)
+- Python 3.10 or higher
+- pip (Python package manager)
 - Git
 
 **Check if you have them:**
 ```bash
-node --version    # Should show v16.0.0 or higher
-npm --version     # Should show 8.0.0 or higher
-git --version     # Any recent version
+python --version   # Should show 3.10+ (or use python3)
+python -m pip --version
+git --version      # Any recent version
 ```
 
-**Don't have Node.js?**
-- Windows: Download from [nodejs.org](https://nodejs.org/)
-- Linux: `sudo apt install nodejs npm` (Ubuntu/Debian) or `sudo yum install nodejs npm` (CentOS/RHEL)
-- macOS: `brew install node` or download from [nodejs.org](https://nodejs.org/)
+**Don't have Python?**
+- Windows: Install Python from Microsoft Store or https://python.org and ensure `Add Python to PATH`
+- Linux: `sudo apt install python3 python3-pip` (Ubuntu/Debian) or `sudo yum install python3 python3-pip` (CentOS/RHEL)
+- macOS: `brew install python@3.11` or download from https://python.org
 
 ---
 
 ## 🚀 Quick Install (3 Steps)
 
 ### Step 1: Clone the Repository
-```bash
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
 ```
 
-### Step 2: Install Dependencies
+### Step 2: Install Scorpion CLI (Python)
 ```bash
-npm install
+python -m pip install --upgrade pip
+python -m pip install -e tools/python_scorpion
 ```
 
-### Step 3: Make it Globally Available
+Windows (PowerShell) with a local venv:
+
+```powershell
+# From repo root
+& .\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\python.exe -m pip install -e .\tools\python_scorpion
+.\.venv\Scripts\scorpion.exe --help
+
+# If your current directory is .\tools
+& ..\.venv\Scripts\Activate.ps1
+..\.venv\Scripts\python.exe -m pip install -e .\python_scorpion
+..\.venv\Scripts\scorpion.exe --help
+```
+
+Note: When you are inside `tools`, do not use `./tools/python_scorpion` as it resolves to a non-existent `tools/tools/python_scorpion` path.
+
+### Step 3: First Run
 ```bash
-npm link
+scorpion --help
+scorpion --version
 ```
 
 **That's it!** You can now use `scorpion` from anywhere on your system.
 
 ---
 
-## ✅ Verify Installation
+scorpion recon -t example.com --dns
 
 Test that everything works:
-```bash
+scorpion recon -t example.com --dns --whois --subdomain
 # Check version
 scorpion --version
 
 # Show help
 scorpion --help
-
-# Run a test scan (safe, non-intrusive)
-scorpion scan -t scanme.nmap.org --ports 80,443
-```
+scorpion suite example.com --profile web --mode active --output-dir results
+# Run a test scan (safe, non-intrusive; use authorized targets only)
+scorpion scan -t example.com --ports 80,443
+scorpion suite example.com --profile web --mode active --output-dir results
 
 ---
 
 ## 🎯 Quick Start Examples
 
-### Basic Scanning
+Use external threat intel sources (VirusTotal, AbuseIPDB, Shodan).
 ```bash
 # Scan a target
 scorpion scan -t example.com
@@ -76,9 +93,9 @@ scorpion scan -t example.com --ports 80,443,8080
 # Stealthy scan
 scorpion scan -t example.com --stealth ninja
 ```
-
-### Reconnaissance
-```bash
+scorpion scan -t example.com
+scorpion recon -t example.com --dns
+scorpion --help  # Python CLI
 # DNS enumeration
 scorpion recon -t example.com --dns
 
@@ -89,20 +106,14 @@ scorpion recon -t example.com --dns --whois --subdomain
 ### Vulnerability Testing
 ```bash
 # OWASP Top 10 testing
-scorpion exploit -t example.com --payload owasp-top10
+scorpion suite example.com --profile web --mode active
 
 # SQL injection testing
-scorpion exploit -t example.com --payload sql-injection
+scorpion suite example.com --profile web --mode active
 ```
 
 ### Threat Intelligence
-```bash
-# Check IP reputation
-scorpion threat-intel -i 8.8.8.8
-
-# Check domain
-scorpion threat-intel -d example.com
-```
+Use external TI vendors (VirusTotal, AbuseIPDB, Shodan) alongside Scorpion outputs.
 
 ---
 
@@ -116,12 +127,11 @@ scorpion threat-intel -d example.com
 
 ## 🔧 Alternative: Run Without Global Install
 
-If you prefer not to use `npm link`, run directly:
+If you prefer not to use a global install, run directly:
 ```bash
 # From the Scorpion directory
-node cli/scorpion.js scan -t example.com
-node cli/scorpion.js recon -t example.com --dns
-node cli/scorpion.js --help
+python -m pip install -e tools/python_scorpion
+scorpion --help
 ```
 
 ---
@@ -129,67 +139,61 @@ node cli/scorpion.js --help
 ## 🌍 Platform-Specific Notes
 
 ### Windows
-- Works in PowerShell, Command Prompt (CMD), or Git Bash
+- Works in PowerShell or Command Prompt (CMD)
 - Some scans may require "Run as Administrator" for advanced features
-- Use `npm link` in an Administrator PowerShell for global access
 
 ### Linux (Ubuntu, Debian, CentOS, etc.)
-- May need `sudo npm link` for global installation
-- Some scans require root: `sudo scorpion scan -t example.com -sS`
+- Some scans may require root: `sudo scorpion scan -t example.com -sS`
 - Install build tools if needed: `sudo apt install build-essential`
 
 ### macOS
 - Use Terminal or iTerm2
-- May need `sudo npm link` for global installation
-- Some scans require root: `sudo scorpion scan -t example.com -sS`
+- Some scans may require root: `sudo scorpion scan -t example.com -sS`
 
 ---
 
 ## 🔑 Optional: API Keys for Enhanced Features
 
-Create a `.env` file in the Scorpion directory for enhanced threat intelligence:
+Create a `.env` file in the Scorpion directory for configuration:
 
 ```env
-VIRUSTOTAL_API_KEY=your_virustotal_key_here
-ABUSEIPDB_API_KEY=your_abuseipdb_key_here
-SHODAN_API_KEY=your_shodan_key_here
+DEFAULT_TIMEOUT=5000
+MAX_CONCURRENT_SCANS=100
 ```
 
-**Get free API keys:**
-- VirusTotal: https://www.virustotal.com/gui/join-us
-- AbuseIPDB: https://www.abuseipdb.com/register
-- Shodan: https://account.shodan.io/register
+You can also configure vendor API keys (e.g., VirusTotal, AbuseIPDB, Shodan) if you integrate external TI workflows.
 
 ---
 
 ## 🐛 Troubleshooting
 
 ### "command not found: scorpion"
-**Solution:** Run `npm link` again, or use the full path:
+**Solution:** Ensure Python CLI installed and on PATH:
 ```bash
-node /path/to/Scorpion/cli/scorpion.js --help
+python -m pip install -e tools/python_scorpion
+scorpion --help
 ```
 
-### "npm: command not found"
-**Solution:** Install Node.js and npm first (see Prerequisites above)
+### Pip/Python not found
+**Solution:** Install Python and pip (see Prerequisites above)
 
 ### Permission errors on Linux/macOS
-**Solution:** Use `sudo`:
+**Solution:** Use `sudo` for privileged scans:
 ```bash
-sudo npm install
-sudo npm link
+sudo scorpion scan -t example.com -sS
 ```
 
-### Module import errors
-**Solution:** Ensure you're using Node.js 16+ (ES modules required):
+### Python environment issues
+**Solution:** Ensure you're using Python 3.10+ and pip installed:
 ```bash
-node --version    # Must be v16.0.0+
+python --version    # Must be 3.10+
+python -m pip --version
 ```
 
-### Network errors during npm install
-**Solution:** Try with a different registry:
+### Network errors during install
+**Solution:** Retry pip install or check proxy settings:
 ```bash
-npm install --registry https://registry.npmjs.org/
+python -m pip install -e tools/python_scorpion
 ```
 
 ---
@@ -200,7 +204,7 @@ To get the latest version:
 ```bash
 cd Scorpion
 git pull origin main
-npm install
+python -m pip install -e tools/python_scorpion
 ```
 
 ---
@@ -209,8 +213,8 @@ npm install
 
 To remove Scorpion:
 ```bash
-# Remove global command
-npm unlink
+# Deactivate and remove venv if used
+deactivate
 
 # Remove the directory
 cd ..

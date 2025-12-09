@@ -1,0 +1,41 @@
+{
+  "target": "afrimarkethub.store",
+  "http": {
+    "status": 403,
+    "headers": {
+      "x-frame-options": "SAMEORIGIN",
+      "x-xss-protection": "1; mode=block",
+      "x-content-type-options": "nosniff",
+      "content-security-policy": "frame-ancestors 'self'",
+      "content-type": "text/html; charset=\"utf-8\"",
+      "content-length": "35538",
+      "connection": "Close"
+    }
+  },
+  "error_probe": {
+    "status": 403
+  },
+  "findings": [
+    {
+      "name": "Missing HSTS",
+      "impact": "Users may downgrade to HTTP and be vulnerable to MITM",
+      "severity": "medium",
+      "remediation": "Add Strict-Transport-Security with max-age>=15552000; includeSubDomains; preload",
+      "evidence": ""
+    },
+    {
+      "name": "Missing Referrer-Policy",
+      "impact": "Referrer leakage risk",
+      "severity": "low",
+      "remediation": "Add Referrer-Policy: no-referrer or strict-origin-when-cross-origin",
+      "evidence": ""
+    },
+    {
+      "name": "Missing Permissions-Policy",
+      "impact": "Unrestricted powerful features",
+      "severity": "low",
+      "remediation": "Add Permissions-Policy to restrict camera, microphone, geolocation, etc.",
+      "evidence": ""
+    }
+  ]
+}

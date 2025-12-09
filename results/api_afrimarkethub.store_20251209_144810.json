@@ -1,0 +1,84 @@
+{
+  "target": "afrimarkethub.store",
+  "findings": [
+    {
+      "type": "swagger_missing_or_protected",
+      "location": "https://afrimarkethub.store",
+      "impact": "Less discoverable but not a vuln by itself",
+      "remediation": "Ensure docs exist for developers and protect if sensitive",
+      "severity": "info"
+    },
+    {
+      "type": "rate_limit_not_detected",
+      "location": "https://afrimarkethub.store/",
+      "impact": "No 429 observed under bursts; may allow abuse",
+      "remediation": "Implement rate limiting and anomaly detection",
+      "severity": "low"
+    }
+  ],
+  "details": {
+    "graphql": {
+      "endpoint": "https://afrimarkethub.store/graphql",
+      "status_code": 0,
+      "open_introspection": false
+    },
+    "jwt": {
+      "endpoint": "https://afrimarkethub.store/",
+      "leaks": []
+    },
+    "idor": {
+      "tests": [
+        {
+          "endpoint": "https://afrimarkethub.store/api/items/1",
+          "status_codes": [
+            0,
+            0
+          ],
+          "indicative_idor": false
+        },
+        {
+          "endpoint": "https://afrimarkethub.store/api/users/1",
+          "status_codes": [
+            0,
+            0
+          ],
+          "indicative_idor": false
+        },
+        {
+          "endpoint": "https://afrimarkethub.store/api/orders/1",
+          "status_codes": [
+            0,
+            0
+          ],
+          "indicative_idor": false
+        }
+      ]
+    },
+    "rate_limit_check": {
+      "endpoint": "https://afrimarkethub.store/",
+      "status_codes": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "rate_limit_detected": false
+    }
+  }
+}

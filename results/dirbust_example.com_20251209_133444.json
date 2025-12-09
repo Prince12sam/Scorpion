@@ -1,0 +1,32 @@
+{
+  "target": "example.com",
+  "base": "https://example.com",
+  "results": [
+    {
+      "url": "https://example.com/.env",
+      "status": 0,
+      "length": 0
+    },
+    {
+      "url": "https://example.com/composer.json",
+      "status": 0,
+      "length": 0
+    },
+    {
+      "url": "https://example.com/humans.txt",
+      "status": 0,
+      "length": 0
+    },
+    {
+      "url": "https://example.com/sitemap.xml",
+      "status": 0,
+      "length": 0
+    }
+  ],
+  "summary": {
+    "count": 4,
+    "by_status": {
+      "0": 4
+    }
+  }
+}
