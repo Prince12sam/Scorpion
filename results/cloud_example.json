@@ -1,0 +1,43 @@
+{
+  "target": "examplebucket",
+  "results": [
+    {
+      "provider": "aws",
+      "name": "examplebucket",
+      "endpoints": [
+        "https://examplebucket.s3.amazonaws.com/?list-type=2",
+        "https://s3.amazonaws.com/examplebucket?list-type=2"
+      ],
+      "status": [
+        403,
+        403
+      ],
+      "public_listing": false
+    },
+    {
+      "provider": "azure",
+      "name": "examplebucket",
+      "endpoints": [
+        "https://examplebucket.blob.core.windows.net/?comp=list"
+      ],
+      "status": [
+        0
+      ],
+      "public_listing": false
+    },
+    {
+      "provider": "gcp",
+      "name": "examplebucket",
+      "endpoints": [
+        "https://storage.googleapis.com/storage/v1/b/examplebucket/o",
+        "https://storage.googleapis.com/examplebucket/"
+      ],
+      "status": [
+        401,
+        403
+      ],
+      "public_listing": false
+    }
+  ],
+  "findings": []
+}

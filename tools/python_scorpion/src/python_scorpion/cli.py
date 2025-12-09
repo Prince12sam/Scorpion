@@ -373,6 +373,7 @@ def k8s(
         with open(output, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
         console.print(f"Saved: {output}")
+@app.command()
 def container(
     registry: str = typer.Argument(..., help="Container registry host (e.g., registry.example.com)"),
     output: Optional[str] = None,
