@@ -427,35 +427,68 @@ scorpion internal-test --scope stealth --depth deep
 scorpion internal-test --compliance PCI-DSS --authenticated
 ```
 
-## 🤖 AI Pentest Command (Legacy)
+## 🤖 AI Pentest Command ⭐ NEW
+
+**Autonomous penetration testing using AI (OpenAI, Anthropic, etc.)**
 
 ```bash
-AI pentest: use suite/report flow + external tooling
+scorpion ai-pentest -t <target> [options]
 ```
 
+### Requirements
+- AI API key (OpenAI, Anthropic, or custom endpoint)
+- Set `SCORPION_AI_API_KEY` environment variable or use `--api-key` flag
+
 ### Options
-- `-t, --target <target>` - Target for AI penetration test (required)
-- `--primary-goal <goal>` - Primary objective (see below)
-- `--secondary-goals <goals>` - Comma-separated secondary goals
-- `--time-limit <minutes>` - Time limit in minutes (default: 120)
-- `--stealth-level <level>` - low, moderate, high (default: moderate)
-- `--autonomy <level>` - supervised, semi-autonomous, fully-autonomous
-- `--risk-tolerance <level>` - low, medium, high (default: medium)
-- `--learning-mode <mode>` - enabled or disabled
-- `-o, --output <file>` - Output file
+| Flag | Description | Default |
+|------|-------------|---------||
+| `-t, --target` | Target for AI penetration test | Required |
+| `--primary-goal` | Primary objective | `comprehensive_assessment` |
+| `--secondary-goals` | Comma-separated goals | None |
+| `--time-limit` | Time limit in minutes | `120` |
+| `--stealth-level` | low, moderate, high | `moderate` |
+| `--autonomy` | supervised, semi_autonomous, fully_autonomous | `semi_autonomous` |
+| `--risk-tolerance` | low, medium, high | `medium` |
+| `--ai-provider` | openai, anthropic, custom | `openai` |
+| `--api-key` | AI API key | `$SCORPION_AI_API_KEY` |
+| `--model` | AI model name | `gpt-4` |
+| `--api-endpoint` | Custom API endpoint | None |
+| `--max-iterations` | Maximum AI decision loops | `10` |
+| `-o, --output` | Output JSON file | Auto-generated |
 
 ### Primary Goals
-- `comprehensive_assessment` - Full security assessment
-- `privilege_escalation` - Focus on privilege escalation
-- `data_access` - Focus on data access
+- `comprehensive_assessment` - Full security assessment (default)
+- `privilege_escalation` - Focus on privilege escalation paths
+- `data_access` - Focus on data exposure vulnerabilities
+- `network_mapping` - Network discovery and mapping
+- `web_exploitation` - Deep web application testing
 
 ### Examples
 ```bash
+# Set API key
+export SCORPION_AI_API_KEY='sk-...'
+
+# Basic AI pentest
 scorpion ai-pentest -t example.com
-scorpion ai-pentest -t example.com --primary-goal comprehensive_assessment
-scorpion ai-pentest -t example.com --stealth-level high --time-limit 60
-scorpion ai-pentest -t example.com --autonomy semi-autonomous --risk-tolerance medium
+
+# Comprehensive with OpenAI GPT-4
+scorpion ai-pentest -t example.com --primary-goal comprehensive_assessment --model gpt-4
+
+# High stealth with Anthropic Claude
+scorpion ai-pentest -t example.com --ai-provider anthropic --api-key sk-ant-... --stealth-level high
+
+# Local AI model (free, private)
+scorpion ai-pentest -t example.com --ai-provider custom --api-endpoint http://localhost:11434/v1/chat/completions
+
+# Web exploitation focus
+scorpion ai-pentest -t example.com --primary-goal web_exploitation --risk-tolerance medium
+
+# Fully autonomous (dangerous, requires authorization)
+scorpion ai-pentest -t example.com --autonomy fully_autonomous --risk-tolerance high
 ```
+
+### Documentation
+See [AI_PENTESTING_GUIDE.md](AI_PENTESTING_GUIDE.md) for complete guide.
 
 ## 🎯 Stealth Levels
 

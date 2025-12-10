@@ -33,6 +33,14 @@ from .web_pentest import AdvancedWebTester
 from .os_fingerprint import OSFingerprinter
 from .payload_generator import PayloadGenerator, PayloadType, PayloadFormat
 from .decoy_scanner import DecoyScanner, parse_decoy_option, DecoyConfig
+from .ai_pentest import (
+    AIPentestAgent,
+    AIPentestConfig,
+    PrimaryGoal,
+    AutonomyLevel,
+    StealthLevel,
+    RiskTolerance
+)
 
 # Remove subtitle under banner by not setting a global help description
 app = typer.Typer()
@@ -1633,6 +1641,283 @@ def payload(
     
     except Exception as e:
         console.print(f"[red]Error generating payload: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command("ai-pentest")
+def ai_pentest_command(
+    target: str = typer.Option(..., "--target", "-t", help="Target for AI penetration test"),
+    primary_goal: str = typer.Option(
+        "comprehensive_assessment",
+        "--primary-goal",
+        help="Primary objective: comprehensive_assessment, privilege_escalation, data_access, network_mapping, web_exploitation, gain_shell_access, vulnerability_discovery, infrastructure_assessment, cloud_security_audit, api_security_testing"
+    ),
+    secondary_goals: str = typer.Option(
+        "",
+        "--secondary-goals",
+        help="Comma-separated secondary goals"
+    ),
+    time_limit: int = typer.Option(120, "--time-limit", help="Time limit in minutes"),
+    stealth_level: str = typer.Option(
+        "moderate",
+        "--stealth-level",
+        help="Stealth level: low, moderate, high"
+    ),
+    autonomy: str = typer.Option(
+        "semi_autonomous",
+        "--autonomy",
+        help="Autonomy level: supervised, semi_autonomous, fully_autonomous"
+    ),
+    risk_tolerance: str = typer.Option(
+        "medium",
+        "--risk-tolerance",
+        help="Risk tolerance: low, medium, high"
+    ),
+    ai_provider: str = typer.Option(
+        "openai",
+        "--ai-provider",
+        help="AI provider: openai, anthropic, custom"
+    ),
+    api_key: Optional[str] = typer.Option(
+        None,
+        "--api-key",
+        help="AI API key (or set SCORPION_AI_API_KEY env var)"
+    ),
+    api_endpoint: Optional[str] = typer.Option(
+        None,
+        "--api-endpoint",
+        help="Custom API endpoint (for custom provider)"
+    ),
+    model: str = typer.Option(
+        "gpt-4",
+        "--model",
+        help="AI model: gpt-4, gpt-3.5-turbo, claude-3-opus-20240229, etc."
+    ),
+    learning_mode: bool = typer.Option(False, "--learning-mode", help="Enable learning mode"),
+    max_iterations: int = typer.Option(10, "--max-iterations", help="Maximum test iterations"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file for results"),
+):
+    """
+    AI-powered autonomous penetration testing.
+    
+    Uses AI (OpenAI, Anthropic, etc.) to intelligently orchestrate security testing.
+    The AI analyzes findings and determines optimal next actions to achieve your goal.
+    
+    ⚠️  WARNING: Only test systems you own or have explicit written authorization to test.
+    Unauthorized penetration testing is illegal and may result in criminal prosecution.
+    
+    Examples:
+        # Basic AI pentest (requires API key)
+        scorpion ai-pentest -t example.com --api-key sk-...
+        
+        # Comprehensive assessment with OpenAI
+        scorpion ai-pentest -t example.com --api-key sk-... --primary-goal comprehensive_assessment
+        
+        # High stealth with Anthropic Claude
+        scorpion ai-pentest -t example.com --ai-provider anthropic --api-key sk-ant-... --model claude-3-opus-20240229 --stealth-level high
+        
+        # Using environment variable for API key
+        export SCORPION_AI_API_KEY=sk-...
+        scorpion ai-pentest -t example.com
+        
+        # Custom OpenAI-compatible endpoint
+        scorpion ai-pentest -t example.com --ai-provider custom --api-endpoint http://localhost:1234/v1/chat/completions --api-key local
+    """
+    
+    # Legal/ethical warning
+    console.print("\n[red]═══════════════════════════════════════════════════════════════[/red]")
+    console.print("[red]                      ⚠️  LEGAL WARNING ⚠️                        [/red]")
+    console.print("[red]═══════════════════════════════════════════════════════════════[/red]")
+    console.print("[yellow]AI-powered penetration testing is POWERFUL and potentially DANGEROUS.[/yellow]")
+    console.print("[yellow]You MUST have explicit written authorization to test the target system.[/yellow]")
+    console.print("[yellow]Unauthorized access is illegal and may result in:[/yellow]")
+    console.print("[yellow]  • Criminal prosecution[/yellow]")
+    console.print("[yellow]  • Significant fines[/yellow]")
+    console.print("[yellow]  • Imprisonment[/yellow]")
+    console.print("[red]═══════════════════════════════════════════════════════════════[/red]\n")
+    
+    # Get API key from env if not provided
+    if not api_key:
+        api_key = os.getenv("SCORPION_AI_API_KEY")
+        if not api_key:
+            console.print("[red]ERROR: AI API key required.[/red]")
+            console.print("[yellow]Provide via --api-key flag or set SCORPION_AI_API_KEY environment variable.[/yellow]")
+            console.print("\n[cyan]Examples:[/cyan]")
+            console.print("  # Linux/Mac:")
+            console.print("  export SCORPION_AI_API_KEY='sk-...'")
+            console.print("\n  # Windows PowerShell:")
+            console.print("  $env:SCORPION_AI_API_KEY='sk-...'")
+            console.print("\n  # Or use flag:")
+            console.print("  scorpion ai-pentest -t example.com --api-key sk-...")
+            raise typer.Exit(1)
+    
+    # Validate inputs
+    try:
+        primary_goal_enum = PrimaryGoal(primary_goal)
+    except ValueError:
+        console.print(f"[red]Invalid primary goal: {primary_goal}[/red]")
+        console.print("[yellow]Valid options: comprehensive_assessment, privilege_escalation, data_access, network_mapping, web_exploitation[/yellow]")
+        raise typer.Exit(1)
+    
+    try:
+        stealth_enum = StealthLevel(stealth_level)
+    except ValueError:
+        console.print(f"[red]Invalid stealth level: {stealth_level}[/red]")
+        console.print("[yellow]Valid options: low, moderate, high[/yellow]")
+        raise typer.Exit(1)
+    
+    try:
+        autonomy_enum = AutonomyLevel(autonomy)
+    except ValueError:
+        console.print(f"[red]Invalid autonomy level: {autonomy}[/red]")
+        console.print("[yellow]Valid options: supervised, semi_autonomous, fully_autonomous[/yellow]")
+        raise typer.Exit(1)
+    
+    try:
+        risk_enum = RiskTolerance(risk_tolerance)
+    except ValueError:
+        console.print(f"[red]Invalid risk tolerance: {risk_tolerance}[/red]")
+        console.print("[yellow]Valid options: low, medium, high[/yellow]")
+        raise typer.Exit(1)
+    
+    # Parse secondary goals
+    secondary_goals_list = [g.strip() for g in secondary_goals.split(",") if g.strip()]
+    
+    # Create configuration
+    config = AIPentestConfig(
+        target=target,
+        primary_goal=primary_goal_enum,
+        secondary_goals=secondary_goals_list,
+        time_limit=time_limit,
+        stealth_level=stealth_enum,
+        autonomy_level=autonomy_enum,
+        risk_tolerance=risk_enum,
+        ai_provider=ai_provider,
+        api_key=api_key,
+        api_endpoint=api_endpoint,
+        model=model,
+        learning_mode=learning_mode,
+        max_iterations=max_iterations
+    )
+    
+    # Display configuration
+    console.print(Panel.fit(
+        f"[cyan]Target:[/cyan] {target}\n"
+        f"[cyan]Primary Goal:[/cyan] {primary_goal}\n"
+        f"[cyan]AI Provider:[/cyan] {ai_provider} ({model})\n"
+        f"[cyan]Stealth Level:[/cyan] {stealth_level}\n"
+        f"[cyan]Risk Tolerance:[/cyan] {risk_tolerance}\n"
+        f"[cyan]Autonomy:[/cyan] {autonomy}\n"
+        f"[cyan]Time Limit:[/cyan] {time_limit} minutes",
+        title="🤖 AI Penetration Test Configuration",
+        border_style="green"
+    ))
+    
+    # Confirmation for high-risk configurations
+    if risk_enum == RiskTolerance.HIGH or autonomy_enum == AutonomyLevel.FULLY_AUTONOMOUS:
+        console.print("\n[red]⚠️  HIGH-RISK CONFIGURATION DETECTED[/red]")
+        console.print("[yellow]This configuration may perform exploitation attempts.[/yellow]")
+        console.print("[yellow]Ensure you have explicit written authorization.[/yellow]\n")
+        
+        confirm = typer.confirm("Do you have written authorization to test this target?")
+        if not confirm:
+            console.print("[red]Test cancelled. Obtain authorization before proceeding.[/red]")
+            raise typer.Exit(1)
+    
+    try:
+        # Create and execute AI agent
+        agent = AIPentestAgent(config)
+        report = asyncio.run(agent.execute())
+        
+        # Display summary
+        console.print("\n" + "=" * 70)
+        console.print("[green bold]AI Penetration Test Complete[/green bold]")
+        console.print("=" * 70 + "\n")
+        
+        # Summary table
+        summary_table = Table(title="Test Summary", box=box.ROUNDED, show_header=True)
+        summary_table.add_column("Metric", style="cyan")
+        summary_table.add_column("Value", style="green")
+        
+        summary_table.add_row("Target", report["summary"]["target"])
+        summary_table.add_row("Duration", f"{report['summary']['duration_minutes']} minutes")
+        summary_table.add_row("Iterations", str(report["summary"]["iterations"]))
+        summary_table.add_row("Total Findings", str(report["summary"]["total_findings"]))
+        summary_table.add_row("Actions Taken", str(report["summary"]["total_actions"]))
+        
+        console.print(summary_table)
+        console.print()
+        
+        # Findings by severity
+        findings_table = Table(title="Findings by Severity", box=box.ROUNDED)
+        findings_table.add_column("Severity", style="cyan")
+        findings_table.add_column("Count", style="green")
+        
+        for severity, count in report["findings_by_severity"].items():
+            if count > 0:
+                color = {
+                    "critical": "red bold",
+                    "high": "red",
+                    "medium": "yellow",
+                    "low": "blue",
+                    "info": "white"
+                }.get(severity, "white")
+                findings_table.add_row(severity.upper(), str(count))
+        
+        console.print(findings_table)
+        console.print()
+        
+        # Recommendations
+        if report.get("recommendations"):
+            console.print("[cyan bold]═══ Recommendations ═══[/cyan bold]\n")
+            for rec in report["recommendations"]:
+                console.print(f"  {rec}")
+            console.print()
+        
+        # Save to file
+        if output:
+            with open(output, "w") as f:
+                json.dump(report, f, indent=2)
+            console.print(f"[green]✅ Full report saved to: {output}[/green]\n")
+        else:
+            # Save to default location
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            default_output = f"ai_pentest_{target.replace(':', '_')}_{timestamp}.json"
+            with open(default_output, "w") as f:
+                json.dump(report, f, indent=2)
+            console.print(f"[green]✅ Full report saved to: {default_output}[/green]\n")
+        
+        # Display top findings
+        if report["detailed_findings"]:
+            console.print("[cyan bold]═══ Top Findings ═══[/cyan bold]\n")
+            
+            # Sort by severity
+            severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+            sorted_findings = sorted(
+                report["detailed_findings"],
+                key=lambda f: (severity_order.get(f["severity"], 5), f["timestamp"])
+            )
+            
+            for finding in sorted_findings[:10]:  # Show top 10
+                severity_color = {
+                    "critical": "red bold",
+                    "high": "red",
+                    "medium": "yellow",
+                    "low": "blue",
+                    "info": "white"
+                }.get(finding["severity"], "white")
+                
+                console.print(f"[{severity_color}]● {finding['severity'].upper()}[/{severity_color}] - {finding['description']}")
+                console.print(f"  [dim]Tool: {finding['tool']} | Category: {finding['category']}[/dim]")
+                console.print(f"  [dim]Action: {finding['recommended_action']}[/dim]\n")
+        
+        console.print("[green]✅ AI-powered penetration test completed successfully![/green]")
+        console.print("[yellow]Review the detailed findings and take appropriate remediation actions.[/yellow]\n")
+        
+    except Exception as e:
+        console.print(f"\n[red]Error during AI penetration test: {e}[/red]")
+        import traceback
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
         raise typer.Exit(1)
 
 

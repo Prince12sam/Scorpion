@@ -1,20 +1,21 @@
 # 🦂 SCORPION CLI
-## Professional Security Testing & Threat-Hunting Platform
+## Professional Offensive Security & Penetration Testing Platform
 
-**Version 2.0.1 | December 8, 2025**
+**Version 2.1.0 | December 10, 2025**
 
 ---
 
 # 📊 AGENDA
 
 1. **Introduction** - What is Scorpion?
-2. **Key Features** - 11 Powerful Commands
-3. **Live Demo** - Real Vulnerability Detection
-4. **Enhanced Reporting** - Location, Impact, Remediation
-5. **Use Cases** - Who Uses It & Why
-6. **Installation** - Quick Setup Guide
-7. **Roadmap** - What's Next
-8. **Q&A** - Questions & Discussion
+2. **Key Features** - 14+ Powerful Capabilities
+3. **Offensive Security Tools** - OS Fingerprinting, Payload Generation, Decoy Scanning
+4. **Live Demo** - Real Vulnerability Detection
+5. **Enhanced Reporting** - Location, Impact, Remediation
+6. **Use Cases** - Who Uses It & Why
+7. **Installation** - Quick Setup Guide
+8. **Roadmap** - What's Next
+9. **Q&A** - Questions & Discussion
 
 ---
 
@@ -31,14 +32,16 @@
 - Time-consuming manual testing processes
 
 ### The Solution: Scorpion CLI
-**One unified platform for comprehensive security testing**
+**One unified platform for offensive security testing**
 
-✅ Port scanning & network reconnaissance  
+✅ Advanced port scanning with stealth techniques  
+✅ OS fingerprinting (nmap-level detection)  
+✅ Decoy scanning (IDS/IPS evasion)  
+✅ Payload generation (reverse/bind/web shells)  
 ✅ Subdomain takeover detection  
 ✅ API security testing  
 ✅ SSL/TLS deep analysis  
-✅ OWASP Top 10 exploitation  
-✅ Threat intelligence integration  
+✅ Web vulnerability scanning (SQL, XSS, SSRF)  
 ✅ **Enhanced vulnerability reporting with exact locations and fixes**
 
 ---
@@ -49,21 +52,26 @@
 
 | Metric | Count |
 |--------|-------|
-| **Total Commands** | 11 |
-| **Vulnerability Types Detected** | 15+ |
+| **Total Commands** | 14+ |
+| **Payload Variants** | 25+ (reverse/bind/web shells) |
+| **OS Signatures** | 12 (Windows, Linux, macOS, BSD, etc.) |
+| **Vulnerability Types Detected** | 20+ |
 | **Cloud Services Supported** | 15 (AWS, Azure, GitHub, etc.) |
 | **OWASP Top 10 Tests** | 18+ |
-| **Threat Intelligence Sources** | 3 (VirusTotal, AbuseIPDB, Shodan) |
+| **Encoding Formats** | 6 (Base64, Hex, URL, PowerShell, etc.) |
 | **Supported Platforms** | Windows, Linux, macOS |
-| **Dependencies** | 7 (lightweight) |
+| **Scan Types** | 6 (SYN, FIN, XMAS, NULL, ACK, Connect) |
 
 ## Testing Capabilities
 
-- **Port Scanning**: TCP/UDP with service detection
-- **Stealth Levels**: 4 (Low, Medium, High, Ninja)
+- **Port Scanning**: TCP/UDP with advanced scan types (SYN/FIN/XMAS/NULL/ACK)
+- **OS Fingerprinting**: TCP/IP stack analysis with 85-90% accuracy
+- **Decoy Scanning**: IDS/IPS evasion with IP spoofing
+- **Payload Generation**: 25+ shell variants with encoding/obfuscation
+- **Timing Templates**: 6 levels (paranoid → insane)
 - **SSL/TLS Tests**: 10+ vulnerability checks
 - **API Tests**: OpenAPI, GraphQL, REST, JWT
-- **Rate Limiting Tests**: 100 requests/second
+- **Web Vulnerabilities**: SQL injection, XSS, SSRF, Command Injection
 
 ---
 
@@ -71,24 +79,209 @@
 
 ## 1️⃣ Network Scanning & Reconnaissance
 
-### Port Scanning
+### Advanced Port Scanning & OS Detection
 ```bash
-scorpion scan -t example.com --ports 1-1000
+# Advanced SYN scan with OS detection
+sudo scorpion scan -t example.com --syn --os-detect
+
+# Decoy scanning for IDS/IPS evasion
+sudo scorpion scan -t example.com --syn --decoy RND:10 -T sneaky
+
+# Multiple scan types
+scorpion scan -t example.com --fin --ports 1-65535
 ```
 
 **Features:**
-- TCP/UDP scanning
-- Service detection & version identification
-- OS fingerprinting
-- 4 stealth levels (Low → Ninja)
+- 6 scan types: SYN, FIN, XMAS, NULL, ACK, Connect
+- OS fingerprinting with 12 signatures (85-90% accuracy)
+- Decoy scanning (IP spoofing for IDS/IPS evasion)
+- 6 timing templates (paranoid → insane)
+- Service version detection (-sV)
 - Banner grabbing
-- Output to JSON/CSV
+- Output to JSON with detailed metadata
 
-**Use Case:** Infrastructure discovery, attack surface mapping
+**Use Case:** Red Team operations, infrastructure discovery, penetration testing
 
 ---
 
-## 2️⃣ Subdomain Takeover Detection ⭐ NEW
+## 2️⃣ OS Fingerprinting ⭐ NEW
+
+### nmap-Level Operating System Detection
+```bash
+sudo scorpion scan -t target.com --syn --os-detect
+```
+
+**Features:**
+- TCP/IP stack fingerprinting
+- 12 OS signatures (Windows, Linux, macOS, BSD, Cisco IOS, etc.)
+- Multi-port consensus algorithm
+- TTL, window size, TCP options analysis
+- ICMP echo analysis
+- 85-90% accuracy with confidence scoring
+
+**Technical Details:**
+- Analyzes TCP window sizes
+- TCP options ordering
+- IP TTL values and hop estimation
+- DF (Don't Fragment) flag behavior
+- ICMP responses
+
+**Use Case:** Target reconnaissance, exploit selection, vulnerability assessment
+
+**Documentation:** OS_FINGERPRINTING_GUIDE.md
+
+---
+
+## 3️⃣ Payload Generation ⭐ NEW
+
+### Metasploit-Level Shell Generation
+```bash
+# Reverse shells
+scorpion payload --lhost 10.0.0.1 --lport 4444 --shell bash
+scorpion payload --lhost 10.0.0.1 --lport 443 --shell powershell
+
+# Web shells
+scorpion payload --type web_shell --shell php --output webshell.php
+
+# With encoding and obfuscation
+scorpion payload --lhost 10.0.0.1 --encode base64 --obfuscate
+```
+
+**25+ Payload Variants:**
+- **Reverse Shells:** Bash, Python, PowerShell, PHP, Perl, Ruby, Netcat (11 types)
+- **Bind Shells:** Netcat, Python, PHP (3 types)
+- **Web Shells:** PHP (simple/advanced), ASP, JSP, Python (5 types)
+
+**Encoding Formats (6):**
+- Base64, Hex, URL encoding
+- PowerShell Base64 (UTF-16LE)
+- C array format
+- Python bytes format
+
+**Advanced Features:**
+- 3-level obfuscation
+- Msfvenom command generation
+- Custom listener setup instructions
+- Usage examples included
+
+**Use Case:** Post-exploitation, vulnerability verification, penetration testing
+
+**Documentation:** PAYLOAD_GENERATION_GUIDE.md
+
+---
+
+## 4️⃣ Decoy Scanning (IDS/IPS Evasion) ⭐ NEW
+
+### nmap-Compatible IP Spoofing
+```bash
+# Random decoys (recommended)
+sudo scorpion scan target.com --syn --decoy RND:5
+
+# Manual decoys with real IP position
+sudo scorpion scan target.com --fin --decoy 10.0.0.1,ME,10.0.0.3
+
+# Stealth evasion
+sudo scorpion scan target.com --xmas --decoy RND:15 -T sneaky
+```
+
+**Features:**
+- Random decoy IP generation (avoids reserved ranges)
+- Manual decoy specification
+- Subnet-based decoy generation
+- Raw socket packet crafting
+- Works with all advanced scan types (SYN/FIN/XMAS/NULL/ACK)
+- Success rate tracking
+
+**How It Works:**
+1. Generates multiple decoy IPs
+2. Sends packets from each decoy to target
+3. Mixes real IP among decoys (random or specified position)
+4. Makes IDS/IPS detection extremely difficult
+
+**Evasion Effectiveness:**
+- 5 decoys = 6× traffic volume (very hard to trace)
+- 10 decoys = 11× traffic volume (extremely hard)
+- 20 decoys = 21× traffic volume (nearly impossible)
+
+**Use Case:** Red Team operations, IDS testing, advanced penetration testing
+
+**⚠️ Requirements:** Administrator/root privileges, advanced scan type
+
+**Documentation:** DECOY_SCANNING_GUIDE.md
+
+---
+
+## 5️⃣ AI-Powered Penetration Testing ⭐ NEW
+
+### Autonomous Security Testing with AI
+```bash
+# Set API key
+export SCORPION_AI_API_KEY='sk-...'
+
+# Basic AI pentest
+scorpion ai-pentest -t example.com
+
+# Comprehensive assessment with GPT-4
+scorpion ai-pentest -t example.com --primary-goal comprehensive_assessment
+
+# Web exploitation focus
+scorpion ai-pentest -t example.com --primary-goal web_exploitation --time-limit 120
+
+# High stealth with Anthropic Claude
+scorpion ai-pentest -t example.com \
+  --ai-provider anthropic \
+  --model claude-3-opus-20240229 \
+  --stealth-level high
+```
+
+**How It Works:**
+1. AI analyzes findings from each test
+2. Intelligently selects next tool to run
+3. Chains tools strategically based on discoveries
+4. Adapts testing approach in real-time
+5. Generates comprehensive report with recommendations
+
+**AI Providers Supported:**
+- **OpenAI:** GPT-4, GPT-3.5-turbo ($0.10-5.00 per test)
+- **Anthropic:** Claude 3 Opus/Sonnet/Haiku ($0.25-15.00 per test)
+- **Local AI:** Ollama, LM Studio (FREE & PRIVATE)
+
+**Primary Goals (5):**
+- `comprehensive_assessment` - Full security audit
+- `web_exploitation` - Deep web app testing
+- `network_mapping` - Infrastructure discovery
+- `privilege_escalation` - Escalation path finding
+- `data_access` - Data exposure vulnerabilities
+
+**Configuration Options:**
+- **Autonomy Levels:** supervised, semi_autonomous, fully_autonomous
+- **Risk Tolerance:** low (passive), medium (active), high (exploitation)
+- **Stealth Levels:** low (fast), moderate, high (slow/careful)
+- **Time Limits:** 30-240 minutes
+
+**Tools Orchestrated by AI:**
+- Port scanning & OS fingerprinting
+- Web vulnerability testing (SQL, XSS, SSRF)
+- SSL/TLS analysis
+- API security testing
+- Subdomain takeover checks
+- Technology detection
+- Payload generation (with authorization)
+
+**Use Cases:**
+- Automated security assessments
+- Red team reconnaissance
+- Bug bounty hunting
+- CI/CD security testing
+- Comprehensive penetration testing
+
+**⚠️ Requires:** Explicit written authorization to test target systems
+
+**Documentation:** AI_PENTESTING_GUIDE.md (1,800+ lines)
+
+---
+
+## 6️⃣ Subdomain Takeover Detection
 
 ### Detect Vulnerable DNS Configurations
 ```bash
@@ -114,7 +307,7 @@ scorpion takeover -t example.com
 
 ---
 
-## 3️⃣ API Security Testing ⭐ NEW
+## 7️⃣ API Security Testing
 
 ### Comprehensive API Vulnerability Assessment
 ```bash
@@ -136,7 +329,7 @@ scorpion api-test -t https://api.example.com
 
 ---
 
-## 4️⃣ SSL/TLS Deep Analysis ⭐ NEW
+## 8️⃣ SSL/TLS Deep Analysis
 
 ### Certificate & Protocol Security
 ```bash
@@ -160,7 +353,7 @@ scorpion ssl-analyze -t example.com
 
 ---
 
-## 5️⃣ OWASP Top 10 Exploitation
+## 9️⃣ Web Vulnerability Scanning (OWASP Top 10)
 
 ### 18+ Non-Destructive Security Probes
 ```bash
@@ -183,7 +376,7 @@ scorpion suite example.com --profile web --mode active --output-dir results  # P
 
 ---
 
-## 6️⃣ Threat Intelligence
+## 🔟 Threat Intelligence Integration
 
 ### Real-Time Threat Analysis
 ```bash
@@ -504,19 +697,25 @@ scorpion --version
 ### Core Documentation
 1. **README.md** - Overview and quick start
 2. **COMMANDS.md** - Complete command reference
-3. **INSTALL_PARROT_OS.md** - Linux installation guide
-4. **VULNERABILITY_REPORTING.md** - Enhanced reporting guide
+3. **QUICKSTART.md** - 5-minute getting started guide
+4. **GETTING_STARTED.md** - Detailed installation
+5. **INSTALL_PARROT_OS.md** - Linux installation guide
 
-### Enhancement Documentation
-5. **QUICK_REFERENCE.md** - User-friendly guide
-6. **BEFORE_AFTER_COMPARISON.md** - Visual improvements
-7. **ENHANCED_REPORTING_SUMMARY.md** - Technical details
+### Feature Guides (1000+ lines each)
+6. **OS_FINGERPRINTING_GUIDE.md** - Complete OS detection guide
+7. **OS_FINGERPRINTING_QUICKREF.md** - Quick reference card
+8. **PAYLOAD_GENERATION_GUIDE.md** - Payload creation comprehensive guide
+9. **DECOY_SCANNING_GUIDE.md** - IDS/IPS evasion techniques
+10. **WEB_PENTESTING_GUIDE.md** - Web vulnerability testing
+11. **WEB_PENTEST_QUICKREF.md** - Web testing quick reference
 
-### Examples
-8. **NEW_FEATURES.md** - Feature documentation
-9. **TEST_REPORT_DUBIZZLE.md** - Real-world test results
+### Implementation Documentation
+12. **IMPLEMENTATION_STATUS.md** - Feature completion status
+13. **ENHANCEMENT_ROADMAP.md** - Competitive analysis & roadmap
+14. **NEW_FEATURES.md** - Latest feature announcements
+15. **ADVANCED_FEATURES.md** - Advanced usage patterns
 
-**Total:** 2,000+ lines of documentation
+**Total:** 15,000+ lines of professional documentation
 
 ---
 
@@ -559,17 +758,23 @@ Scorpion aligns with:
 
 # 🗺️ ROADMAP
 
-## Version 2.0.1 (Current) ✅
+## Version 2.1.0 (Current - December 2025) ✅
 
+- ✅ OS Fingerprinting (nmap-level detection)
+- ✅ Payload Generation (25+ variants)
+- ✅ Decoy Scanning (IDS/IPS evasion)
+- ✅ Advanced scan types (SYN/FIN/XMAS/NULL/ACK)
+- ✅ Timing templates (6 levels)
 - ✅ Enhanced vulnerability reporting
 - ✅ Subdomain takeover detection
 - ✅ API security testing
 - ✅ SSL/TLS deep analysis
-- ✅ Comprehensive documentation
+- ✅ Web vulnerability scanning
+- ✅ Comprehensive documentation (15+ guides)
 
 ---
 
-## Version 2.1.0 (Q1 2026) 🔜
+## Version 2.2.0 (Q1 2026) 🔜
 
 ### Planned Features
 
@@ -690,15 +895,30 @@ MIT licensed, free forever
 
 ### 1. **Install**
 ```bash
+# Clone repository
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
-npm install
-npm link
+
+# Install Python CLI
+python -m pip install -e tools/python_scorpion
+
+# Verify installation
+scorpion --version
 ```
 
 ### 2. **Test (with permission!)**
 ```bash
-scorpion scan -t your-domain.com --ports 1-1000
+# Basic scanning
+scorpion scan -t your-domain.com --web
+
+# Advanced offensive testing (requires sudo/admin)
+sudo scorpion scan -t your-domain.com --syn --os-detect
+sudo scorpion scan -t your-domain.com --syn --decoy RND:5
+
+# Payload generation
+scorpion payload --lhost 10.0.0.1 --lport 4444 --shell bash
+
+# Additional tests
 scorpion takeover -t your-domain.com
 scorpion api-test -t https://api.your-domain.com
 scorpion ssl-analyze -t your-domain.com

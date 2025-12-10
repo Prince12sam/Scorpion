@@ -218,27 +218,42 @@ scorpion internal-test --scope stealth --depth deep
 scorpion internal-test --compliance PCI-DSS
 ```
 
-### AI-Powered Penetration Testing
+### AI-Powered Penetration Testing ⭐ NEW
 ```bash
+# Set API key first (required)
+export SCORPION_AI_API_KEY='sk-...'  # Get from OpenAI/Anthropic
+
 # Basic AI pentest
 scorpion ai-pentest -t example.com
 
-# Comprehensive assessment
+# Comprehensive assessment with GPT-4
 scorpion ai-pentest -t example.com --primary-goal comprehensive_assessment
 
-# Time-limited test
-scorpion ai-pentest -t example.com --time-limit 60
+# Web exploitation focus
+scorpion ai-pentest -t example.com --primary-goal web_exploitation --time-limit 90
 
-# High stealth
-scorpion ai-pentest -t example.com --stealth-level high
+# High stealth with Anthropic Claude
+scorpion ai-pentest -t example.com \
+  --ai-provider anthropic \
+  --api-key sk-ant-... \
+  --model claude-3-opus-20240229 \
+  --stealth-level high
 
-# Full autonomous
+# Local AI (free, private)
+scorpion ai-pentest -t example.com \
+  --ai-provider custom \
+  --api-endpoint http://localhost:11434/v1/chat/completions \
+  --model llama3
+
+# Full autonomous (requires authorization!)
 scorpion ai-pentest -t example.com \
   --primary-goal comprehensive_assessment \
-  --autonomy semi-autonomous \
-  --risk-tolerance medium \
+  --autonomy fully_autonomous \
+  --risk-tolerance high \
   --time-limit 120
 ```
+
+**See [AI_PENTESTING_GUIDE.md](AI_PENTESTING_GUIDE.md) for complete documentation.**
 
 ## Configuration
 

@@ -582,9 +582,22 @@ scorpion internal-test -o internal-assessment.json
 
 ### AI-Powered Autonomous Penetration Testing
 
+**🤖 Uses AI (OpenAI, Anthropic, etc.) to intelligently orchestrate security testing**
+
+**Requirements:**
+- AI API key (OpenAI, Anthropic, or custom endpoint)
+- Set `SCORPION_AI_API_KEY` environment variable or use `--api-key` flag
+
 ```bash
+# Set API key (required)
+export SCORPION_AI_API_KEY='sk-...'  # Linux/Mac
+$env:SCORPION_AI_API_KEY='sk-...'   # Windows PowerShell
+
 # Basic AI penetration test
 scorpion ai-pentest -t example.com
+
+# Or provide API key directly
+scorpion ai-pentest -t example.com --api-key sk-...
 
 # Comprehensive assessment
 scorpion ai-pentest -t example.com --primary-goal comprehensive_assessment
@@ -592,11 +605,8 @@ scorpion ai-pentest -t example.com --primary-goal comprehensive_assessment
 # Privilege escalation focus
 scorpion ai-pentest -t example.com --primary-goal privilege_escalation
 
-# Data access focus
-scorpion ai-pentest -t example.com --primary-goal data_access
-
-# Multiple secondary goals
-scorpion ai-pentest -t example.com --secondary-goals "privilege_escalation,data_access,persistence"
+# Web exploitation focus
+scorpion ai-pentest -t example.com --primary-goal web_exploitation
 
 # Time-limited test
 scorpion ai-pentest -t example.com --time-limit 60
@@ -605,6 +615,11 @@ scorpion ai-pentest -t example.com --time-limit 60
 scorpion ai-pentest -t example.com --stealth-level low
 scorpion ai-pentest -t example.com --stealth-level moderate
 scorpion ai-pentest -t example.com --stealth-level high
+
+# AI Provider options
+scorpion ai-pentest -t example.com --ai-provider openai --model gpt-4
+scorpion ai-pentest -t example.com --ai-provider anthropic --api-key sk-ant-... --model claude-3-opus-20240229
+scorpion ai-pentest -t example.com --ai-provider custom --api-endpoint http://localhost:11434/v1/chat/completions
 
 # Autonomy levels
 scorpion ai-pentest -t example.com --autonomy supervised
