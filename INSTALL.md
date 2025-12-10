@@ -1,6 +1,6 @@
 # Scorpion CLI - Installation Guide 🦂
 
-Quick guide to clone and start using Scorpion CLI for security testing.
+Complete guide to install Scorpion CLI on Windows, Linux, and macOS.
 
 ---
 
@@ -13,91 +13,109 @@ Quick guide to clone and start using Scorpion CLI for security testing.
 
 **Check if you have them:**
 ```bash
-python --version   # Should show 3.10+ (or use python3)
-python -m pip --version
-git --version      # Any recent version
+python --version   # Should show 3.10+ (use python3 on Linux/macOS)
+pip --version
+git --version
 ```
 
 **Don't have Python?**
-- Windows: Install Python from Microsoft Store or https://python.org and ensure `Add Python to PATH`
-- Linux: `sudo apt install python3 python3-pip` (Ubuntu/Debian) or `sudo yum install python3 python3-pip` (CentOS/RHEL)
-- macOS: `brew install python@3.11` or download from https://python.org
+- **Windows:** Install Python from [Microsoft Store](https://www.microsoft.com/store/productId/9NRWMJP3717K) or [python.org](https://python.org) (check "Add Python to PATH")
+- **Linux:** `sudo apt install python3 python3-pip` (Ubuntu/Debian) or `sudo dnf install python3 python3-pip` (Fedora/RHEL)
+- **macOS:** `brew install python@3.11` or download from [python.org](https://python.org)
 
 ---
 
 ## 🚀 Quick Install (3 Steps)
 
 ### Step 1: Clone the Repository
+```bash
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
 ```
 
-### Step 2: Install Scorpion CLI (Python)
+### Step 2: Install Scorpion CLI
 ```bash
-python -m pip install --upgrade pip
 python -m pip install -e tools/python_scorpion
 ```
 
-Windows (PowerShell) with a local venv:
-
+**Windows PowerShell** (if using a virtual environment):
 ```powershell
 # From repo root
+python -m venv .venv
 & .\.venv\Scripts\Activate.ps1
-.\.venv\Scripts\python.exe -m pip install -e .\tools\python_scorpion
-.\.venv\Scripts\scorpion.exe --help
-
-# If your current directory is .\tools
-& ..\.venv\Scripts\Activate.ps1
-..\.venv\Scripts\python.exe -m pip install -e .\python_scorpion
-..\.venv\Scripts\scorpion.exe --help
+python -m pip install -e tools\python_scorpion
 ```
 
-Note: When you are inside `tools`, do not use `./tools/python_scorpion` as it resolves to a non-existent `tools/tools/python_scorpion` path.
-
-### Step 3: First Run
+**Linux/macOS** (if using a virtual environment):
 ```bash
-scorpion --help
-scorpion --version
+# From repo root
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e tools/python_scorpion
 ```
 
-**That's it!** You can now use `scorpion` from anywhere on your system.
+### Step 3: Verify Installation
+```bash
+scorpion --version
+scorpion --help
+```
+
+**That's it!** You can now use `scorpion` from anywhere.
 
 ---
 
-scorpion recon -t example.com --dns
+## 🎯 Quick Test
 
-Test that everything works:
-scorpion recon -t example.com --dns --whois --subdomain
-# Check version
-scorpion --version
+```bash
+# Port scan (safe, example.com)
+scorpion scan -t example.com --web
 
-# Show help
-scorpion --help
-scorpion suite example.com --profile web --mode active --output-dir results
-# Run a test scan (safe, non-intrusive; use authorized targets only)
-scorpion scan -t example.com --ports 80,443
-scorpion suite example.com --profile web --mode active --output-dir results
+# SSL analysis
+scorpion ssl-analyze -t example.com -p 443
+
+# Reconnaissance
+scorpion recon-cmd -t example.com
+```
 
 ---
 
-## 🎯 Quick Start Examples
+## 🌐 Platform-Specific Notes
 
-Use external threat intel sources (VirusTotal, AbuseIPDB, Shodan).
-```bash
-# Scan a target
-scorpion scan -t example.com
+### Windows
+- Use PowerShell or Command Prompt
+- Paths use backslashes: `results\scan.json`
+- For SYN scans: Run PowerShell as Administrator
 
-# Scan specific ports
-scorpion scan -t example.com --ports 80,443,8080
+### Linux/macOS
+- Use bash/zsh terminal
+- Paths use forward slashes: `results/scan.json`
+- For SYN scans: Use `sudo` or run as root
 
-# Stealthy scan
-scorpion scan -t example.com --stealth ninja
+---
+
+## 🔧 Advanced: SYN Scanning (Optional)
+
+SYN scanning requires admin/root privileges and Scapy.
+
+**Windows (elevated PowerShell):**
+```powershell
+pip install scapy
+scorpion scan -t example.com --syn --web --rate-limit 50
 ```
-scorpion scan -t example.com
-scorpion recon -t example.com --dns
-scorpion --help  # Python CLI
-# DNS enumeration
-scorpion recon -t example.com --dns
+
+**Linux (sudo):**
+```bash
+sudo pip install scapy
+sudo scorpion scan -t example.com --syn --web --rate-limit 50
+```
+
+---
+
+## 📖 Next Steps
+
+- **Command Reference:** [COMMANDS.md](COMMANDS.md)
+- **Linux Guide:** [INSTALL_LINUX.md](INSTALL_LINUX.md)
+- **Quick Examples:** [QUICKSTART.md](QUICKSTART.md)
 
 # Full reconnaissance
 scorpion recon -t example.com --dns --whois --subdomain

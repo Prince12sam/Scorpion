@@ -1,103 +1,179 @@
 # Scorpion CLI - Quick Start Guide 🦂
 
+Get started with Scorpion CLI in 5 minutes.
+
+---
+
 ## Installation
 
-### Windows
+### All Platforms (3 Steps)
 ```bash
+# 1. Clone repository
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
-install.bat
+
+# 2. Install CLI
+python -m pip install -e tools/python_scorpion
+
+# 3. Verify
+scorpion --version
+scorpion --help
 ```
 
-### Linux/macOS
-```bash
-git clone https://github.com/Prince12sam/Scorpion.git
-cd Scorpion
-chmod +x install.sh
-./install.sh
-```
+---
 
-## Available Commands
+## Core Commands
 
-### Core Commands
-- `scorpion scan` - Vulnerability scanning with stealth modes
-- `scorpion recon` - Network reconnaissance and discovery  
-Python-first: use `scorpion` CLI for all commands. Legacy Node CLI has been removed.
-- `scorpion internal-test` - Internal network security testing
-- `scorpion ai-pentest` - AI-powered autonomous penetration testing
-- `scorpion help-advanced` - View advanced capabilities
-- `scorpion --version` - Show version
-- `scorpion --help` - Display help
-
-## Basic Usage Examples
-
-### Display Help
+### Help & Version
 ```bash
 # Show all commands
 scorpion --help
 
-# Show help for specific command
+# Show version
+scorpion --version
+
+# Help for specific command
 scorpion scan --help
-scorpion --help  # Python CLI help
 ```
 
-### Vulnerability Scanning
+---
+
+## Quick Examples
+
+### Port Scanning
 ```bash
-# Basic scan
-scorpion scan -t example.com
+# Web preset (ports 80,443,8080)
+scorpion scan -t example.com --web
 
-# Scan specific ports
-scorpion scan -t example.com --ports 80,443,8080
+# Fast scan (low timeout, high concurrency)
+scorpion scan -t example.com --fast
 
-# Stealth scan (ninja mode)
-scorpion scan -t example.com --stealth ninja --ports 1-1000
+# Infrastructure scan (common server ports)
+scorpion scan -t example.com --infra
 
-# Deep scan with service detection
-scorpion scan -t example.com --type deep -A -O
+# Custom ports
+scorpion scan -t example.com -p 1-1024
 
-# Save results
-scorpion scan -t example.com -o results.json
+# With UDP
+scorpion scan -t example.com --web -U -u 53,123,161
 ```
 
-### Network Reconnaissance
+### Reconnaissance
 ```bash
-# DNS enumeration
-scorpion recon -t example.com --dns
+# DNS, HTTP headers, WHOIS
+scorpion recon-cmd -t example.com
 
-# Full reconnaissance
-scorpion recon -t example.com --dns --whois --subdomain
+# Technology detection
+scorpion tech example.com
 
-# With port scanning
-scorpion recon -t example.com --dns --ports
+# Directory discovery
+scorpion dirbust example.com --concurrency 10
 ```
 
-### Exploit Testing
+### Web Testing
 ```bash
-# OWASP Top 10 testing
-scorpion suite example.com --profile web --mode active --output-dir results  # Python alternative (safe active checks)
+# SSL/TLS analysis
+scorpion ssl-analyze -t example.com -p 443
 
-# Specific vulnerability types
-scorpion suite example.com --profile web --mode active --output-dir results
+# API security tests
+scorpion api-test example.com
 
-# Cloud exploits
-scorpion suite example.com --profile full --mode active --output-dir results
+# Subdomain takeover check
+scorpion takeover example.com
 
-# All payloads
-scorpion suite example.com --profile full --output-dir results
+# Web crawler
+scorpion crawl example.com --max-pages 20
 ```
 
-### Threat Intelligence
+### Cloud & Container
 ```bash
-# Check IP reputation
-Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
+# Cloud storage exposure
+scorpion cloud examplebucket --providers aws,azure,gcp
 
-# Check domain
-Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
+# Kubernetes API audit
+scorpion k8s https://example.com:6443
 
-# Check file hash
-Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
+# Container registry check
+scorpion container registry.example.com
+```
 
-# List IOCs
+### Suite & Reporting
+```bash
+# Run web suite (passive mode)
+scorpion suite -t example.com --profile web --mode passive --output-dir results
+
+# Generate HTML report
+latest=$(ls -t results/suite_example.com_*.json | head -n1)
+scorpion report --suite "$latest" --summary
+
+# Active mode (with safety caps)
+scorpion suite -t example.com --profile full --mode active --safe-mode --max-requests 200 --rate-limit 10 --output-dir results
+```
+
+---
+
+## Output Options
+
+All commands support `--output` to save JSON results:
+
+```bash
+scorpion scan -t example.com --web --output results/scan_example.json
+scorpion ssl-analyze -t example.com --output results/ssl_example.json
+scorpion recon-cmd -t example.com --output results/recon_example.json
+```
+
+---
+
+## Advanced: SYN Scanning
+
+SYN scanning requires admin/root and Scapy.
+
+**Windows (elevated PowerShell):**
+```powershell
+pip install scapy
+scorpion scan -t example.com --syn --web --rate-limit 50
+```
+
+**Linux (sudo):**
+```bash
+sudo pip install scapy
+sudo scorpion scan -t example.com --syn --web --rate-limit 50
+```
+
+---
+
+## Presets & Flags
+
+### Scan Presets
+- `--web` → ports 80,443,8080, only open
+- `--fast` → timeout 2s, 60 concurrent, only open
+- `--infra` → common server ports, only open
+
+### Common Flags
+- `-t, --target` → Target host
+- `-p, --ports` → Port range/list
+- `-C, --concurrency` → Concurrent probes
+- `-T, --timeout` → Timeout seconds
+- `-O, --only-open` → Show only open ports
+- `-U, --udp` → Enable UDP scan
+- `-u, --udp-ports` → UDP port list
+
+---
+
+## Platform Notes
+
+- **Windows:** Use PowerShell, paths with `\`
+- **Linux/macOS:** Use bash, paths with `/`
+- **Windows SYN:** Run PowerShell as Administrator
+- **Linux SYN:** Use `sudo`
+
+---
+
+## Next Steps
+
+📖 Full command reference: [COMMANDS.md](COMMANDS.md)  
+🐧 Linux detailed guide: [INSTALL_LINUX.md](INSTALL_LINUX.md)  
+🪟 Windows detailed guide: [INSTALL.md](INSTALL.md)
 Use external TI (VirusTotal/AbuseIPDB/Shodan) alongside outputs
 ```
 

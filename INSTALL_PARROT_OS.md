@@ -75,38 +75,38 @@ You should see:
 
 ## 🧪 Test Your Installation
 
-### Test 1: Basic Scan
+### Test 1: Basic Port Scan
 
 ```bash
-# Test with placeholders only (do not use unauthorized targets)
-scorpion scan -t example.com --ports 80,443
+# Test with web preset (ports 80, 443)
+scorpion scan -t example.com --web
+
+# Custom ports
+scorpion scan -t example.com -p 80,443,8080 -T 5
 ```
 
-### Test 2: Subdomain Takeover Check
+### Test 2: SSL/TLS Analysis
 
 ```bash
-scorpion takeover -t example.com
+scorpion ssl-analyze -t example.com -p 443 -T 5
 
 # Output JSON to a file
-scorpion takeover -t example.com -o takeover-results.json
+scorpion ssl-analyze -t example.com -p 443 --output results/ssl-report.json
 ```
 
-### Test 3: API Security Test
+### Test 3: Reconnaissance
 
 ```bash
-scorpion api-test -t https://api.example.com
+scorpion recon-cmd -t example.com
 
 # Output JSON to a file
-scorpion api-test -t https://api.example.com -o api-report.json
+scorpion recon-cmd -t example.com --output results/recon-report.json
 ```
 
-### Test 4: SSL/TLS Analysis
+### Test 4: Directory Discovery
 
 ```bash
-scorpion ssl-analyze -t example.com
-
-# Output JSON to a file
-scorpion ssl-analyze -t example.com -o ssl-report.json
+scorpion dirbust example.com --concurrency 10 --output results/dirb.json
 ```
 
 ---
@@ -147,12 +147,13 @@ sudo apt install -y python3-pip
 ### Issue 2: Permission Errors
 
 ```bash
-# If you get EACCES errors during npm install:
-sudo chown -R $USER:$USER ~/.npm
-sudo chown -R $USER:$USER /usr/local/lib/node_modules
+# If you get permission errors during pip install:
+python3 -m pip install --user -e tools/python_scorpion
 
-# Then retry:
-npm install
+# OR use a virtual environment:
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e tools/python_scorpion
 ```
 
 ### Issue 3: CLI Not Found
@@ -163,59 +164,67 @@ python3 -m pip install -e tools/python_scorpion
 which scorpion
 ```
 
-### Issue 4: Port Scanning Requires Root
+### Issue 4: SYN Scanning Requires Root
 
-Some scans need elevated privileges:
+SYN scans need elevated privileges and Scapy:
 
 ```bash
-# For SYN scans and OS detection:
-sudo scorpion scan -t example.com -sS -O
+# Install Scapy
+sudo pip install scapy
 
-# OR:
-sudo scorpion scan -t example.com -sS -O  # Python CLI
+# Run SYN scan with sudo
+sudo scorpion scan -t example.com --syn --web --rate-limit 50
+
+# Optional: specify network interface
+sudo scorpion scan -t example.com --syn --web --iface eth0
+
+# List available interfaces
+scorpion scan --list-ifaces
 ```
 
 ---
 
-## 📋 All Available Commands (Python)
+## 📋 All Available Commands
 
 ```bash
 # Help
 scorpion --help
 scorpion scan --help
-scorpion recon --help
+scorpion ssl-analyze --help
 
-# Port Scanning
-scorpion scan -t example.com --ports 1-1000
-scorpion scan -t example.com --type deep
-scorpion scan -t example.com --stealth ninja
+# Port Scanning (TCP/UDP)
+scorpion scan -t example.com -p 80,443,8080
+scorpion scan -t example.com --web          # Preset: ports 80,443
+scorpion scan -t example.com --fast         # Preset: quick scan
+scorpion scan -t example.com -u 53,161      # UDP scan
 
-# Network Reconnaissance
-scorpion recon -t example.com --dns --whois --subdomain
+# SYN Scan (requires root + scapy)
+sudo scorpion scan -t example.com --syn --web --rate-limit 50
 
-# Subdomain Takeover (NEW)
-scorpion takeover -t example.com
-scorpion takeover -t example.com --check-aws
-scorpion takeover -t example.com -o report.json
+# SSL/TLS Analysis
+scorpion ssl-analyze -t example.com -p 443 -T 5
+scorpion ssl-analyze -t example.com -p 443 --output results/ssl.json
 
-# API Security Testing (NEW)
-scorpion api-test -t https://api.example.com
-scorpion api-test -t https://api.example.com --no-graphql
-scorpion api-test -t https://api.example.com -o api-report.json
+# Reconnaissance
+scorpion recon-cmd -t example.com
+scorpion recon-cmd -t example.com --output results/recon.json
 
-# SSL/TLS Analysis (NEW)
-scorpion ssl-analyze -t example.com
-scorpion ssl-analyze -t example.com -p 8443
-scorpion ssl-analyze -t example.com -o ssl-report.json
+# Directory Discovery
+scorpion dirbust example.com --concurrency 10 --output results/dirb.json
 
-# Web suite (safe active checks)
-scorpion suite example.com --profile web --mode active --output-dir results
+# Technology Detection
+scorpion tech example.com --output results/tech.json
 
-# Enterprise Scanning (Python)
-scorpion suite example.com --profile full --output-dir results
+# Web Crawling
+scorpion crawl example.com --start https://example.com --max-pages 10 --concurrency 4 --output results/crawl.json
 
-# AI-Powered Penetration Testing
-# Use suite/report flow and external tooling
+# Test Suites
+scorpion suite -t example.com --profile web --mode passive --output-dir results
+scorpion suite -t example.com --profile infra --mode active --output-dir results
+
+# Generate Reports
+scorpion report --suite results/suite_example.com_*.json --summary
+scorpion report --suite results/suite_example.com_*.json --format html --output report.html
 ```
 
 ---
@@ -234,25 +243,32 @@ python3 -m pip install -e tools/python_scorpion
 TARGET="example.com"
 
 # Port scan
-scorpion scan -t $TARGET --ports 1-1000 -o scan-results.json
-
-# Reconnaissance
-scorpion recon -t $TARGET --dns --subdomain --whois
-
-# Subdomain takeover check
-scorpion takeover -t $TARGET -o takeover-results.json
-
-# API security test (if you have an API)
-scorpion api-test -t https://api.$TARGET -o api-results.json
+scorpion scan -t $TARGET --web -o results/scan.json
 
 # SSL/TLS analysis
-scorpion ssl-analyze -t $TARGET -o ssl-results.json
+scorpion ssl-analyze -t $TARGET -p 443 -T 5 --output results/ssl.json
 
-# Active-safe web checks (Python)
-scorpion suite $TARGET --profile web --mode active --output-dir results
+# Reconnaissance
+scorpion recon-cmd -t $TARGET --output results/recon.json
+
+# Directory discovery
+scorpion dirbust $TARGET --concurrency 10 --output results/dirb.json
+
+# Technology detection
+scorpion tech $TARGET --output results/tech.json
+
+# Web crawling
+scorpion crawl $TARGET --start https://$TARGET --max-pages 10 --output results/crawl.json
+
+# Run test suite
+scorpion suite -t $TARGET --profile web --mode passive --output-dir results
+
+# Generate report
+latest=$(ls -t results/suite_${TARGET}_*.json | head -n1)
+scorpion report --suite "$latest" --summary
 
 # View results
-ls -lh *-results.json
+ls -lh results/
 ```
 
 ---
@@ -265,16 +281,16 @@ Parrot OS has many security tools. Combine Scorpion with them:
 
 ```bash
 # Use with nmap
-nmap -p- $TARGET | grep open
-scorpion scan -t $TARGET --ports $(nmap -p- $TARGET | grep open | cut -d'/' -f1)
+nmap -p- $TARGET
+scorpion scan -t $TARGET --web
 
 # Use with nikto
-scorpion scan -t $TARGET --ports 80,443
+scorpion scan -t $TARGET --web
 nikto -h $TARGET
 
-# Use with sqlmap
-scorpion suite $TARGET --profile web --mode active --output-dir results
-sqlmap -u "http://$TARGET/page?id=1"  # with permission only
+# Use with other tools
+scorpion suite -t $TARGET --profile web --mode passive --output-dir results
+# Then use results for deeper analysis with specialized tools
 ```
 
 ### 2. Run as Regular User
@@ -283,10 +299,15 @@ Most Scorpion commands don't need root:
 
 ```bash
 # These work without sudo:
-scorpion takeover -t example.com
-scorpion api-test -t https://api.example.com
-scorpion ssl-analyze -t example.com
-scorpion recon -t example.com --dns
+scorpion scan -t example.com --web
+scorpion ssl-analyze -t example.com -p 443
+scorpion recon-cmd -t example.com
+scorpion dirbust example.com --concurrency 10
+scorpion tech example.com
+scorpion crawl example.com --start https://example.com
+
+# Only SYN scans need sudo:
+sudo scorpion scan -t example.com --syn --web
 ```
 
 ### 3. Save Results in ~/results
@@ -296,9 +317,10 @@ scorpion recon -t example.com --dns
 mkdir -p ~/results
 
 # Save all reports there
-scorpion scan -t example.com -o ~/results/scan.json
-scorpion takeover -t example.com -o ~/results/takeover.json
-scorpion api-test -t https://api.example.com -o ~/results/api.json
+scorpion scan -t example.com --web --output ~/results/scan.json
+scorpion ssl-analyze -t example.com -p 443 --output ~/results/ssl.json
+scorpion recon-cmd -t example.com --output ~/results/recon.json
+scorpion suite -t example.com --profile web --output-dir ~/results
 ```
 
 ---
@@ -376,16 +398,16 @@ scorpion api-test --help
 ### Common Questions
 
 **Q: Do I need root/sudo?**  
-A: Most commands work without sudo. Only SYN scans (-sS) and OS detection (-O) need root.
+A: Most commands work without sudo. Only SYN scans (--syn) need root and Scapy.
 
 **Q: Can I test any website?**  
 A: NO! Only test systems you own or have written permission to test.
 
 **Q: How do I update?**  
-A: `cd Scorpion && git pull && npm install`
+A: `cd Scorpion && git pull && pip install -e tools/python_scorpion`
 
 **Q: Where are results saved?**  
-A: Use `-o filename.json` to save results. Default: printed to console.
+A: Use `--output filename.json` to save results. Default: printed to console.
 
 ---
 
@@ -393,7 +415,8 @@ A: Use `-o filename.json` to save results. Default: printed to console.
 
 ```bash
 # Start testing (with permission!)
-scorpion scan -t your-target.com --ports 1-1000
+scorpion scan -t your-target.com --web
+scorpion suite -t your-target.com --profile web --mode passive --output-dir results
 ```
 
 **Happy (ethical) hacking! 🦂**

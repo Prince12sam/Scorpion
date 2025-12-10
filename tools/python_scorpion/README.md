@@ -1,53 +1,119 @@
-# Python Scorpion (Heavy-weight)
+# Scorpion Python CLI
 
-A Python-based, high-concurrency variant of the Scorpion security toolkit.
+Production-ready, high-concurrency security testing toolkit.
+
+---
 
 ## Features
-- Async TCP port scanner (fast, concurrent)
-- TLS/SSL analyzer (cert expiry, cipher, TLS version, HSTS)
-- Subdomain takeover checks
-- API probe (Swagger/GraphQL/JWT/IDOR/Rate-limit pulse)
-- Recon (DNS, headers, WHOIS)
-- NEW: Dirbust (built-in curated wordlist; wildcard filtering)
-- NEW: Tech fingerprinting (server/framework/CDN/WAF)
-- Orchestrated `suite` runs with profile selection and combined JSON
 
-## Install (Windows PowerShell)
+- **Async TCP/UDP port scanning** - Fast, concurrent network scanning
+- **SSL/TLS analyzer** - Certificate validation, cipher suites, protocol detection
+- **Subdomain takeover checks** - 15+ cloud provider detection
+- **API security testing** - Swagger/GraphQL/JWT/IDOR/rate-limit testing
+- **Reconnaissance** - DNS enumeration, HTTP headers, WHOIS
+- **Directory discovery** - Built-in wordlist with wildcard filtering
+- **Technology detection** - Server/framework/CDN/WAF identification
+- **Web crawler** - Same-host crawling with secrets detection
+- **Cloud/K8s/Container audits** - Infrastructure security checks
+- **Suite mode** - Combined testing with unified JSON/HTML reports
 
-```powershell
-# From repo root
-cd "c:\Users\prince.sam_dubizzle\Downloads\open_project\tools\python_scorpion"
+---
 
-# Create venv
-python -m venv .venv; .\.venv\Scripts\Activate.ps1
+## Quick Install
 
-# Install requirements
-pip install -U pip; pip install typer rich httpx dnspython cryptography
+### From Repository Root
 
-# Editable install
-pip install -e .
+```bash
+# Clone repository (if not already done)
+git clone https://github.com/Prince12sam/Scorpion.git
+cd Scorpion
 
-# Verify CLI
+# Install CLI
+python -m pip install -e tools/python_scorpion
+
+# Verify
+scorpion --version
 scorpion --help
 ```
 
-## Packaging (Single Binary)
-
-Build a one-file binary for easy distribution on Windows or Linux.
-
-Windows (PowerShell):
-
-```powershell
-cd tools/python_scorpion
-pip install -r requirements-dev.txt
-./build-windows.ps1
-# Binary: tools/python_scorpion/dist/scorpion.exe
-```
-
-Linux (bash):
+### From This Directory
 
 ```bash
 cd tools/python_scorpion
+
+# Install
+pip install -e .
+
+# Verify
+scorpion --version
+```
+
+---
+
+## Quick Examples
+
+```bash
+# Port scan
+scorpion scan -t example.com --web
+
+# SSL analysis
+scorpion ssl-analyze -t example.com -p 443
+
+# Reconnaissance
+scorpion recon-cmd -t example.com
+
+# Web suite + report
+scorpion suite -t example.com --profile web --mode passive --output-dir results
+latest=$(ls -t results/suite_*.json | head -n1)
+scorpion report --suite "$latest" --summary
+```
+
+---
+
+## Documentation
+
+See the main repository documentation:
+- [Getting Started](../../GETTING_STARTED.md)
+- [Installation Guide](../../INSTALL.md)
+- [Command Reference](../../COMMANDS.md)
+
+---
+
+## Development
+
+### Install Development Dependencies
+
+```bash
+pip install -r requirements-dev.txt
+```
+
+### Build Binary (Optional)
+
+**Windows:**
+```powershell
+.\build-windows.ps1
+# Output: dist/scorpion.exe
+```
+
+**Linux:**
+```bash
+./build-linux.sh
+# Output: dist/scorpion
+```
+
+---
+
+## Requirements
+
+- Python 3.10+
+- Dependencies: typer, rich, httpx, dnspython, cryptography
+- Optional: scapy (for SYN scanning), uvloop (Linux/macOS performance)
+
+---
+
+## License
+
+MIT License - See [LICENSE](../../LICENSE)
 pip install -r requirements-dev.txt
 bash build-linux.sh
 # Binary: tools/python_scorpion/dist/scorpion

@@ -1,103 +1,157 @@
 # Scorpion CLI Security Tool 🦂
 
-> Consolidation Notice (Dec 2025)
->
-> - Primary CLI: Python Scorpion (`scorpion`) — cross‑platform, production‑ready.
-> - Python CLI is the primary and only supported entrypoint.
-> - Feature coverage: Python CLI includes scan, ssl-analyze, takeover, api-test, recon, dirbust, tech, crawl, suite/report, plus cloud, k8s, and container checks with passive/active-safe OWASP coverage.
-> - Safer by default: TLS verification on, no exploit payloads by default; active tests gated by flags.
-> - Linux Quickstart below shows install and test commands across common distros.
-
-Migration guide removed; repository is Python-only.
-
 [![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/Prince12sam/Scorpion)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)](https://nodejs.org/)
+[![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org/)
 
-**🔒 Professional Command-Line Security Testing & Threat-Hunting Platform**
+**Professional Command-Line Security Testing & Threat-Hunting Platform**
 
-## Primary CLI: Python Scorpion
+> **Python-only CLI** — Production-ready, cross-platform security testing toolkit with comprehensive vulnerability scanning, reconnaissance, and automated reporting.
 
-- Install: see `tools/python_scorpion/README.md` (or run `pip install -r tools/python_scorpion/requirements.txt` and add `scorpion` to PATH if installed as console script).
-- Key commands:
-  - `scorpion scan|suite|report|ssl-analyze|takeover|api-test|recon|dirbust|tech|crawl|cloud|k8s|container`
-  - Modes: `--mode passive|active`, safety caps: `--safe-mode`, `--max-requests`, `--rate-limit`
+---
 
-### Linux Quickstart
+## 📋 Prerequisites
 
+- **Python 3.10 or higher**
+- pip (Python package manager)
+- Git
+
+**Check versions:**
 ```bash
-# Ubuntu/Debian
-sudo apt update
-sudo apt install -y python3 python3-pip git curl
-cd ~/Scorpion
-python3 -m pip install -r tools/python_scorpion/requirements.txt
-
-# Run a passive web suite and generate report
-scorpion --no-banner suite -t example.com --profile web --mode passive --output results/
-latest=$(ls -t results/suite_example.com_*.json | head -n1)
-scorpion --no-banner report --suite "$latest" --output results/suite_example_web_passive.html
+python --version    # or python3 --version
+pip --version
+git --version
 ```
 
-> Note: The Node CLI has been removed. Use the Python CLI `scorpion`.
+---
 
-## 🚀 Quick Start
+## 🚀 Quick Install (3 Steps)
 
-### Installation
-
+### 1️⃣ Clone Repository
 ```bash
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
+```
+
+### 2️⃣ Install Scorpion CLI
+```bash
 python -m pip install -e tools/python_scorpion
 ```
 
-### Basic Usage
+### 3️⃣ Verify Installation
+```bash
+scorpion --version
+scorpion --help
+```
+
+**That's it!** You're ready to run security scans.
+
+👉 **New to Scorpion?** Read the [Getting Started Guide](GETTING_STARTED.md) for a 5-minute walkthrough.
+
+---
+
+## ⚡ Quick Commands
 
 ```bash
-# Display help
-scorpion --help
+# Port scan with web preset
+scorpion scan -t example.com --web
 
-# Scan a target
-scorpion scan -t example.com --ports 1-1000
+# SSL/TLS analysis
+scorpion ssl-analyze -t example.com -p 443 -T 5
 
-# Network reconnaissance
-scorpion recon -t example.com --dns --whois
+# Reconnaissance
+scorpion recon-cmd -t example.com
 
-# Active-safe web checks (Python)
-scorpion suite example.com --profile web --mode active --output-dir results
-# Use Python suite for active-safe checks
-# scorpion suite example.com --profile web --mode active --output-dir results
+# Web suite + Report
+scorpion suite -t example.com --profile web --mode passive --output-dir results
+latest=$(ls -t results/suite_example.com_*.json | head -n1)
+scorpion report --suite "$latest" --summary
 ```
+
+📖 **Full command reference:** [COMMANDS.md](COMMANDS.md)  
+🐧 **Linux-specific guide:** [INSTALL_LINUX.md](INSTALL_LINUX.md)  
+🪟 **Windows guide:** [INSTALL.md](INSTALL.md)
+
+---
 
 ## ✨ Features
 
-### 🎯 **Enhanced Vulnerability Reporting** ⭐ NEW
-- **Exact Locations**: Precise identification of vulnerability locations
-- **Impact Analysis**: Real-world consequences for each security issue
-- **Remediation Steps**: Step-by-step instructions to fix vulnerabilities
-- **Technical Details**: CVE references, payloads, and proof-of-concept data
-- **Compliance Mapping**: OWASP, NIST, PCI DSS alignment
-- **JSON Export**: Machine-readable reports for CI/CD integration
+### 🎯 Core Security Testing
+- **Port Scanning:** Fast async TCP/UDP scanning with service detection
+- **SSL/TLS Analysis:** Certificate validation, cipher suites, protocol versions
+- **Subdomain Takeover:** Detection across 15+ cloud providers
+- **API Security:** Swagger/GraphQL testing, IDOR detection, rate limit checks
+- **Web Crawling:** Same-host crawler with secrets detection
+- **Directory Discovery:** Built-in wordlists with wildcard filtering
 
-📄 **[View Full Vulnerability Reporting Guide →](VULNERABILITY_REPORTING.md)**
+### 🔍 Reconnaissance
+- **DNS Enumeration:** A, AAAA, MX, TXT, NS records
+- **Technology Detection:** Framework, CDN, WAF identification
+- **WHOIS Lookup:** Domain registration details
+- **HTTP Analysis:** Headers, status codes, server fingerprinting
 
-### 🔍 **Subdomain Takeover Detection** ⭐ NEW
-- **15+ Cloud Services**: AWS S3, Azure, GitHub Pages, Heroku, Shopify, and more
-- **Real DNS Resolution**: Production-ready CNAME enumeration
-- **Service Fingerprinting**: Automatic vulnerable service identification
-- **HTTP Verification**: Live requests to confirm unclaimed resources
-- **Detailed Reports**: Exact DNS records and remediation guidance
+### ☁️ Cloud & Container Security
+- **Cloud Storage:** AWS S3, Azure Blob, GCP bucket exposure checks
+- **Kubernetes:** API/kubelet endpoint auditing
+- **Container Registries:** Docker/Harbor anonymous access detection
 
-### 🔐 **API Security Testing** ⭐ NEW
-- **Endpoint Discovery**: Automatic API path enumeration
-- **OpenAPI/Swagger Testing**: Documentation exposure detection
-- **GraphQL Security**: Introspection and injection testing
-- **Authentication Analysis**: JWT, OAuth, Basic Auth security checks
-- **IDOR Detection**: Insecure Direct Object Reference testing
-- **Rate Limiting Tests**: 100-request burst testing
-- **Input Validation**: XSS, SQLi, Command Injection probes
+### 📊 Reporting
+- **JSON Outputs:** Machine-readable results for all commands
+- **HTML Reports:** Professional vulnerability reports with severity ratings
+- **Suite Mode:** Combined testing with unified output
+- **Summary Reports:** Executive-friendly findings overview
 
-### 🔒 **SSL/TLS Deep Analysis** ⭐ NEW
+### 🛡️ Safety Features
+- **Passive Mode:** Non-intrusive reconnaissance
+- **Active Mode:** With configurable safety caps
+- **Rate Limiting:** Prevent service disruption
+- **TLS Verification:** Secure connections by default
+
+---
+
+## 📚 Documentation
+
+**📑 [Documentation Index](DOCS_INDEX.md)** - Navigate all guides
+
+### Quick Links
+- **🚀 Getting Started:** [GETTING_STARTED.md](GETTING_STARTED.md) ⭐ **Start here!**
+- **🪟 Windows Installation:** [INSTALL.md](INSTALL.md)
+- **🐧 Linux Installation:** [INSTALL_LINUX.md](INSTALL_LINUX.md)
+- **⚡ Quick Examples:** [QUICKSTART.md](QUICKSTART.md)  
+- **📋 Complete Command Reference:** [COMMANDS.md](COMMANDS.md)
+
+---
+
+## 🔒 Security & Ethics
+
+**Important:** Use Scorpion only on systems you own or have explicit permission to test.
+
+- Unauthorized scanning may be illegal
+- Always obtain written authorization before testing
+- Respect rate limits and system resources
+- Follow responsible disclosure practices
+- Review local laws and regulations
+
+---
+
+## 📄 License
+
+MIT License - See [LICENSE](LICENSE) for details.
+
+---
+
+## 🤝 Contributing
+
+Contributions welcome! Please open an issue or pull request on GitHub.
+
+---
+
+## 📮 Support
+
+- **Issues:** [GitHub Issues](https://github.com/Prince12sam/Scorpion/issues)
+- **Documentation:** See guides in repository root
+- **Examples:** Check [QUICKSTART.md](QUICKSTART.md) for common use cases
 - **Certificate Inspection**: Expiration, key size, signature validation
 - **Protocol Testing**: SSLv3, TLS 1.0-1.3 support detection
 - **Cipher Analysis**: Strong vs weak cipher suite identification

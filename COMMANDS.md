@@ -1,103 +1,340 @@
-# Scorpion CLI - Command Reference Card
+# Scorpion CLI - Command Reference
 
-Quick reference for all available commands and options.
+Complete reference for all Scorpion CLI commands and options.
 
-## 📋 Main Commands
+---
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `scan` | Vulnerability scanning | `scorpion scan -t example.com` |
-| `recon` | Network reconnaissance | `scorpion recon -t example.com --dns` |
-| `threat-intel` | Use external TI services | — |
-| `suite` | Enterprise/web active-safe checks | `scorpion suite example.com --profile web --mode active` |
-| `suite` | Unified Python suite | `scorpion suite example.com --profile full --output-dir results` |
-| `internal-test` | Internal network test | `scorpion internal-test --scope full` |
-| `ai-pentest` | AI-powered pentest | `scorpion ai-pentest -t example.com` |
-| `takeover` | Subdomain takeover detection | `scorpion takeover -t example.com` |
-| `api-test` | API security testing | `scorpion api-test -t https://api.example.com` |
-| `ssl-analyze` | SSL/TLS deep analysis | `scorpion ssl-analyze -t example.com` |
-| `help-advanced` | Show advanced features | `scorpion help-advanced` |
+## 📋 Core Commands
 
-## 🔍 Scan Command
+| Command | Description | Quick Example |
+|---------|-------------|---------------|
+| `scan` | TCP/UDP port scanning | `scorpion scan -t example.com --web` |
+| `ssl-analyze` | SSL/TLS analysis | `scorpion ssl-analyze -t example.com` |
+| `recon-cmd` | Reconnaissance | `scorpion recon-cmd -t example.com` |
+| `takeover` | Subdomain takeover check | `scorpion takeover example.com` |
+| `api-test` | API security testing | `scorpion api-test example.com` |
+| `dirbust` | Directory discovery | `scorpion dirbust example.com` |
+| `tech` | Technology detection | `scorpion tech example.com` |
+| `crawl` | Web crawler | `scorpion crawl example.com` |
+| `cloud` | Cloud storage audit | `scorpion cloud bucket` |
+| `k8s` | Kubernetes API audit | `scorpion k8s https://host:6443` |
+| `container` | Container registry audit | `scorpion container registry.host` |
+| `suite` | Combined security suite | `scorpion suite -t example.com --profile web` |
+| `report` | Generate HTML report | `scorpion report --suite results.json` |
+
+---
+
+## 🔍 scan - Port Scanning
 
 ```bash
-scorpion scan [options]
+scorpion scan -t <target> [options]
 ```
 
 ### Options
-- `-t, --target <target>` - Target IP, domain, or URL (required)
-- `-p, --ports <ports>` - Port range (e.g., 1-1000, 80,443)
-- `--type <type>` - Scan type: quick, normal, deep, custom
-- `--technique <technique>` - tcp-connect, syn-scan, udp-scan, stealth
-- `-sT` - TCP connect scan
-- `-sS` - TCP SYN scan (requires privileges)
-- `-sU` - UDP scan
-- `-A` - Aggressive: enable service/version detection
-- `-O` - OS detection
-- `-v, --verbose` - Verbose output
-- `--stealth <level>` - low, medium, high, ninja
-- `--output-mode <mode>` - nmap or json
-- `-o, --output <file>` - Save results to file
+| Flag | Description | Example |
+|------|-------------|---------|
+| `-t, --target` | Target host (required) | `-t example.com` |
+| `-p, --ports` | Port range/list | `-p 1-1024` or `-p 80,443` |
+| `-C, --concurrency` | Concurrent probes | `-C 200` |
+| `-T, --timeout` | Timeout seconds | `-T 2.0` |
+| `-R, --retries` | Retry count | `-R 1` |
+| `-U, --udp` | Enable UDP scan | `-U` |
+| `-u, --udp-ports` | UDP ports | `-u 53,123,161` |
+| `-O, --only-open` | Show only open ports | `-O` |
+| `--raw` | Raw banner only | `--raw` |
+| `--no-write` | Connect-only mode | `--no-write` |
+| `--syn` | SYN scan (requires admin) | `--syn` |
+| `--rate-limit` | SYN rate limit | `--rate-limit 50` |
+| `--iface` | Network interface | `--iface eth0` |
+| `--list-ifaces` | List interfaces | `--list-ifaces` |
+| `--fast` | Fast preset | `--fast` |
+| `--web` | Web preset (80,443,8080) | `--web` |
+| `--infra` | Infrastructure preset | `--infra` |
+| `--output` | Save JSON output | `--output scan.json` |
 
 ### Examples
 ```bash
-scorpion scan -t example.com
-scorpion scan -t example.com --ports 80,443,8080 --stealth high
-scorpion scan -t example.com -sS --type deep -A -O
-scorpion scan -t example.com --stealth ninja -o results.json
+# Web scan
+scorpion scan -t example.com --web
+
+# Fast scan
+scorpion scan -t example.com --fast
+
+# Custom ports with UDP
+scorpion scan -t example.com -p 1-1024 -U -u 53,123,161
+
+# SYN scan (admin required)
+scorpion scan -t example.com --syn --web --rate-limit 50
 ```
 
-## 🌐 Recon Command
+---
+
+## 🔐 ssl-analyze - SSL/TLS Analysis
 
 ```bash
-scorpion recon [options]
+scorpion ssl-analyze -t <target> [options]
 ```
 
 ### Options
-- `-t, --target <target>` - Target IP, domain, or network (required)
-- `--dns` - Perform DNS enumeration
-- `--whois` - Perform WHOIS lookup
-- `--ports` - Perform port scanning
-- `--subdomain` - Subdomain enumeration
+| Flag | Description | Example |
+|------|-------------|---------|
+| `-t, --target` | Target host | `-t example.com` |
+| `-p, --port` | TLS port | `-p 443` |
+| `-T, --timeout` | Timeout seconds | `-T 5` |
+| `--output` | Save JSON | `--output ssl.json` |
 
-### Examples
+### Example
 ```bash
-scorpion recon -t example.com --dns
-scorpion recon -t example.com --dns --whois --subdomain
-scorpion recon -t 192.168.1.1 --dns --ports
+scorpion ssl-analyze -t example.com -p 443 -T 5 --output results/ssl.json
 ```
 
-## 🛡️ Threat Intel Command (Legacy Node)
+---
+
+## 🌐 recon-cmd - Reconnaissance
 
 ```bash
-Threat intel: use external services (VirusTotal/AbuseIPDB/Shodan)
-```
-
-### Options
-- `-i, --ip <ip>` - Check IP reputation
-- `-d, --domain <domain>` - Check domain reputation
-- `-h, --hash <hash>` - Check file hash (MD5/SHA1/SHA256)
-- `--ioc` - List indicators of compromise
-
-### Examples
-```bash
-External TI examples omitted
-
-> Python CLI note: use external threat intel tools alongside suite outputs.
-```
-
-## 💥 Exploit Command (Legacy Node) and Python Alternative
-
-```bash
-Exploit testing: use Python suite active-safe mode
+scorpion recon-cmd -t <target> [options]
 ```
 
 ### Options
-- `-t, --target <target>` - Target IP, domain, or URL (required)
-- `-p, --port <port>` - Specific port to test
-- `--service <service>` - Target service (ssh, http, ftp, smtp)
-- `--vuln <cve>` - Target specific CVE (e.g., CVE-2021-44228)
-- `--payload <type>` - Payload type (see below)
+| Flag | Description |
+|------|-------------|
+| `-t, --target` | Target host |
+| `--output` | Save JSON |
+
+### Example
+```bash
+scorpion recon-cmd -t example.com --output results/recon.json
+```
+
+---
+
+## 🎯 takeover - Subdomain Takeover
+
+```bash
+scorpion takeover <host> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--output` | Save JSON |
+| `--timeout` | Timeout seconds |
+
+### Example
+```bash
+scorpion takeover example.com --output results/takeover.json
+```
+
+---
+
+## 🔌 api-test - API Security
+
+```bash
+scorpion api-test <host> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--output` | Save JSON |
+| `--bursts` | Rate limit test bursts |
+
+### Example
+```bash
+scorpion api-test example.com --output results/api.json
+```
+
+---
+
+## 📁 dirbust - Directory Discovery
+
+```bash
+scorpion dirbust <host> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--wordlist` | Custom wordlist path |
+| `--concurrency` | Concurrent requests |
+| `--https` | Use HTTPS |
+| `--output` | Save JSON |
+
+### Example
+```bash
+scorpion dirbust example.com --concurrency 10 --output results/dirb.json
+```
+
+---
+
+## 🔬 tech - Technology Detection
+
+```bash
+scorpion tech <host> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--output` | Save JSON |
+
+### Example
+```bash
+scorpion tech example.com --output results/tech.json
+```
+
+---
+
+## 🕷️ crawl - Web Crawler
+
+```bash
+scorpion crawl <host> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--start` | Start URL |
+| `--max-pages` | Maximum pages |
+| `--concurrency` | Concurrent requests |
+| `--output` | Save JSON |
+
+### Example
+```bash
+scorpion crawl example.com --start https://example.com --max-pages 20 --output results/crawl.json
+```
+
+---
+
+## ☁️ cloud - Cloud Storage Audit
+
+```bash
+scorpion cloud <name> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--providers` | Providers (aws,azure,gcp) |
+| `--output` | Save JSON |
+
+### Example
+```bash
+scorpion cloud examplebucket --providers aws,azure,gcp --output results/cloud.json
+```
+
+---
+
+## ☸️ k8s - Kubernetes Audit
+
+```bash
+scorpion k8s <api-base> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--insecure` | Skip TLS verification |
+| `--output` | Save JSON |
+
+### Example
+```bash
+scorpion k8s https://example.com:6443 --output results/k8s.json
+```
+
+---
+
+## 📦 container - Container Registry Audit
+
+```bash
+scorpion container <registry> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--output` | Save JSON |
+
+### Example
+```bash
+scorpion container registry.example.com --output results/container.json
+```
+
+---
+
+## 🎭 suite - Combined Security Suite
+
+```bash
+scorpion suite -t <target> [options]
+```
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `-t, --target` | Target host | `-t example.com` |
+| `--profile` | Scan profile | `--profile web` |
+| `--mode` | Testing mode | `--mode passive` |
+| `--output-dir` | Output directory | `--output-dir results` |
+| `--ports` | Port range | `--ports 1-1024` |
+| `--udp` | Include UDP | `--udp` |
+| `--cloud-name` | Cloud bucket name | `--cloud-name bucket` |
+| `--k8s-api` | K8s API URL | `--k8s-api https://host:6443` |
+| `--registry` | Container registry | `--registry registry.host` |
+| `--safe-mode` | Enable safety caps | `--safe-mode` |
+| `--max-requests` | Request cap | `--max-requests 200` |
+| `--rate-limit` | Rate limit | `--rate-limit 10` |
+
+### Profiles
+- `web` - Web application testing
+- `api` - API security testing
+- `infra` - Infrastructure scanning
+- `full` - Complete suite
+
+### Modes
+- `passive` - Non-intrusive checks
+- `active` - Active testing (with safety caps)
+
+### Example
+```bash
+scorpion suite -t example.com --profile web --mode passive --output-dir results
+```
+
+---
+
+## 📊 report - HTML Report Generation
+
+```bash
+scorpion report --suite <file> [options]
+```
+
+### Options
+| Flag | Description |
+|------|-------------|
+| `--suite` | Suite JSON file |
+| `--output` | HTML output file |
+| `--summary` | Generate summary report |
+
+### Example
+```bash
+scorpion report --suite results/suite_example.com_*.json --summary --output report.html
+```
+
+---
+
+## 🚀 Quick Command Chains
+
+```bash
+# Web suite + report
+scorpion suite -t example.com --profile web --mode passive --output-dir results
+latest=$(ls -t results/suite_example.com_*.json | head -n1)
+scorpion report --suite "$latest" --summary
+
+# Multi-tool scan
+scorpion scan -t example.com --web --output results/scan.json
+scorpion ssl-analyze -t example.com --output results/ssl.json
+scorpion recon-cmd -t example.com --output results/recon.json
+```
 - `--mode <mode>` - reconnaissance, proof-of-concept, full-exploitation
 - `-o, --output <file>` - Save results
 
