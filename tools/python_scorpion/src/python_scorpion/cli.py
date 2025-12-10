@@ -16,7 +16,7 @@ from rich.console import Console
 from rich.table import Table
 from rich import box
 
-from .scanner import async_port_scan, async_udp_scan, async_syn_scan
+from .scanner import async_port_scan, async_udp_scan, async_syn_scan, async_advanced_scan
 from .ssl_analyzer import analyze_ssl
 from .takeover import takeover_scan
 from .api import api_probe
@@ -29,6 +29,10 @@ from .cloud import cloud_audit
 from .k8s import k8s_audit
 from .container_sec import container_audit
 from .web_owasp import web_owasp_passive
+from .web_pentest import AdvancedWebTester
+from .os_fingerprint import OSFingerprinter
+from .payload_generator import PayloadGenerator, PayloadType, PayloadFormat
+from .decoy_scanner import DecoyScanner, parse_decoy_option, DecoyConfig
 
 # Remove subtitle under banner by not setting a global help description
 app = typer.Typer()
@@ -117,19 +121,31 @@ def scan(
     only_open: bool = typer.Option(False, "--only-open", "-O", help="Show only open ports in output"),
     raw: bool = typer.Option(False, "--raw", help="Show raw banner only; do not infer service names"),
     no_write: bool = typer.Option(False, "--no-write", help="Do not send probe bytes; connect-and-read only"),
+    version_detect: bool = typer.Option(False, "--version-detect", "-sV", help="Enable service version detection (like nmap -sV)"),
+    os_detect: bool = typer.Option(False, "--os-detect", "-O", help="Enable OS fingerprinting (requires admin/root + scapy)"),
     fast: bool = typer.Option(False, "--fast", help="Preset: --timeout 2.0 --retries 1 --concurrency 60 --only-open"),
     web: bool = typer.Option(False, "--web", help="Preset: ports 80,443,8080 and only-open"),
     infra: bool = typer.Option(False, "--infra", help="Preset: common infra ports and only-open"),
-    syn: bool = typer.Option(False, "--syn", help="Attempt TCP SYN scan (requires admin/raw sockets or scapy)"),
-    syn_rate: float = typer.Option(0.0, "--rate-limit", help="Limit SYN probes per second (0 = unlimited)"),
-    syn_iface: str = typer.Option("", "--iface", help="Network interface name for SYN scan (Scapy)"),
-    list_ifaces: bool = typer.Option(False, "--list-ifaces", help="List available interfaces for SYN scan and exit"),
+    syn: bool = typer.Option(False, "--syn", "-sS", help="TCP SYN scan (stealth, requires admin/root + scapy)"),
+    fin: bool = typer.Option(False, "--fin", "-sF", help="TCP FIN scan (stealth, requires admin/root + scapy)"),
+    xmas: bool = typer.Option(False, "--xmas", "-sX", help="TCP XMAS scan (stealth, requires admin/root + scapy)"),
+    null: bool = typer.Option(False, "--null", "-sN", help="TCP NULL scan (stealth, requires admin/root + scapy)"),
+    ack: bool = typer.Option(False, "--ack", "-sA", help="TCP ACK scan (firewall detection, requires admin/root + scapy)"),
+    decoy: Optional[str] = typer.Option(None, "--decoy", "-D", help="Decoy scan: RND:count (random), ME (real IP only), or IP1,IP2,ME (manual list)"),
+    timing: Optional[str] = typer.Option(None, "-T", help="Timing template: paranoid, sneaky, polite, normal, aggressive, insane (like nmap -T0 to -T5)"),
+    syn_rate: float = typer.Option(0.0, "--rate-limit", help="Limit advanced scan probes per second (0 = unlimited)"),
+    syn_iface: str = typer.Option("", "--iface", help="Network interface name for advanced scans (Scapy)"),
+    list_ifaces: bool = typer.Option(False, "--list-ifaces", help="List available interfaces for advanced scans and exit"),
     output: Optional[str] = None,
 ):
-    """Async TCP (and optional UDP) port scan: ranges (1-1024) or lists (80,443)."""
+    """
+    Production TCP/UDP port scanner with advanced capabilities.
+    Supports multiple scan types, version detection, OS fingerprinting, and timing templates.
+    """
     async def run():
         tgt = target or host
-        # If user requested interface listing, show and exit
+        
+        # List interfaces and exit
         if list_ifaces:
             try:
                 from scapy.all import get_if_list
@@ -146,16 +162,57 @@ def scan(
             else:
                 console.print(table)
             raise typer.Exit()
+        
         if not tgt:
             console.print("Provide a host (positional) or --target", style="red")
             raise typer.Exit(code=2)
-        # apply presets
+        
+        # Apply timing templates (nmap-style T0-T5)
         timeout_local = timeout
         retries_local = retries
         concurrency_local = concurrency
         only_open_local = only_open
         ports_local = ports
-
+        rate_limit = syn_rate
+        
+        if timing:
+            timing_lower = timing.lower()
+            if timing_lower in ["paranoid", "t0", "0"]:
+                # T0: Paranoid - 5 min timeout per probe, serial
+                timeout_local = 300.0
+                concurrency_local = 1
+                rate_limit = 0.016  # ~1 probe per minute
+            elif timing_lower in ["sneaky", "t1", "1"]:
+                # T1: Sneaky - 15s timeout, very low concurrency
+                timeout_local = 15.0
+                concurrency_local = 5
+                rate_limit = 0.2  # 1 probe per 5 seconds
+            elif timing_lower in ["polite", "t2", "2"]:
+                # T2: Polite - 10s timeout, low concurrency
+                timeout_local = 10.0
+                concurrency_local = 10
+                rate_limit = 1.0  # 1 probe per second
+            elif timing_lower in ["normal", "t3", "3"]:
+                # T3: Normal - default settings
+                timeout_local = 3.0
+                concurrency_local = 50
+                rate_limit = 10.0
+            elif timing_lower in ["aggressive", "t4", "4"]:
+                # T4: Aggressive - fast scan
+                timeout_local = 1.5
+                concurrency_local = 100
+                rate_limit = 100.0
+            elif timing_lower in ["insane", "t5", "5"]:
+                # T5: Insane - maximum speed (may miss results)
+                timeout_local = 0.5
+                concurrency_local = 500
+                rate_limit = 0.0  # unlimited
+            else:
+                console.print(f"Invalid timing template: {timing}", style="red")
+                console.print("Valid options: paranoid, sneaky, polite, normal, aggressive, insane (or T0-T5)", style="yellow")
+                raise typer.Exit(code=2)
+        
+        # Apply presets (can override timing)
         if fast:
             timeout_local = 2.0
             retries_local = 1
@@ -168,11 +225,12 @@ def scan(
             ports_local = "22,25,53,80,110,143,443,3389,5432,3306"
             only_open_local = True
 
-        # parse ports
+        # Parse ports
         targets: List[int] = []
         udp_targets: List[int] = []
         results: List[dict] = []
         results_udp: List[dict] = []
+        
         if "," in ports_local:
             targets = [int(p.strip()) for p in ports_local.split(",")]
         elif "-" in ports_local:
@@ -191,31 +249,139 @@ def scan(
                 else:
                     udp_targets = [int(udp_ports)]
             else:
-                # default top UDP ports
+                # Default top UDP ports
                 udp_targets = [53, 123, 161, 500, 137, 138, 67, 68, 69, 1900]
 
+        # Execute scans based on flags
+        scan_type_count = sum([syn, fin, xmas, null, ack])
+        if scan_type_count > 1:
+            console.print("ERROR: Only one advanced scan type allowed at a time (--syn, --fin, --xmas, --null, --ack)", style="red")
+            raise typer.Exit(code=2)
+        
+        # Decoy scanning (works with advanced scans only)
+        decoy_scanner = None
+        decoy_config = None
+        decoy_results = None
+        
+        if decoy:
+            if not any([syn, fin, xmas, null, ack]):
+                console.print("ERROR: Decoy scanning requires an advanced scan type (--syn, --fin, --xmas, --null, or --ack)", style="red")
+                console.print("Tip: Use --syn --decoy RND:5 for decoy scanning", style="yellow")
+                raise typer.Exit(code=2)
+            
+            console.print(f"\n[cyan]=== Decoy Scanning Enabled ===[/cyan]")
+            console.print(f"[yellow]WARNING: Decoy scanning requires administrator/root privileges[/yellow]")
+            
+            try:
+                # Parse decoy configuration
+                decoy_config = parse_decoy_option(decoy, tgt, count=5)
+                console.print(f"Decoy Mode: {decoy_config.mode.value}")
+                
+                # Initialize decoy scanner
+                decoy_scanner = DecoyScanner()
+                
+                # Determine scan type for decoys
+                decoy_scan_type = "syn" if syn else ("fin" if fin else ("xmas" if xmas else ("null" if null else "ack")))
+                
+                # Perform decoy scan
+                console.print(f"Sending decoy packets ({decoy_scan_type} scan)...")
+                decoy_results = await decoy_scanner.perform_decoy_scan(
+                    tgt, targets, decoy_config, decoy_scan_type
+                )
+                
+                # Display decoy information
+                console.print(f"\n[green]✓ Decoy Scan Complete[/green]")
+                console.print(f"  Decoys Used: {len(decoy_results['decoys_used'])} IPs")
+                console.print(f"  Real IP Position: {decoy_results['real_ip_position'] + 1} of {len(decoy_results['decoys_used'])}")
+                console.print(f"  Packets Sent: {decoy_results['total_packets_sent']}")
+                console.print(f"  Success Rate: {decoy_results['success_rate']:.1f}%")
+                
+                # Show decoy IPs (first 5 for brevity)
+                console.print(f"\n[cyan]Decoy IPs (showing first 5):[/cyan]")
+                for i, ip in enumerate(decoy_results['decoys_used'][:5]):
+                    marker = " [YOU]" if ip == decoy_results['real_ip'] else ""
+                    console.print(f"  {i+1}. {ip}{marker}")
+                if len(decoy_results['decoys_used']) > 5:
+                    console.print(f"  ... and {len(decoy_results['decoys_used']) - 5} more")
+                
+            except PermissionError:
+                console.print("[red]Decoy scanning requires admin privileges (Windows) or root (Linux)[/red]")
+                console.print("[yellow]Tip: Run as administrator/root to enable decoy scanning[/yellow]")
+                raise typer.Exit(code=1)
+            except Exception as e:
+                console.print(f"[red]Decoy scan error: {e}[/red]")
+                raise typer.Exit(code=1)
+        
         if syn:
             try:
-                results = await async_syn_scan(tgt, targets, concurrency=concurrency_local, timeout=timeout_local, rate_limit=syn_rate, iface=syn_iface)
+                results = await async_syn_scan(tgt, targets, concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
             except PermissionError:
-                console.print("SYN scan requires admin privileges (Windows).", style="red")
-                console.print("Tip: open an elevated PowerShell and retry, or run without --syn.", style="yellow")
-                raise typer.Exit(code=2)
+                console.print("SYN scan requires admin privileges (Windows) or root (Linux).", style="red")
+                console.print("Tip: Run as administrator/root, or use regular TCP scan without --syn.", style="yellow")
+                raise typer.Exit(code=1)
             except Exception as e:
-                # Likely scapy missing
-                if "scapy_not_installed" in str(e):
-                    console.print("Install Scapy to use --syn: pip install scapy", style="yellow")
-                else:
-                    console.print(f"SYN scan error: {e}", style="red")
-                raise typer.Exit(code=2)
+                console.print(f"SYN scan error: {e}", style="red")
+                console.print("Ensure Scapy is installed: pip install scapy", style="yellow")
+                raise typer.Exit(code=1)
+        elif fin:
+            try:
+                results = await async_advanced_scan(tgt, targets, "fin", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except PermissionError:
+                console.print("FIN scan requires admin privileges (Windows) or root (Linux).", style="red")
+                console.print("Tip: Run as administrator/root, or use regular TCP scan.", style="yellow")
+                raise typer.Exit(code=1)
+            except Exception as e:
+                console.print(f"FIN scan error: {e}", style="red")
+                console.print("Ensure Scapy is installed: pip install scapy", style="yellow")
+                raise typer.Exit(code=1)
+        elif xmas:
+            try:
+                results = await async_advanced_scan(tgt, targets, "xmas", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except PermissionError:
+                console.print("XMAS scan requires admin privileges (Windows) or root (Linux).", style="red")
+                console.print("Tip: Run as administrator/root, or use regular TCP scan.", style="yellow")
+                raise typer.Exit(code=1)
+            except Exception as e:
+                console.print(f"XMAS scan error: {e}", style="red")
+                console.print("Ensure Scapy is installed: pip install scapy", style="yellow")
+                raise typer.Exit(code=1)
+        elif null:
+            try:
+                results = await async_advanced_scan(tgt, targets, "null", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except PermissionError:
+                console.print("NULL scan requires admin privileges (Windows) or root (Linux).", style="red")
+                console.print("Tip: Run as administrator/root, or use regular TCP scan.", style="yellow")
+                raise typer.Exit(code=1)
+            except Exception as e:
+                console.print(f"NULL scan error: {e}", style="red")
+                console.print("Ensure Scapy is installed: pip install scapy", style="yellow")
+                raise typer.Exit(code=1)
+        elif ack:
+            try:
+                results = await async_advanced_scan(tgt, targets, "ack", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except PermissionError:
+                console.print("ACK scan requires admin privileges (Windows) or root (Linux).", style="red")
+                console.print("Tip: Run as administrator/root, or use regular TCP scan.", style="yellow")
+                raise typer.Exit(code=1)
+            except Exception as e:
+                console.print(f"ACK scan error: {e}", style="red")
+                console.print("Ensure Scapy is installed: pip install scapy", style="yellow")
+                raise typer.Exit(code=1)
         else:
-            results = await async_port_scan(tgt, targets, concurrency=concurrency_local, timeout=timeout_local, no_write=no_write)
+            # Regular TCP connect scan
+            results = await async_port_scan(tgt, targets, concurrency=concurrency_local, timeout=timeout_local, no_write=no_write, version_detection=version_detect)
+        
+        # UDP scan if requested
         if udp and udp_targets:
             results_udp = await async_udp_scan(tgt, udp_targets, concurrency=concurrency_local, timeout=timeout_local)
+        
+        # Output results
         if output:
             payload = {"target": tgt, "ports": targets, "results": results}
             if results_udp:
                 payload.update({"udp_ports": udp_targets, "udp_results": results_udp})
+            if decoy_results:
+                payload["decoy_scan"] = decoy_results
             with open(output, "w", encoding="utf-8") as f:
                 json.dump(payload, f, ensure_ascii=False, indent=2)
             console.print(f"Saved: {output}")
@@ -236,6 +402,51 @@ def scan(
         open_ports = [r['port'] for r in results if r['state']=='open']
         console.print(f"Open ports: {open_ports}")
 
+        # OS Detection if requested
+        if os_detect and open_ports:
+            console.print("\n[cyan]═══ OS Fingerprinting ═══[/cyan]")
+            try:
+                fingerprinter = OSFingerprinter()
+                os_result = await fingerprinter.comprehensive_fingerprint(tgt, open_ports)
+                
+                if os_result.get("consensus"):
+                    consensus = os_result["consensus"]
+                    console.print(f"\n[green]✓ OS Detected:[/green] {consensus['os']} ({consensus['family']})")
+                    console.print(f"  Confidence: {consensus['confidence']}%")
+                    console.print(f"  Based on {consensus['measurements']} measurement(s)")
+                else:
+                    console.print("[yellow]OS fingerprinting did not reach consensus[/yellow]")
+                
+                # Show detailed fingerprint data
+                if os_result.get("fingerprints"):
+                    console.print("\n[cyan]Fingerprint Details:[/cyan]")
+                    for fp in os_result["fingerprints"][:3]:  # Show top 3
+                        if fp.get("ttl"):
+                            ttl_info = fp["ttl"]
+                            console.print(f"  TTL: {ttl_info['ttl_value']} (estimated {ttl_info['estimated_hops']} hops)")
+                            console.print(f"  Hints: {', '.join(ttl_info['os_hints'])}")
+                        if fp.get("best_match"):
+                            match = fp["best_match"]
+                            console.print(f"  Match: {match['os']} ({match['confidence']}%)")
+                
+                # Save OS detection to output
+                if output and os_result:
+                    try:
+                        with open(output, "r", encoding="utf-8") as f:
+                            data = json.load(f)
+                        data["os_detection"] = os_result
+                        with open(output, "w", encoding="utf-8") as f:
+                            json.dump(data, f, ensure_ascii=False, indent=2)
+                    except:
+                        pass
+                        
+            except PermissionError:
+                console.print("[red]OS detection requires admin privileges (Windows) or root (Linux)[/red]")
+                console.print("[yellow]Tip: Run as administrator/root to enable OS fingerprinting[/yellow]")
+            except Exception as e:
+                console.print(f"[yellow]OS detection error: {e}[/yellow]")
+                console.print("[yellow]Ensure Scapy is installed: pip install scapy[/yellow]")
+
         if results_udp:
             table_u = Table(title=f"UDP Scan: {tgt}", box=box.MINIMAL_DOUBLE_HEAD)
             table_u.add_column("Port", style="cyan")
@@ -250,6 +461,10 @@ def scan(
             console.print(table_u)
             open_udp = [r['port'] for r in results_udp if r['state']=='open']
             console.print(f"Open UDP ports: {open_udp}")
+        
+        # Clean up decoy scanner
+        if decoy_scanner:
+            decoy_scanner.close()
 
     asyncio.run(run())
 
@@ -619,6 +834,807 @@ def enterprise_scan_migrate():
         "Run per-target and aggregate reports as needed."
     )
     console.print(tip, style="yellow")
+
+
+@app.command()
+def fuzz(
+    target: str = typer.Argument(..., help="Target URL"),
+    wordlist: str = typer.Option(..., "--wordlist", "-w", help="Path to wordlist file"),
+    mode: str = typer.Option("path", "--mode", "-m", help="Fuzz mode: path, param, header"),
+    param_name: Optional[str] = typer.Option(None, "--param", help="Parameter name (for param mode)"),
+    header_name: Optional[str] = typer.Option(None, "--header", help="Header name (for header mode)"),
+    method: str = typer.Option("GET", "--method", "-X", help="HTTP method (GET/POST for param mode)"),
+    extensions: Optional[str] = typer.Option(None, "--extensions", "-e", help="Extensions for path fuzzing (comma-separated, e.g., php,html,txt)"),
+    match_status: Optional[str] = typer.Option(None, "--match-status", "-mc", help="Match status codes (comma-separated)"),
+    filter_status: Optional[str] = typer.Option(None, "--filter-status", "-fc", help="Filter status codes (comma-separated)"),
+    match_size: Optional[str] = typer.Option(None, "--match-size", "-ms", help="Match content lengths (comma-separated)"),
+    filter_size: Optional[str] = typer.Option(None, "--filter-size", "-fs", help="Filter content lengths (comma-separated)"),
+    match_words: Optional[str] = typer.Option(None, "--match-words", "-mw", help="Match word counts (comma-separated)"),
+    filter_words: Optional[str] = typer.Option(None, "--filter-words", "-fw", help="Filter word counts (comma-separated)"),
+    match_lines: Optional[str] = typer.Option(None, "--match-lines", "-ml", help="Match line counts (comma-separated)"),
+    filter_lines: Optional[str] = typer.Option(None, "--filter-lines", "-fl", help="Filter line counts (comma-separated)"),
+    concurrency: int = typer.Option(10, "--concurrency", "-c", help="Concurrent requests"),
+    timeout: float = typer.Option(10.0, "--timeout", "-t", help="Request timeout in seconds"),
+    delay: float = typer.Option(0.0, "--delay", "-d", help="Delay between requests in seconds"),
+    auto_calibrate: bool = typer.Option(True, "--auto-calibrate", "-ac", help="Auto-calibrate baseline filtering"),
+    follow_redirects: bool = typer.Option(False, "--follow-redirects", "-r", help="Follow HTTP redirects"),
+    insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file"),
+):
+    """
+    Production-grade web fuzzer with advanced filtering.
+    Supports path, parameter, and header fuzzing with auto-calibration.
+    """
+    async def run():
+        from .fuzzer import AdvancedFuzzer, load_wordlist
+        
+        # Load wordlist
+        try:
+            wordlist_data = load_wordlist(wordlist)
+            console.print(f"Loaded {len(wordlist_data)} payloads from {wordlist}", style="cyan")
+        except FileNotFoundError:
+            console.print(f"ERROR: Wordlist not found: {wordlist}", style="red")
+            raise typer.Exit(code=1)
+        except Exception as e:
+            console.print(f"ERROR loading wordlist: {e}", style="red")
+            raise typer.Exit(code=1)
+        
+        # Parse match/filter criteria
+        match_status_list = [int(x) for x in match_status.split(",")] if match_status else None
+        filter_status_list = [int(x) for x in filter_status.split(",")] if filter_status else None
+        match_size_list = [int(x) for x in match_size.split(",")] if match_size else None
+        filter_size_list = [int(x) for x in filter_size.split(",")] if filter_size else None
+        match_words_list = [int(x) for x in match_words.split(",")] if match_words else None
+        filter_words_list = [int(x) for x in filter_words.split(",")] if filter_words else None
+        match_lines_list = [int(x) for x in match_lines.split(",")] if match_lines else None
+        filter_lines_list = [int(x) for x in filter_lines.split(",")] if filter_lines else None
+        extensions_list = [e.strip() for e in extensions.split(",")] if extensions else None
+        
+        # Initialize fuzzer
+        fuzzer = AdvancedFuzzer(
+            target=target,
+            wordlist=wordlist_data,
+            concurrency=concurrency,
+            timeout=timeout,
+            delay=delay,
+            auto_calibrate=auto_calibrate,
+            follow_redirects=follow_redirects,
+            verify_ssl=not insecure,
+        )
+        
+        console.print(f"\n[cyan]Starting {mode.upper()} fuzzing on {target}[/cyan]")
+        console.print(f"Concurrency: {concurrency} | Timeout: {timeout}s | Auto-calibrate: {auto_calibrate}\n")
+        
+        # Execute fuzzing based on mode
+        try:
+            if mode == "path":
+                results = await fuzzer.fuzz_paths(
+                    extensions=extensions_list,
+                    match_status=match_status_list,
+                    filter_status=filter_status_list,
+                    match_size=match_size_list,
+                    filter_size=filter_size_list,
+                    match_words=match_words_list,
+                    filter_words=filter_words_list,
+                    match_lines=match_lines_list,
+                    filter_lines=filter_lines_list,
+                )
+            elif mode == "param":
+                if not param_name:
+                    console.print("ERROR: --param required for param mode", style="red")
+                    raise typer.Exit(code=1)
+                results = await fuzzer.fuzz_parameters(
+                    param_name=param_name,
+                    method=method,
+                    match_status=match_status_list,
+                    filter_status=filter_status_list,
+                    match_size=match_size_list,
+                    filter_size=filter_size_list,
+                    match_words=match_words_list,
+                    filter_words=filter_words_list,
+                    match_lines=match_lines_list,
+                    filter_lines=filter_lines_list,
+                )
+            elif mode == "header":
+                if not header_name:
+                    console.print("ERROR: --header required for header mode", style="red")
+                    raise typer.Exit(code=1)
+                results = await fuzzer.fuzz_headers(
+                    header_name=header_name,
+                    match_status=match_status_list,
+                    filter_status=filter_status_list,
+                    match_size=match_size_list,
+                    filter_size=filter_size_list,
+                    match_words=match_words_list,
+                    filter_words=filter_words_list,
+                    match_lines=match_lines_list,
+                    filter_lines=filter_lines_list,
+                )
+            else:
+                console.print(f"ERROR: Invalid mode: {mode}. Use: path, param, header", style="red")
+                raise typer.Exit(code=1)
+        except Exception as e:
+            console.print(f"ERROR during fuzzing: {e}", style="red")
+            raise typer.Exit(code=1)
+        
+        # Display results
+        if results:
+            table = Table(title=f"Fuzz Results ({len(results)} findings)", box=box.ROUNDED)
+            table.add_column("Status", style="cyan")
+            table.add_column("Size", style="yellow")
+            table.add_column("Words", style="yellow")
+            table.add_column("Lines", style="yellow")
+            table.add_column("Time", style="magenta")
+            table.add_column("Payload", style="green")
+            
+            for result in results[:50]:  # Show first 50
+                table.add_row(
+                    str(result.status_code),
+                    str(result.content_length),
+                    str(result.word_count),
+                    str(result.line_count),
+                    f"{result.response_time:.2f}s",
+                    result.payload[:40],
+                )
+            
+            console.print(table)
+            console.print(f"\n[green]Found {len(results)} results[/green]")
+        else:
+            console.print("[yellow]No results found (all filtered)[/yellow]")
+        
+        # Save output
+        if output:
+            import json
+            from dataclasses import asdict
+            output_data = {
+                "target": target,
+                "mode": mode,
+                "total_payloads": len(wordlist_data),
+                "total_results": len(results),
+                "results": [asdict(r) for r in results],
+            }
+            with open(output, "w", encoding="utf-8") as f:
+                json.dump(output_data, f, indent=2, ensure_ascii=False)
+            console.print(f"Results saved to: {output}", style="cyan")
+    
+    asyncio.run(run())
+
+
+@app.command()
+def nuclei(
+    target: str = typer.Argument(..., help="Target URL or file with URLs"),
+    templates: Optional[str] = typer.Option(None, "--templates", "-t", help="Template paths (comma-separated)"),
+    tags: Optional[str] = typer.Option(None, "--tags", help="Template tags (comma-separated, e.g., cve,xss,sqli)"),
+    severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Severity filter (comma-separated: critical,high,medium,low,info)"),
+    exclude_severity: Optional[str] = typer.Option(None, "--exclude-severity", "-es", help="Exclude severity levels"),
+    include_tags: Optional[str] = typer.Option(None, "--include-tags", "-it", help="Additional tags to include"),
+    exclude_tags: Optional[str] = typer.Option(None, "--exclude-tags", "-et", help="Tags to exclude"),
+    rate_limit: int = typer.Option(150, "--rate-limit", "-rl", help="Requests per second"),
+    concurrency: int = typer.Option(25, "--concurrency", "-c", help="Template concurrency"),
+    timeout: int = typer.Option(10, "--timeout", help="Request timeout in seconds"),
+    retries: int = typer.Option(1, "--retries", help="Retries on failure"),
+    update: bool = typer.Option(False, "--update", "-u", help="Update nuclei templates before scan"),
+    list_templates: bool = typer.Option(False, "--list", "-l", help="List available templates and exit"),
+    silent: bool = typer.Option(False, "--silent", help="Suppress progress output"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSONL file"),
+):
+    """
+    Production Nuclei integration for vulnerability scanning.
+    Requires nuclei binary installed in PATH.
+    """
+    from .nuclei_wrapper import NucleiScanner, get_nuclei_version
+    
+    # Check nuclei installation
+    version = get_nuclei_version()
+    if not version:
+        console.print("ERROR: Nuclei not found in PATH", style="red")
+        console.print("\nInstall nuclei:", style="yellow")
+        console.print("  Linux/Debian: sudo apt install nuclei", style="cyan")
+        console.print("  macOS: brew install nuclei", style="cyan")
+        console.print("  Windows: Download from https://github.com/projectdiscovery/nuclei/releases", style="cyan")
+        raise typer.Exit(code=1)
+    
+    console.print(f"Nuclei version: {version}", style="cyan")
+    
+    try:
+        scanner = NucleiScanner()
+    except FileNotFoundError as e:
+        console.print(f"ERROR: {e}", style="red")
+        raise typer.Exit(code=1)
+    
+    # Update templates
+    if update:
+        console.print("Updating nuclei templates...", style="cyan")
+        if scanner.check_updates():
+            console.print("Templates updated successfully", style="green")
+        else:
+            console.print("Failed to update templates", style="yellow")
+    
+    # List templates
+    if list_templates:
+        console.print("Listing templates...", style="cyan")
+        tags_list = tags.split(",") if tags else None
+        templates_list = scanner.list_templates(tags=tags_list)
+        
+        if templates_list:
+            console.print(f"\nFound {len(templates_list)} templates:\n", style="green")
+            for template in templates_list[:100]:  # Show first 100
+                console.print(f"  - {template}")
+            if len(templates_list) > 100:
+                console.print(f"\n... and {len(templates_list) - 100} more")
+        else:
+            console.print("No templates found", style="yellow")
+        
+        raise typer.Exit()
+    
+    # Run scan
+    console.print(f"\n[cyan]Starting Nuclei scan on {target}[/cyan]")
+    console.print(f"Rate limit: {rate_limit}/s | Concurrency: {concurrency} | Timeout: {timeout}s\n")
+    
+    try:
+        templates_list = templates.split(",") if templates else None
+        tags_list = tags.split(",") if tags else None
+        severity_list = severity.split(",") if severity else None
+        exclude_severity_list = exclude_severity.split(",") if exclude_severity else None
+        include_tags_list = include_tags.split(",") if include_tags else None
+        exclude_tags_list = exclude_tags.split(",") if exclude_tags else None
+        
+        results = scanner.scan(
+            target=target,
+            templates=templates_list,
+            tags=tags_list,
+            severity=severity_list,
+            rate_limit=rate_limit,
+            concurrency=concurrency,
+            timeout=timeout,
+            retries=retries,
+            output_file=output,
+            include_tags=include_tags_list,
+            exclude_tags=exclude_tags_list,
+            exclude_severity=exclude_severity_list,
+            silent=silent,
+        )
+        
+        # Display summary
+        if results:
+            severity_counts = {}
+            for result in results:
+                sev = result.get("info", {}).get("severity", "unknown")
+                severity_counts[sev] = severity_counts.get(sev, 0) + 1
+            
+            console.print(f"\n[green]Scan completed: {len(results)} findings[/green]\n")
+            
+            table = Table(title="Severity Breakdown", box=box.ROUNDED)
+            table.add_column("Severity", style="cyan")
+            table.add_column("Count", style="yellow")
+            
+            for sev in ["critical", "high", "medium", "low", "info", "unknown"]:
+                if sev in severity_counts:
+                    table.add_row(sev.upper(), str(severity_counts[sev]))
+            
+            console.print(table)
+            
+            if output:
+                console.print(f"\nResults saved to: {output}", style="cyan")
+        else:
+            console.print("[yellow]No vulnerabilities found[/yellow]")
+    
+    except TimeoutError:
+        console.print("ERROR: Nuclei scan timed out", style="red")
+        raise typer.Exit(code=1)
+    except Exception as e:
+        console.print(f"ERROR during nuclei scan: {e}", style="red")
+        raise typer.Exit(code=1)
+
+
+@app.command()
+def bruteforce(
+    target: str = typer.Argument(..., help="Target URL"),
+    auth_type: str = typer.Option(..., "--auth-type", "-a", help="Auth type: basic, form, json"),
+    usernames: Optional[str] = typer.Option(None, "--usernames", "-u", help="Username or file with usernames (one per line)"),
+    passwords: Optional[str] = typer.Option(None, "--passwords", "-p", help="Password or file with passwords (one per line)"),
+    username_file: Optional[str] = typer.Option(None, "--username-file", "-U", help="File with usernames (one per line)"),
+    password_file: Optional[str] = typer.Option(None, "--password-file", "-P", help="File with passwords (one per line)"),
+    single_user: Optional[str] = typer.Option(None, "--user", help="Single username to test"),
+    single_pass: Optional[str] = typer.Option(None, "--pass", help="Single password to test"),
+    username_field: str = typer.Option("username", "--user-field", help="Username field name (form/json)"),
+    password_field: str = typer.Option("password", "--pass-field", help="Password field name (form/json)"),
+    method: str = typer.Option("POST", "--method", "-X", help="HTTP method (for form auth)"),
+    success_string: Optional[str] = typer.Option(None, "--success", help="String indicating successful login"),
+    failure_string: Optional[str] = typer.Option(None, "--failure", help="String indicating failed login"),
+    success_key: Optional[str] = typer.Option(None, "--success-key", help="JSON key indicating success (for json auth)"),
+    concurrency: int = typer.Option(5, "--concurrency", "-c", help="Concurrent attempts (be careful with rate-limiting!)"),
+    timeout: float = typer.Option(10.0, "--timeout", "-t", help="Request timeout in seconds"),
+    delay: float = typer.Option(0.0, "--delay", "-d", help="Delay between attempts in seconds"),
+    stop_on_success: bool = typer.Option(True, "--stop-on-success", help="Stop after first successful login"),
+    insecure: bool = typer.Option(False, "--insecure", "-k", help="Skip SSL verification"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file"),
+):
+    """
+    Production authentication brute-forcer.
+    Supports HTTP Basic Auth, form-based, and JSON API authentication.
+    ⚠️ WARNING: Only use on systems you own or have permission to test!
+    """
+    async def run():
+        from .bruteforce import AuthBruteForcer, load_credentials_file
+        
+        # Load usernames
+        username_list = []
+        if single_user:
+            username_list = [single_user]
+        elif username_file:
+            try:
+                username_list = load_credentials_file(username_file)
+                console.print(f"Loaded {len(username_list)} usernames from {username_file}", style="cyan")
+            except FileNotFoundError:
+                console.print(f"ERROR: Username file not found: {username_file}", style="red")
+                raise typer.Exit(code=1)
+        elif usernames:
+            import os
+            if os.path.exists(usernames):
+                username_list = load_credentials_file(usernames)
+                console.print(f"Loaded {len(username_list)} usernames from {usernames}", style="cyan")
+            else:
+                username_list = [u.strip() for u in usernames.split(",")]
+        else:
+            console.print("ERROR: Provide --user, --usernames, or --username-file", style="red")
+            raise typer.Exit(code=1)
+        
+        # Load passwords
+        password_list = []
+        if single_pass:
+            password_list = [single_pass]
+        elif password_file:
+            try:
+                password_list = load_credentials_file(password_file)
+                console.print(f"Loaded {len(password_list)} passwords from {password_file}", style="cyan")
+            except FileNotFoundError:
+                console.print(f"ERROR: Password file not found: {password_file}", style="red")
+                raise typer.Exit(code=1)
+        elif passwords:
+            import os
+            if os.path.exists(passwords):
+                password_list = load_credentials_file(passwords)
+                console.print(f"Loaded {len(password_list)} passwords from {passwords}", style="cyan")
+            else:
+                password_list = [p.strip() for p in passwords.split(",")]
+        else:
+            console.print("ERROR: Provide --pass, --passwords, or --password-file", style="red")
+            raise typer.Exit(code=1)
+        
+        total_attempts = len(username_list) * len(password_list)
+        
+        console.print(f"\n[yellow]WARNING: Brute-force attacks can be illegal and unethical![/yellow]")
+        console.print(f"[yellow]Only use this on systems you own or have written permission to test.[/yellow]\n")
+        
+        console.print(f"[cyan]Starting {auth_type.upper()} brute-force on {target}[/cyan]")
+        console.print(f"Usernames: {len(username_list)} | Passwords: {len(password_list)} | Total attempts: {total_attempts}")
+        console.print(f"Concurrency: {concurrency} | Timeout: {timeout}s | Stop on success: {stop_on_success}\n")
+        
+        # Initialize brute-forcer
+        bruteforcer = AuthBruteForcer(
+            target=target,
+            concurrency=concurrency,
+            timeout=timeout,
+            delay=delay,
+            verify_ssl=not insecure,
+            stop_on_success=stop_on_success,
+        )
+        
+        # Execute brute-force
+        try:
+            if auth_type == "basic":
+                results = await bruteforcer.brute_force_basic_auth(username_list, password_list)
+            elif auth_type == "form":
+                results = await bruteforcer.brute_force_form(
+                    username_list, password_list,
+                    username_field=username_field,
+                    password_field=password_field,
+                    method=method,
+                    success_indicator=success_string,
+                    failure_indicator=failure_string,
+                )
+            elif auth_type == "json":
+                results = await bruteforcer.brute_force_json_api(
+                    username_list, password_list,
+                    username_field=username_field,
+                    password_field=password_field,
+                    success_key=success_key,
+                )
+            else:
+                console.print(f"ERROR: Invalid auth type: {auth_type}. Use: basic, form, json", style="red")
+                raise typer.Exit(code=1)
+        except Exception as e:
+            console.print(f"ERROR during brute-force: {e}", style="red")
+            raise typer.Exit(code=1)
+        
+        # Display results
+        successful = [r for r in results if r.success]
+        failed = [r for r in results if not r.success and not r.error]
+        errors = [r for r in results if r.error]
+        
+        if successful:
+            console.print(f"\n[green]✓ SUCCESS! Found {len(successful)} valid credential(s):[/green]\n", style="bold")
+            
+            table = Table(title="Valid Credentials", box=box.ROUNDED, border_style="green")
+            table.add_column("Username", style="cyan")
+            table.add_column("Password", style="yellow")
+            table.add_column("Status", style="green")
+            table.add_column("Time", style="magenta")
+            
+            for result in successful:
+                table.add_row(
+                    result.username,
+                    "*" * len(result.password),  # Mask password in output
+                    str(result.status_code),
+                    f"{result.response_time:.2f}s",
+                )
+            
+            console.print(table)
+            console.print(f"\n[green]Valid credentials found! Check output file for details.[/green]")
+        else:
+            console.print(f"\n[red]✗ No valid credentials found[/red]")
+        
+        console.print(f"\nAttempts: {len(results)} | Success: {len(successful)} | Failed: {len(failed)} | Errors: {len(errors)}")
+        
+        # Save output
+        if output:
+            import json
+            from dataclasses import asdict
+            output_data = {
+                "target": target,
+                "auth_type": auth_type,
+                "total_attempts": len(results),
+                "successful": len(successful),
+                "failed": len(failed),
+                "errors": len(errors),
+                "results": [asdict(r) for r in results],
+            }
+            with open(output, "w", encoding="utf-8") as f:
+                json.dump(output_data, f, indent=2, ensure_ascii=False)
+            console.print(f"\nResults saved to: {output}", style="cyan")
+    
+    asyncio.run(run())
+
+
+@app.command()
+def webscan(
+    target: str = typer.Argument(..., help="Target URL to scan (e.g., https://example.com)"),
+    concurrency: int = typer.Option(10, "--concurrency", "-c", help="Number of concurrent requests"),
+    timeout: float = typer.Option(15.0, "--timeout", "-t", help="Request timeout in seconds"),
+    no_ssl_verify: bool = typer.Option(False, "--no-ssl-verify", help="Disable SSL certificate verification"),
+    test_sqli: bool = typer.Option(True, "--test-sqli/--no-sqli", help="Scan for SQL injection"),
+    test_xss: bool = typer.Option(True, "--test-xss/--no-xss", help="Scan for XSS"),
+    test_cmdi: bool = typer.Option(True, "--test-cmdi/--no-cmdi", help="Scan for command injection"),
+    test_ssrf: bool = typer.Option(True, "--test-ssrf/--no-ssrf", help="Scan for SSRF"),
+    test_headers: bool = typer.Option(True, "--test-headers/--no-headers", help="Scan security headers"),
+    test_cors: bool = typer.Option(True, "--test-cors/--no-cors", help="Scan CORS configuration"),
+    severity_filter: Optional[str] = typer.Option(None, "--severity", "-s", help="Filter by severity (critical,high,medium,low,info)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+):
+    """
+    Advanced web application vulnerability scanning.
+    
+    Scans for:
+    - SQL Injection (error-based, time-based, boolean-based)
+    - Cross-Site Scripting (XSS)
+    - Command Injection
+    - Server-Side Request Forgery (SSRF)
+    - Security Headers (HSTS, CSP, X-Frame-Options, etc.)
+    - CORS Misconfiguration
+    
+    Examples:
+        # Full scan
+        scorpion webscan https://example.com/page?id=1
+        
+        # Only scan for SQLi and XSS
+        scorpion webscan https://example.com --no-cmdi --no-ssrf --no-headers --no-cors
+        
+        # Filter critical vulnerabilities only
+        scorpion webscan https://example.com -s critical
+        
+        # Custom concurrency and timeout
+        scorpion webscan https://example.com -c 20 -t 30
+    
+    WARNING: Only scan applications you have permission to scan!
+    Unauthorized scanning is illegal and unethical.
+    """
+    
+    console.print("\n[bold red]WARNING: Web Application Vulnerability Scanning[/bold red]")
+    console.print("[yellow]Only scan applications you have explicit permission to scan.[/yellow]")
+    console.print("[yellow]Unauthorized scanning may be illegal and unethical.[/yellow]\n")
+    
+    async def run():
+        tester = AdvancedWebTester(
+            target=target,
+            concurrency=concurrency,
+            timeout=timeout,
+            verify_ssl=not no_ssl_verify,
+        )
+        
+        console.print(f"[cyan]Target:[/cyan] {target}")
+        console.print(f"[cyan]Concurrency:[/cyan] {concurrency}")
+        console.print(f"[cyan]Timeout:[/cyan] {timeout}s\n")
+        
+        with console.status("[bold cyan]Running web application security tests...", spinner="dots"):
+            findings = []
+            
+            # Parse URL and extract parameters
+            from urllib.parse import urlparse, parse_qs
+            parsed = urlparse(target)
+            params = parse_qs(parsed.query)
+            params_dict = {k: v[0] if v else "" for k, v in params.items()}
+            
+            if not params_dict:
+                params_dict = {"id": "1", "page": "home"}
+            
+            connector = __import__('aiohttp').TCPConnector(limit=concurrency, ssl=not no_ssl_verify)
+            async with __import__('aiohttp').ClientSession(connector=connector) as session:
+                tasks = []
+                
+                if test_sqli:
+                    tasks.append(tester.test_sql_injection(session, params_dict))
+                if test_xss:
+                    tasks.append(tester.test_xss(session, params_dict))
+                if test_cmdi:
+                    tasks.append(tester.test_command_injection(session, params_dict))
+                if test_ssrf:
+                    tasks.append(tester.test_ssrf(session, params_dict))
+                if test_headers:
+                    tasks.append(tester.test_security_headers(session))
+                if test_cors:
+                    tasks.append(tester.test_cors_misconfiguration(session))
+                
+                results = await asyncio.gather(*tasks)
+                
+                for result_list in results:
+                    findings.extend(result_list)
+        
+        # Filter by severity if requested
+        if severity_filter:
+            severities = [s.strip().lower() for s in severity_filter.split(",")]
+            findings = [f for f in findings if f.severity.lower() in severities]
+        
+        # Sort by severity
+        severity_order = {"critical": 0, "high": 1, "medium": 2, "low": 3, "info": 4}
+        findings.sort(key=lambda x: severity_order.get(x.severity.lower(), 99))
+        
+        # Display results
+        console.print(f"\n[bold]Found {len(findings)} vulnerabilities:[/bold]\n")
+        
+        if not findings:
+            console.print("[green]✓ No vulnerabilities detected![/green]")
+        else:
+            # Group by severity
+            by_severity = {}
+            for finding in findings:
+                sev = finding.severity.lower()
+                if sev not in by_severity:
+                    by_severity[sev] = []
+                by_severity[sev].append(finding)
+            
+            # Display summary
+            for sev in ["critical", "high", "medium", "low", "info"]:
+                if sev in by_severity:
+                    count = len(by_severity[sev])
+                    color = {
+                        "critical": "red",
+                        "high": "orange1",
+                        "medium": "yellow",
+                        "low": "cyan",
+                        "info": "blue",
+                    }.get(sev, "white")
+                    console.print(f"[{color}]● {sev.upper()}: {count}[/{color}]")
+            
+            console.print()
+            
+            # Display detailed findings
+            for i, finding in enumerate(findings, 1):
+                severity_color = {
+                    "critical": "red",
+                    "high": "orange1",
+                    "medium": "yellow",
+                    "low": "cyan",
+                    "info": "blue",
+                }.get(finding.severity.lower(), "white")
+                
+                panel_content = f"""[bold]Type:[/bold] {finding.vuln_type}
+[bold]Severity:[/bold] [{severity_color}]{finding.severity.upper()}[/{severity_color}]
+[bold]Confidence:[/bold] {finding.confidence}
+[bold]URL:[/bold] {finding.url}
+[bold]Parameter:[/bold] {finding.parameter or 'N/A'}
+[bold]Method:[/bold] {finding.method}
+[bold]Payload:[/bold] {finding.payload[:100]}{'...' if len(finding.payload) > 100 else ''}
+
+[bold]Evidence:[/bold]
+{finding.evidence}
+
+[bold]Description:[/bold]
+{finding.description}
+
+[bold]Remediation:[/bold]
+{finding.remediation}"""
+                
+                console.print(Panel(
+                    panel_content,
+                    title=f"[{severity_color}]Finding #{i}[/{severity_color}]",
+                    border_style=severity_color,
+                    box=box.ROUNDED,
+                ))
+                console.print()
+        
+        # Save to file if requested
+        if output:
+            from dataclasses import asdict
+            output_data = {
+                "target": target,
+                "scan_time": datetime.datetime.now().isoformat(),
+                "total_findings": len(findings),
+                "by_severity": {
+                    sev: len([f for f in findings if f.severity.lower() == sev])
+                    for sev in ["critical", "high", "medium", "low", "info"]
+                },
+                "findings": [asdict(f) for f in findings],
+            }
+            with open(output, "w", encoding="utf-8") as f:
+                json.dump(output_data, f, indent=2, ensure_ascii=False)
+            console.print(f"[cyan]Results saved to: {output}[/cyan]")
+    
+    asyncio.run(run())
+
+
+@app.command()
+def payload(
+    lhost: str = typer.Option(..., "--lhost", "-l", help="Listener host IP (attacker machine)"),
+    lport: int = typer.Option(4444, "--lport", "-p", help="Listener port"),
+    payload_type: str = typer.Option("reverse_tcp", "--type", "-t", help="Payload type: reverse_tcp, bind_tcp, web_shell, powershell"),
+    shell: str = typer.Option("bash", "--shell", "-s", help="Shell type: bash, python, powershell, netcat, php, perl, ruby"),
+    platform: str = typer.Option("linux", "--platform", help="Target platform: linux, windows, unix, macos, web"),
+    encoder: Optional[str] = typer.Option(None, "--encode", "-e", help="Encoder: base64, hex, url, ps_base64, all"),
+    format: str = typer.Option("raw", "--format", "-f", help="Output format: raw, base64, hex, url, ps_base64"),
+    obfuscate: bool = typer.Option(False, "--obfuscate", "-o", help="Obfuscate payload"),
+    list_payloads: bool = typer.Option(False, "--list", help="List available payloads and exit"),
+    msfvenom: bool = typer.Option(False, "--msfvenom", help="Generate msfvenom command instead of raw payload"),
+    output: Optional[str] = typer.Option(None, "--output", help="Save payload to file"),
+):
+    """
+    Generate exploitation payloads for penetration testing.
+    Creates reverse shells, bind shells, web shells, and encoded payloads.
+    """
+    generator = PayloadGenerator()
+    
+    # List available payloads
+    if list_payloads:
+        available = generator.list_available_payloads()
+        
+        console.print("[cyan]=== Available Payloads ===[/cyan]\n")
+        
+        for category, items in available.items():
+            table = Table(title=category.replace("_", " ").title(), box=box.MINIMAL)
+            table.add_column("Payload", style="green")
+            for item in items:
+                table.add_row(item)
+            console.print(table)
+            console.print()
+        
+        return
+    
+    # Generate msfvenom command
+    if msfvenom:
+        result = generator.generate_msfvenom_command(
+            payload_type=payload_type,
+            lhost=lhost,
+            lport=lport,
+            platform=platform,
+            arch="x64",
+            format=format if format != "raw" else "exe"
+        )
+        
+        console.print("[cyan]=== Msfvenom Payload Generator ===[/cyan]\n")
+        console.print(f"[yellow]Platform:[/yellow] {result['platform']}")
+        console.print(f"[yellow]Architecture:[/yellow] {result['arch']}")
+        console.print(f"[yellow]Payload:[/yellow] {result['payload']}")
+        console.print(f"[yellow]Format:[/yellow] {result['format']}\n")
+        
+        console.print("[cyan]=== Generation Command ===[/cyan]")
+        console.print(f"[green]{result['command']}[/green]\n")
+        
+        console.print("[cyan]=== Listener Setup ===[/cyan]")
+        console.print(f"[yellow]{result['listener']}[/yellow]\n")
+        
+        if output:
+            with open(output, "w") as f:
+                f.write(f"# {result['description']}\n\n")
+                f.write(f"# Generation Command:\n{result['command']}\n\n")
+                f.write(f"# Listener:\n{result['listener']}\n")
+            console.print(f"[green]Commands saved to: {output}[/green]")
+        
+        return
+    
+    # Generate payload based on type
+    try:
+        if payload_type in ["reverse_tcp", "reverse_shell"]:
+            payload_obj = generator.generate_reverse_shell(
+                lhost=lhost,
+                lport=lport,
+                shell_type=shell,
+                encoder=encoder
+            )
+        
+        elif payload_type == "bind_tcp":
+            payload_obj = generator.generate_bind_shell(
+                lport=lport,
+                shell_type=shell
+            )
+        
+        elif payload_type == "web_shell":
+            payload_obj = generator.generate_web_shell(
+                shell_type=shell,
+                obfuscate=obfuscate
+            )
+        
+        elif payload_type == "powershell":
+            payload_obj = generator.generate_powershell_payload(
+                lhost=lhost,
+                lport=lport,
+                encoder="base64"
+            )
+        
+        else:
+            console.print(f"[red]Unknown payload type: {payload_type}[/red]")
+            console.print("[yellow]Available types: reverse_tcp, bind_tcp, web_shell, powershell[/yellow]")
+            raise typer.Exit(1)
+        
+        # Display payload information
+        console.print("[cyan]=== Payload Generated ===[/cyan]\n")
+        console.print(f"[yellow]Type:[/yellow] {payload_obj.type}")
+        console.print(f"[yellow]Platform:[/yellow] {payload_obj.platform}")
+        console.print(f"[yellow]Description:[/yellow] {payload_obj.description}\n")
+        
+        console.print("[cyan]=== Payload Code ===[/cyan]")
+        console.print(Panel(payload_obj.code, border_style="green", box=box.ROUNDED))
+        console.print()
+        
+        # Show encoded versions if available
+        if payload_obj.encoded:
+            console.print("[cyan]=== Encoded Versions ===[/cyan]")
+            for enc_type, enc_value in payload_obj.encoded.items():
+                if len(enc_value) > 200:
+                    enc_display = enc_value[:200] + "..."
+                else:
+                    enc_display = enc_value
+                console.print(f"\n[yellow]{enc_type.upper()}:[/yellow]")
+                console.print(f"[dim]{enc_display}[/dim]")
+            console.print()
+        
+        console.print("[cyan]=== Usage Instructions ===[/cyan]")
+        console.print(f"[yellow]{payload_obj.usage}[/yellow]\n")
+        
+        # Save to file if requested
+        if output:
+            with open(output, "w") as f:
+                f.write(f"# {payload_obj.description}\n")
+                f.write(f"# Platform: {payload_obj.platform}\n")
+                f.write(f"# Type: {payload_obj.type}\n\n")
+                f.write(f"# Usage:\n# {payload_obj.usage}\n\n")
+                f.write(f"# Payload:\n{payload_obj.code}\n")
+                
+                if payload_obj.encoded:
+                    f.write(f"\n# Encoded versions:\n")
+                    for enc_type, enc_value in payload_obj.encoded.items():
+                        f.write(f"\n# {enc_type.upper()}:\n")
+                        f.write(f"{enc_value}\n")
+            
+            console.print(f"[green]Payload saved to: {output}[/green]")
+        
+        # Security warning
+        console.print("[red]WARNING:[/red] Only use payloads on systems you own or have explicit permission to test.")
+        console.print("[yellow]Unauthorized use may violate computer fraud laws.[/yellow]")
+    
+    except Exception as e:
+        console.print(f"[red]Error generating payload: {e}[/red]")
+        raise typer.Exit(1)
+
 
 if __name__ == "__main__":
     app()

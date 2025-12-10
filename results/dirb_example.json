@@ -1,9 +1,0 @@
-{
-  "target": "example.com",
-  "base": "https://example.com",
-  "results": [],
-  "summary": {
-    "count": 0,
-    "by_status": {}
-  }
-}

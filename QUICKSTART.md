@@ -48,6 +48,13 @@ scorpion scan -t example.com --web
 # Fast scan (low timeout, high concurrency)
 scorpion scan -t example.com --fast
 
+# OS fingerprinting (requires admin/root)
+scorpion scan -t example.com --syn --os-detect
+
+# Decoy scanning for IDS/IPS evasion (requires admin/root)
+scorpion scan -t example.com --syn --decoy RND:5
+scorpion scan -t example.com --fin --decoy RND:10 -T sneaky
+
 # Infrastructure scan (common server ports)
 scorpion scan -t example.com --infra
 

@@ -44,9 +44,17 @@ scorpion scan -t <target> [options]
 | `--raw` | Raw banner only | `--raw` |
 | `--no-write` | Connect-only mode | `--no-write` |
 | `--syn` | SYN scan (requires admin) | `--syn` |
+| `--fin` | FIN scan (requires admin) | `--fin` |
+| `--xmas` | XMAS scan (requires admin) | `--xmas` |
+| `--null` | NULL scan (requires admin) | `--null` |
+| `--ack` | ACK scan (requires admin) | `--ack` |
+| `-D, --decoy` | Decoy scan (IDS/IPS evasion) | `--decoy RND:5` |
+| `-T` | Timing template | `-T sneaky` |
 | `--rate-limit` | SYN rate limit | `--rate-limit 50` |
 | `--iface` | Network interface | `--iface eth0` |
 | `--list-ifaces` | List interfaces | `--list-ifaces` |
+| `-sV, --version-detect` | Service version detection | `--version-detect` |
+| `-O, --os-detect` | OS fingerprinting | `--os-detect` |
 | `--fast` | Fast preset | `--fast` |
 | `--web` | Web preset (80,443,8080) | `--web` |
 | `--infra` | Infrastructure preset | `--infra` |
@@ -65,6 +73,18 @@ scorpion scan -t example.com -p 1-1024 -U -u 53,123,161
 
 # SYN scan (admin required)
 scorpion scan -t example.com --syn --web --rate-limit 50
+
+# OS fingerprinting
+scorpion scan -t example.com --syn --os-detect
+
+# Decoy scanning (IDS/IPS evasion, admin required)
+scorpion scan -t example.com --syn --decoy RND:5
+scorpion scan -t example.com --fin --decoy RND:10 -T sneaky
+scorpion scan -t example.com --syn --decoy 10.0.0.1,ME,10.0.0.3
+
+# Advanced scans with timing templates
+scorpion scan -t example.com --syn -T aggressive
+scorpion scan -t example.com --xmas -T sneaky --decoy RND:8
 ```
 
 ---

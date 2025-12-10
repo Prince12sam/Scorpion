@@ -96,6 +96,15 @@ scorpion recon-cmd -t example.com
 # Web crawler
 scorpion crawl example.com --max-pages 10
 
+# OS fingerprinting (requires admin/root)
+sudo scorpion scan example.com --syn --os-detect
+
+# Payload generation
+scorpion payload --lhost 10.0.0.1 --lport 4444 --shell bash
+
+# Decoy scanning (IDS/IPS evasion, requires admin/root)
+sudo scorpion scan example.com --syn --decoy RND:5
+
 # Full web suite + HTML report
 scorpion suite -t example.com --profile web --mode passive --output-dir results
 ```
@@ -128,6 +137,9 @@ Open `report.html` in your browser to view the professional security report!
 | SSL check | `scorpion ssl-analyze -t <host>` |
 | Recon | `scorpion recon-cmd -t <host>` |
 | API test | `scorpion api-test <host>` |
+| OS fingerprint | `sudo scorpion scan -t <host> --syn --os-detect` |
+| Payload gen | `scorpion payload --lhost <ip> --lport 4444 --shell bash` |
+| Decoy scan | `sudo scorpion scan -t <host> --syn --decoy RND:5` |
 | Full suite | `scorpion suite -t <host> --profile web --output-dir results` |
 | Help | `scorpion --help` |
 

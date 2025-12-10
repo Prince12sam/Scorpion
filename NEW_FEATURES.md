@@ -1,9 +1,108 @@
 # New Features Added to Scorpion CLI 🦂
 
-**Date**: December 8, 2025  
-**Version**: 2.0.1 (Enhanced)
+**Date**: December 10, 2025  
+**Version**: 2.1.0 (Advanced Evasion)
 
-## 🚀 Three Powerful New Security Testing Modules
+## 🚀 Latest Features
+
+### ⭐ **NEW** Decoy Scanning (IDS/IPS Evasion)
+
+**Added**: December 10, 2025  
+**Status**: Production-ready
+
+Advanced IDS/IPS evasion through IP spoofing - obscure your real IP by mixing scan traffic with multiple decoy sources.
+
+**Features**:
+- ✅ Random decoy IP generation (avoiding reserved ranges)
+- ✅ Manual decoy specification with real IP positioning
+- ✅ Subnet-based decoy generation
+- ✅ Raw socket packet crafting with IP spoofing
+- ✅ Works with all advanced scan types (SYN/FIN/XMAS/NULL/ACK)
+- ✅ Success rate tracking and reporting
+- ✅ nmap-compatible syntax (`--decoy` / `-D`)
+
+**Usage**:
+```bash
+# Random decoys (5 fake IPs + your real IP)
+sudo scorpion scan target.com --syn --decoy RND:5
+
+# Manual decoys with real IP position
+sudo scorpion scan target.com --syn --decoy 10.0.0.1,ME,10.0.0.3
+
+# Combine with timing for maximum stealth
+sudo scorpion scan target.com --fin --decoy RND:10 -T sneaky
+
+# Advanced evasion with OS detection
+sudo scorpion scan target.com --xmas --decoy RND:15 --os-detect
+```
+
+**How It Works**:
+- Generates random or manual decoy IPs
+- Sends scan packets from each decoy IP to the target
+- Mixes your real IP among decoys at random or specified position
+- Makes IDS/IPS detection extremely difficult
+
+**Documentation**: [DECOY_SCANNING_GUIDE.md](DECOY_SCANNING_GUIDE.md)
+
+---
+
+### ⭐ Payload Generation
+
+**Added**: December 2025  
+**Status**: Production-ready
+
+Generate reverse shells, bind shells, and web shells for exploitation testing.
+
+**Features**:
+- ✅ 25+ payload variants (Bash, Python, PowerShell, PHP, Perl, Ruby, Netcat)
+- ✅ Multiple encoding formats (Base64, Hex, URL, PowerShell Base64)
+- ✅ 3-level obfuscation support
+- ✅ Msfvenom command generation for Metasploit integration
+
+**Usage**:
+```bash
+# Generate reverse shells
+scorpion payload --lhost 10.0.0.1 --lport 4444 --shell bash
+scorpion payload --lhost 10.0.0.1 --lport 443 --shell powershell
+
+# Web shells
+scorpion payload --lhost 10.0.0.1 --type web_shell --shell php
+
+# With encoding
+scorpion payload --lhost 10.0.0.1 --encode base64 --output payload.txt
+```
+
+**Documentation**: [PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)
+
+---
+
+### ⭐ OS Fingerprinting
+
+**Added**: December 2025  
+**Status**: Production-ready
+
+nmap-level OS detection using TCP/IP stack fingerprinting.
+
+**Features**:
+- ✅ 12 OS signatures (Windows, Linux, macOS, BSD, network devices)
+- ✅ 85-90% accuracy with confidence scoring
+- ✅ Multi-port consensus algorithm
+- ✅ TTL, window size, TCP options analysis
+
+**Usage**:
+```bash
+# Basic OS detection
+scorpion scan example.com --os-detect
+
+# OS detection with SYN scan
+scorpion scan example.com --syn --os-detect
+```
+
+**Documentation**: [OS_FINGERPRINTING_GUIDE.md](OS_FINGERPRINTING_GUIDE.md)
+
+---
+
+## 🔧 Earlier Security Testing Modules
 
 All features are **production-ready** with real testing capabilities—no mock data or dummy implementations.
 

@@ -1,24 +1,244 @@
-node_modules
+# ===================================
+# Scorpion Security Platform .gitignore
+# ===================================
+
+# ============ Python ============
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Virtual environments
+venv/
+.venv/
+ENV/
+env/
 .env
 .env.*
-dist
-build
-.DS_Store
+!.env.example
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage/
+*.cover
+.hypothesis/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# ============ Node.js ============
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log
+
+# ============ IDEs ============
+# VSCode
 .vscode/
+*.code-workspace
+
+# JetBrains IDEs
 .idea/
-coverage/
-cli/results/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ============ Operating Systems ============
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============ Scorpion Specific ============
+# Runtime output directories
 logs/
-reports/
+reports/*
+!reports/.gitkeep
+results/*
+!results/.gitkeep
+
+# Data directories (keep structure, ignore content)
+data/baselines/*
+!data/baselines/.gitkeep
+
+# CLI results
+cli/results/
+cli/data/
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+
+# Test files with sensitive data
+test-passwords.txt
+test-users.txt
+test-wordlist.txt
+targets.txt
+targets.list
+
+# Keep example files
+!targets.example.txt
+!test.json
+!*.example.*
+
+# Scan outputs
+*.json.bak
+scan_*.json
+tech_*.json
+web_*.json
+suite_*.json
+exploit_*.json
+api_*.json
+ssl_*.json
+recon_*.json
+
+# HTML reports
+report.html
+report_*.html
+summary_*.html
+
+# Certificates
+certs/*.pem
+certs/*.key
+certs/*.crt
+!certs/.gitkeep
+
+# ============ Security ============
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+
+# API keys and secrets
+secrets.json
+credentials.json
+*.secret
+*.key.json
+
+# SSH keys
+*.pem
+*.ppk
+id_rsa*
+id_dsa*
+id_ecdsa*
+id_ed25519*
+
+# ============ Build Artifacts ============
+dist/
+build/
+*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+
+# ============ Documentation Build ============
+docs/_build/
+docs/.doctrees/
+site/
+
+# ============ Database ============
+*.db
+*.sqlite
+*.sqlite3
+
+# ============ Misc ============
+.version
+.scorpion/cache/
+.scorpion/temp/
 *.local
 
+# ============ Keep Important Files ============
+# Keep .gitkeep files
+!.gitkeep
 
-# Snyk Security Extension - AI Rules (auto-generated)
-.github\instructions\snyk_rules.instructions.md
+# Keep example/template files
+!*.example
+!*.template
+!*.sample
+
+# Keep documentation
+!*.md
+!LICENSE
+!README.md
+
+# Keep configuration examples
+!*example.json
+!*example.txt
+!*example.yml
+!*example.yaml
+
+# ============ Snyk Security ============
+.snyk
+.dccache
 
 # Snyk Security Extension - AI Rules (auto-generated)
 .github/instructions/snyk_rules.instructions.md

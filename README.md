@@ -78,7 +78,9 @@ scorpion report --suite "$latest" --summary
 ## ✨ Features
 
 ### 🎯 Core Security Testing
-- **Port Scanning:** Fast async TCP/UDP scanning with service detection
+- **Port Scanning:** Fast async TCP/UDP scanning with service detection + **OS fingerprinting**
+- **Decoy Scanning:** IDS/IPS evasion through IP spoofing (random, subnet, manual decoys) ⭐ **NEW!**
+- **Payload Generation:** Reverse shells, bind shells, web shells for exploitation ⭐ **NEW!**
 - **SSL/TLS Analysis:** Certificate validation, cipher suites, protocol versions
 - **Subdomain Takeover:** Detection across 15+ cloud providers
 - **API Security:** Swagger/GraphQL testing, IDOR detection, rate limit checks
@@ -222,30 +224,49 @@ scorpion --version
 # Basic port scan
 scorpion scan -t example.com
 
-# Scan specific ports with stealth
-scorpion scan -t example.com --ports 80,443,8080 --stealth high
+# Scan specific ports with OS detection (NEW!)
+scorpion scan -t example.com --ports 80,443 --os-detect
+
+# SYN scan with OS fingerprinting (requires admin/root)
+scorpion scan -t example.com --syn --os-detect
+
+# Timing templates (nmap-style)
+scorpion scan -t example.com -T aggressive --os-detect
 
 # Deep scan with service detection
-scorpion scan -t example.com --type deep -A
+scorpion scan -t example.com --version-detect
 
-# Ninja-level stealth scan
-scorpion scan -t example.com --stealth ninja --ports 1-1000
+# TCP SYN scan (stealth, requires privileges)
+scorpion scan -t example.com --syn --ports 1-1000
 
-# TCP SYN scan (requires privileges)
-scorpion scan -t example.com -sS --ports 1-1000
-
-# OS detection
-scorpion scan -t example.com -O
+# Advanced scan types (FIN, XMAS, NULL, ACK)
+scorpion scan -t example.com --fin --ports 1-1000
 
 # Output to JSON file
-scorpion scan -t example.com -o results.json
+scorpion scan -t example.com --os-detect -o results.json
 
-# Available scan types: quick, normal, deep, custom
-scorpion scan -t example.com --type deep
-
-# Available stealth levels: low, medium, high, ninja
-scorpion scan -t example.com --stealth ninja
+# Available timing: paranoid, sneaky, polite, normal, aggressive, insane
+scorpion scan -t example.com -T sneaky
 ```
+
+**NEW: OS Fingerprinting**
+```bash
+# Basic OS detection
+scorpion scan example.com --os-detect
+
+# OS detection with web preset
+scorpion scan example.com --web --os-detect
+
+# OS detection with infrastructure preset
+scorpion scan example.com --infra --os-detect
+
+# Example Output:
+# ═══ OS Fingerprinting ═══
+# ✓ OS Detected: Windows 10/11 (windows)
+#   Confidence: 90%
+#   Based on 2 measurement(s)
+```
+📖 **Full OS detection guide:** [OS_FINGERPRINTING_GUIDE.md](OS_FINGERPRINTING_GUIDE.md)
 
 ### Network Reconnaissance
 
@@ -304,6 +325,116 @@ scorpion api-test -t https://api.example.com --no-discover --no-graphql
 # Save detailed report
 scorpion api-test -t https://api.example.com -o api-report.json
 ```
+
+### Web Application Vulnerability Scanning ⭐ NEW
+
+```bash
+# Full web vulnerability scan
+scorpion webscan https://example.com/page?id=1
+
+# Scan login page
+scorpion webscan "https://site.com/login?user=admin&pass=test"
+
+# Scan API endpoint
+scorpion webscan "https://api.site.com/v1/user?id=123"
+
+# Custom concurrency and timeout
+scorpion webscan https://example.com -c 20 -t 30
+
+# Filter critical vulnerabilities only
+scorpion webscan https://example.com -s critical
+
+# Filter high and critical
+scorpion webscan https://example.com -s critical,high
+
+# Save results to JSON
+scorpion webscan https://example.com -o web-vulns.json
+
+# Selective scanning (only SQLi and XSS)
+scorpion webscan https://example.com --no-cmdi --no-ssrf --no-headers --no-cors
+
+# Skip SSRF scanning
+scorpion webscan https://internal.com --no-ssrf
+
+# Scan testing environments (disable SSL verify)
+scorpion webscan https://localhost:8443 --no-ssl-verify
+```
+
+**Detects:**
+- SQL Injection (error-based, time-based, boolean-based)
+- Cross-Site Scripting (XSS)
+- Command Injection
+- Server-Side Request Forgery (SSRF)
+- Security Headers (HSTS, CSP, X-Frame-Options, etc.)
+- CORS Misconfiguration
+
+📖 **Full guide:** [WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md)
+
+### Payload Generation ⭐ **NEW!**
+
+```bash
+# Generate reverse shells
+scorpion payload --lhost 10.0.0.1 --lport 4444 --shell bash
+scorpion payload --lhost 10.0.0.1 --lport 443 --shell python
+scorpion payload --lhost 10.0.0.1 --lport 443 --type powershell
+
+# Generate web shells
+scorpion payload --lhost 10.0.0.1 --type web_shell --shell php
+scorpion payload --lhost 10.0.0.1 --type web_shell --shell asp
+
+# Generate with encoding
+scorpion payload --lhost 10.0.0.1 --encode base64 --output payload.txt
+
+# Generate msfvenom commands
+scorpion payload --lhost 10.0.0.1 --msfvenom --platform windows --format exe
+
+# List available payloads
+scorpion payload --list --lhost 10.0.0.1
+
+# Save to file
+scorpion payload --lhost 10.0.0.1 --shell bash --output reverse_shell.sh
+```
+
+**Features:**
+- Reverse shells (Bash, Python, PowerShell, PHP, Perl, Ruby, Netcat)
+- Bind shells (Netcat, Python, PHP)
+- Web shells (PHP, ASP, JSP, Python)
+- Encoding (Base64, Hex, URL, PowerShell Base64)
+- Msfvenom integration for Metasploit payloads
+
+📖 **Full guide:** [PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)
+
+### Decoy Scanning (IDS/IPS Evasion) ⭐ **NEW!**
+
+```bash
+# Random decoys (recommended)
+scorpion scan target.com --syn --decoy RND:5
+
+# More decoys for better obfuscation
+scorpion scan target.com --syn --decoy RND:10
+
+# Manual decoy list with real IP position
+scorpion scan target.com --syn --decoy 10.0.0.1,10.0.0.2,ME,10.0.0.5
+
+# Combine with slow timing for stealth
+scorpion scan target.com --fin --decoy RND:8 -T sneaky
+
+# XMAS scan with aggressive decoys
+scorpion scan target.com --xmas --decoy RND:15 -T aggressive
+
+# Full scan with decoys and OS detection
+scorpion scan target.com --syn --decoy RND:10 --os-detect --output scan_decoy.json
+```
+
+**Features:**
+- Random decoy generation (RND:count)
+- Manual decoy specification (IP1,IP2,ME)
+- Subnet-based decoys
+- Works with all advanced scan types (SYN/FIN/XMAS/NULL/ACK)
+- Requires administrator/root privileges
+- Nmap-compatible syntax
+
+📖 **Full guide:** [DECOY_SCANNING_GUIDE.md](DECOY_SCANNING_GUIDE.md)
 
 ### SSL/TLS Security Analysis ⭐ NEW
 

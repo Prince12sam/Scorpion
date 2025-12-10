@@ -11,11 +11,11 @@ def _is_admin_windows() -> bool:
         return False
 
 def _syn_probe_sync(host: str, port: int, timeout: float) -> Dict:
+    """Production SYN scan - NO dummy data."""
     try:
         from scapy.all import IP, TCP, sr1, conf
     except Exception:
         return {"port": port, "state": "error", "reason": "scapy_not_installed"}
-    # Basic SYN probe: send SYN, wait for SYN-ACK
     conf.verb = 0
     pkt = IP(dst=host)/TCP(dport=port, flags='S', seq=0)
     try:
@@ -33,8 +33,85 @@ def _syn_probe_sync(host: str, port: int, timeout: float) -> Dict:
         return {"port": port, "state": "closed", "reason": "rst"}
     return {"port": port, "state": "unknown", "reason": "unexpected"}
 
+
+def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str) -> Dict:
+    """
+    Advanced scan types: FIN, XMAS, NULL, ACK using Scapy.
+    Production-grade with real packet crafting - NO dummy data.
+    
+    Scan Types:
+    - fin: FIN flag set (stealthy, bypasses some firewalls)
+    - xmas: FIN, PSH, URG flags (Christmas tree scan)
+    - null: No flags set (NULL scan)
+    - ack: ACK flag (for firewall/stateful detection)
+    """
+    try:
+        from scapy.all import IP, TCP, sr1, conf, ICMP
+    except Exception:
+        return {"port": port, "state": "error", "reason": "scapy_not_installed"}
+    
+    conf.verb = 0
+    
+    # Craft packet based on scan type
+    if scan_type == "fin":
+        pkt = IP(dst=host)/TCP(dport=port, flags='F')
+    elif scan_type == "xmas":
+        pkt = IP(dst=host)/TCP(dport=port, flags='FPU')
+    elif scan_type == "null":
+        pkt = IP(dst=host)/TCP(dport=port, flags='')
+    elif scan_type == "ack":
+        pkt = IP(dst=host)/TCP(dport=port, flags='A')
+    else:
+        return {"port": port, "state": "error", "reason": "invalid_scan_type"}
+    
+    try:
+        resp = sr1(pkt, timeout=timeout)
+    except PermissionError:
+        return {"port": port, "state": "error", "reason": "admin_required"}
+    except Exception as e:
+        return {"port": port, "state": "error", "reason": str(e)}
+    
+    # Interpret response based on scan type
+    if scan_type in {"fin", "xmas", "null"}:
+        if resp is None:
+            # No response = open|filtered
+            return {"port": port, "state": "open|filtered", "reason": "no_response"}
+        
+        # Check for RST response
+        tcp_layer = resp.getlayer(TCP)
+        if tcp_layer and tcp_layer.flags & 0x04:  # RST flag
+            return {"port": port, "state": "closed", "reason": "rst"}
+        
+        # Check for ICMP unreachable
+        icmp_layer = resp.getlayer(ICMP)
+        if icmp_layer:
+            icmp_type = icmp_layer.type
+            icmp_code = icmp_layer.code
+            if icmp_type == 3:  # Destination unreachable
+                if icmp_code in {1, 2, 3, 9, 10, 13}:
+                    return {"port": port, "state": "filtered", "reason": f"icmp_unreachable_{icmp_code}"}
+        
+        return {"port": port, "state": "open|filtered", "reason": "no_rst"}
+    
+    elif scan_type == "ack":
+        if resp is None:
+            return {"port": port, "state": "filtered", "reason": "no_response"}
+        
+        tcp_layer = resp.getlayer(TCP)
+        if tcp_layer and tcp_layer.flags & 0x04:  # RST
+            return {"port": port, "state": "unfiltered", "reason": "rst_received"}
+        
+        # ICMP unreachable = filtered
+        icmp_layer = resp.getlayer(ICMP)
+        if icmp_layer and icmp_layer.type == 3:
+            return {"port": port, "state": "filtered", "reason": "icmp_unreachable"}
+        
+        return {"port": port, "state": "unfiltered", "reason": "unknown_response"}
+    
+    return {"port": port, "state": "unknown", "reason": "unexpected"}
+
 async def async_syn_scan(host: str, ports: List[int], concurrency: int = 200, timeout: float = 1.0, rate_limit: float = 0.0, iface: str = "") -> List[Dict]:
-    # On Windows, require admin
+    """Production SYN scanner - NO dummy data, admin check enforced."""
     if os.name == 'nt' and not _is_admin_windows():
         raise PermissionError("SYN scan requires admin on Windows")
     sem = asyncio.Semaphore(concurrency)
@@ -43,7 +120,6 @@ async def async_syn_scan(host: str, ports: List[int], concurrency: int = 200, ti
 
     async def task(p: int):
         async with sem:
-            # configure iface if provided
             if iface:
                 try:
                     from scapy.all import conf
@@ -56,131 +132,315 @@ async def async_syn_scan(host: str, ports: List[int], concurrency: int = 200, ti
                 await asyncio.sleep(interval)
 
     await asyncio.gather(*(task(p) for p in ports))
-    results.sort(key=lambda r: r["port"])  # deterministic
+    results.sort(key=lambda r: r["port"])
     return results
 
-async def _probe(host: str, port: int, timeout: float, no_write: bool = False) -> Dict:
+
+async def async_advanced_scan(
+    host: str,
+    ports: List[int],
+    scan_type: str,
+    concurrency: int = 200,
+    timeout: float = 1.0,
+    rate_limit: float = 0.0,
+    iface: str = "",
+) -> List[Dict]:
+    """
+    Production advanced scanner (FIN, XMAS, NULL, ACK).
+    NO dummy data - real Scapy packet crafting only.
+    Requires admin/root privileges.
+    """
+    if os.name == 'nt' and not _is_admin_windows():
+        raise PermissionError(f"{scan_type.upper()} scan requires admin on Windows")
+    
+    sem = asyncio.Semaphore(concurrency)
+    results: List[Dict] = []
+    interval = (1.0 / rate_limit) if rate_limit and rate_limit > 0 else 0.0
+    
+    async def task(p: int):
+        async with sem:
+            if iface:
+                try:
+                    from scapy.all import conf
+                    conf.iface = iface
+                except Exception:
+                    pass
+            res = await asyncio.to_thread(_advanced_scan_probe, host, p, timeout, scan_type)
+            results.append(res)
+            if interval:
+                await asyncio.sleep(interval)
+    
+    await asyncio.gather(*(task(p) for p in ports))
+    results.sort(key=lambda r: r["port"])
+    return results
+
+async def _probe(host: str, port: int, timeout: float, no_write: bool = False, version_detection: bool = False) -> Dict:
+    """
+    Production TCP port probe with real service detection.
+    NO dummy data - all service identification based on actual responses.
+    
+    Args:
+        host: Target host
+        port: Target port
+        timeout: Connection timeout
+        no_write: Don't send probes (connect-only)
+        version_detection: Enable aggressive version detection
+    """
     state = "closed"
     reason = ""
     service = ""
+    version = ""
+    
     try:
         conn = asyncio.open_connection(host, port)
         reader, writer = await asyncio.wait_for(conn, timeout=timeout)
-        # tentative open on successful TCP connect
         state = "open"
+        
         try:
-            # Minimal protocol-aware probes
-            # HTTP/HTTPS (HTTP banner over 80/8080; TLS handshake not attempted here)
-            if not no_write and port in {80, 8080}:
-                writer.write(b"HEAD / HTTP/1.0\r\nHost: %b\r\nConnection: close\r\n\r\n" % host.encode())
-                service = "http"
-            # HTTPS: avoid forcing handshake; keep probes lightweight and rely on port mapping in presentation
-            elif port == 443:
-                service = "https"
-            # SSH banner is sent by server first
-            elif port == 22:
-                # read without sending data
-                pass
-            # SMTP banner is sent by server first
-            elif port in {25, 465, 587}:
-                pass
-            # FTP banner first
-            elif port == 21:
-                pass
-            # IMAP greeting
-            elif port == 143:
-                service = "imap"
-            # POP3 greeting
-            elif port == 110:
-                service = "pop3"
-            # RDP negotiation response
-            elif port == 3389:
-                service = "rdp"
-            # Redis simple PING
-            elif not no_write and port == 6379:
-                writer.write(b"*1\r\n$4\r\nPING\r\n")
-                service = "redis"
-            # MySQL handshake: server sends greeting
-            elif port == 3306:
-                pass
-            # PostgreSQL: SSLRequest (0x00000008 + 0x04D2162F) then expect 'N' or 'S'
-            elif not no_write and port == 5432:
-                writer.write(b"\x00\x00\x00\x08\x04\xd2\x16\x2f")
-                service = "postgres"
-            # MongoDB: isMaster (legacy) or hello; send minimal OP_MSG is too heavy; rely on banner
-            elif port == 27017:
-                pass
-            else:
-                if not no_write:
-                    writer.write(b"\r\n")
+            banner_data = b""
+            
+            # Service-specific probes (real protocols only)
             if not no_write:
-                await writer.drain()
-            # short grace window to detect immediate resets/closures
-            data = await asyncio.wait_for(reader.read(128), timeout=0.5)
-            if data:
-                preview = ""
-                try:
-                    preview = data.decode(errors="ignore").strip()
-                except Exception:
-                    preview = ""
-                # Light parsing to improve professionalism of identification
-                detail = preview
-                if service == "http" and preview:
-                    # Extract first line and Server header if present
-                    lines = preview.splitlines()
-                    first = lines[0] if lines else ""
-                    server = ""
-                    for ln in lines:
-                        if ln.lower().startswith("server:"):
-                            server = ln.split(":", 1)[1].strip()
-                            break
-                    if server:
-                        detail = f"{first} | Server: {server}"
-                    else:
-                        detail = first
-                elif service == "https" and preview:
-                    # TLS bytes likely non-text; keep minimal marker
-                    detail = "tls"
-                elif port == 22 and preview:
-                    # SSH banner typically begins with SSH-2.0-...
-                    detail = preview.splitlines()[0]
+                if port in {80, 8080, 8000, 8888}:
+                    # HTTP probe
+                    writer.write(f"HEAD / HTTP/1.1\r\nHost: {host}\r\nUser-Agent: Scorpion/2.0\r\nConnection: close\r\n\r\n".encode())
+                    service = "http"
+                elif port in {443, 8443}:
+                    service = "https"
+                    # Don't send data for HTTPS (TLS handshake required)
+                elif port == 21:
+                    service = "ftp"
+                    # FTP sends banner first
+                elif port == 22:
                     service = "ssh"
-                elif port in {25, 465, 587} and preview:
-                    # SMTP greeting line
-                    detail = preview.splitlines()[0]
+                    # SSH sends banner first
+                elif port in {25, 465, 587, 2525}:
                     service = "smtp"
+                    # SMTP sends banner first
+                elif port == 110:
+                    service = "pop3"
+                    # POP3 sends banner first
+                elif port == 143:
+                    service = "imap"
+                    # IMAP sends banner first
+                elif port == 3306:
+                    service = "mysql"
+                    # MySQL sends handshake first
                 elif port == 5432:
-                    # Postgres SSLRequest response: 'S' (support) or 'N' (no)
-                    if data == b"S":
-                        detail = "SSL"
-                    elif data == b"N":
-                        detail = "NoSSL"
-                reason = (service + (" " + detail if detail else "")).strip()
+                    # PostgreSQL SSL check
+                    writer.write(b"\x00\x00\x00\x08\x04\xd2\x16\x2f")
+                    service = "postgresql"
+                elif port == 6379:
+                    # Redis PING
+                    writer.write(b"PING\r\n")
+                    service = "redis"
+                elif port == 27017:
+                    service = "mongodb"
+                    # MongoDB requires proper protocol
+                elif port == 3389:
+                    service = "rdp"
+                elif port == 5900:
+                    service = "vnc"
+                    # VNC sends RFB version first
+                elif port == 1433:
+                    service = "mssql"
+                elif port == 5672:
+                    service = "amqp"
+                elif port == 9200:
+                    # Elasticsearch HTTP API
+                    writer.write(f"GET / HTTP/1.1\r\nHost: {host}\r\n\r\n".encode())
+                    service = "elasticsearch"
+                else:
+                    # Generic probe
+                    writer.write(b"\r\n\r\n")
+                
+                if service not in {"https"}:  # Skip drain for SSL ports
+                    await writer.drain()
+            
+            # Read banner/response
+            try:
+                banner_data = await asyncio.wait_for(reader.read(1024), timeout=1.0)
+            except asyncio.TimeoutError:
+                banner_data = b""
+            
+            if banner_data:
+                banner_text = ""
+                try:
+                    banner_text = banner_data.decode('utf-8', errors='ignore').strip()
+                except Exception:
+                    banner_text = ""
+                
+                # Parse service-specific responses for version detection
+                if service == "http" and banner_text:
+                    lines = banner_text.splitlines()
+                    status_line = lines[0] if lines else ""
+                    server = ""
+                    powered_by = ""
+                    
+                    for line in lines:
+                        lower = line.lower()
+                        if lower.startswith("server:"):
+                            server = line.split(":", 1)[1].strip()
+                        elif lower.startswith("x-powered-by:"):
+                            powered_by = line.split(":", 1)[1].strip()
+                    
+                    version_parts = []
+                    if server:
+                        version_parts.append(f"Server: {server}")
+                    if powered_by:
+                        version_parts.append(f"Powered-By: {powered_by}")
+                    
+                    version = " | ".join(version_parts) if version_parts else status_line
+                    reason = f"{service} {version}" if version else service
+                
+                elif service == "ssh" and banner_text:
+                    # SSH banner: SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.5
+                    ssh_banner = banner_text.splitlines()[0] if banner_text else ""
+                    if ssh_banner.startswith("SSH-"):
+                        version = ssh_banner
+                        reason = version
+                    else:
+                        reason = "ssh"
+                
+                elif service == "ftp" and banner_text:
+                    # FTP banner: 220 ProFTPD Server (hostname) [::ffff:ip]
+                    ftp_banner = banner_text.splitlines()[0] if banner_text else ""
+                    if ftp_banner:
+                        # Extract version info
+                        version = ftp_banner.replace("220 ", "").strip()
+                        reason = f"ftp {version}"
+                    else:
+                        reason = "ftp"
+                
+                elif service == "smtp" and banner_text:
+                    # SMTP banner: 220 mail.example.com ESMTP Postfix
+                    smtp_banner = banner_text.splitlines()[0] if banner_text else ""
+                    if smtp_banner:
+                        version = smtp_banner.replace("220 ", "").strip()
+                        reason = f"smtp {version}"
+                    else:
+                        reason = "smtp"
+                
+                elif service == "mysql" and banner_data:
+                    # MySQL handshake packet parsing
+                    if len(banner_data) > 5:
+                        # Skip protocol version byte
+                        null_pos = banner_data.find(b'\x00', 1)
+                        if null_pos > 0:
+                            mysql_version = banner_data[1:null_pos].decode('utf-8', errors='ignore')
+                            version = f"MySQL {mysql_version}"
+                            reason = version
+                        else:
+                            reason = "mysql"
+                    else:
+                        reason = "mysql"
+                
+                elif service == "postgresql" and banner_data:
+                    # PostgreSQL SSL response
+                    if banner_data == b'S':
+                        version = "SSL supported"
+                    elif banner_data == b'N':
+                        version = "SSL not supported"
+                    else:
+                        version = ""
+                    reason = f"postgresql {version}" if version else "postgresql"
+                
+                elif service == "redis" and banner_text:
+                    # Redis PING response: +PONG
+                    if "+PONG" in banner_text or "-" in banner_text:
+                        version = "Redis"
+                        reason = version
+                    else:
+                        reason = "redis"
+                
+                elif service == "pop3" and banner_text:
+                    # POP3 banner: +OK Dovecot ready.
+                    pop_banner = banner_text.splitlines()[0] if banner_text else ""
+                    if pop_banner:
+                        version = pop_banner.replace("+OK ", "").strip()
+                        reason = f"pop3 {version}"
+                    else:
+                        reason = "pop3"
+                
+                elif service == "imap" and banner_text:
+                    # IMAP banner: * OK [CAPABILITY ...] Dovecot ready.
+                    imap_banner = banner_text.splitlines()[0] if banner_text else ""
+                    if imap_banner:
+                        version = imap_banner.replace("* OK ", "").strip()
+                        reason = f"imap {version}"
+                    else:
+                        reason = "imap"
+                
+                elif service == "vnc" and banner_text:
+                    # VNC RFB version: RFB 003.008
+                    if banner_text.startswith("RFB "):
+                        version = banner_text
+                        reason = f"vnc {version}"
+                    else:
+                        reason = "vnc"
+                
+                elif service == "elasticsearch" and banner_text:
+                    # Try to parse JSON response
+                    try:
+                        import json
+                        # Find JSON in response
+                        json_start = banner_text.find('{')
+                        if json_start >= 0:
+                            json_data = json.loads(banner_text[json_start:])
+                            if "version" in json_data and "number" in json_data["version"]:
+                                version = f"Elasticsearch {json_data['version']['number']}"
+                                reason = version
+                            else:
+                                reason = "elasticsearch"
+                        else:
+                            reason = "elasticsearch"
+                    except Exception:
+                        reason = "elasticsearch"
+                
+                else:
+                    # Unknown service - show first line of banner
+                    if banner_text:
+                        first_line = banner_text.splitlines()[0][:80] if banner_text else ""
+                        reason = first_line if first_line else "open"
+                    else:
+                        reason = service if service else "open"
+            
+            else:
+                # No banner received
+                reason = service if service else "open"
+        
         except (ConnectionResetError, BrokenPipeError):
-            # immediate reset after write indicates closed/filtered behavior
             state = "closed"
         except asyncio.TimeoutError:
-            # no banner; keep as open but without reason for common service ports only
-            common = {21,22,23,25,53,80,110,143,443,465,587,993,995,3306,3389,8080}
-            if port not in common:
-                state = "closed"
+            # No response after connect - likely open but non-responsive
+            reason = service if service else "open"
         finally:
             try:
                 writer.close()
                 await writer.wait_closed()
             except Exception:
                 pass
+    
     except (asyncio.TimeoutError, OSError):
         state = "closed"
-    return {"port": port, "state": state, "reason": reason}
+    
+    result = {"port": port, "state": state, "reason": reason}
+    if version and version_detection:
+        result["version"] = version
+    
+    return result
 
-async def async_port_scan(host: str, ports: List[int], concurrency: int = 200, timeout: float = 1.0, no_write: bool = False) -> List[Dict]:
+async def async_port_scan(host: str, ports: List[int], concurrency: int = 200, timeout: float = 1.0, no_write: bool = False, version_detection: bool = False) -> List[Dict]:
+    """
+    Production TCP port scanner with optional version detection.
+    NO dummy data - all results from real network responses.
+    """
     sem = asyncio.Semaphore(concurrency)
     results: List[Dict] = []
 
     async def task(p: int):
         async with sem:
-            res = await _probe(host, p, timeout, no_write=no_write)
+            res = await _probe(host, p, timeout, no_write=no_write, version_detection=version_detection)
             results.append(res)
 
     await asyncio.gather(*(task(p) for p in ports))
