@@ -56,6 +56,31 @@ scorpion payload --lhost 10.0.0.1 --encode base64 --output payload.txt
 - ASP (Windows/IIS)
 - JSP (Java/Tomcat)
 
+### 🎯 AI Agent: OS-Specific Auto-Generation
+
+The AI pentesting agent **automatically detects target OS** and generates appropriate payloads:
+
+**Detection Methods:**
+1. **OS Fingerprinting** - Primary source (os_fingerprint tool)
+2. **Port Analysis** - Windows (3389/445/135), Linux (22/SSH)
+3. **Tech Stack** - IIS=Windows, Apache/Nginx=Linux
+
+**Automatic Payload Selection:**
+
+| Detected OS | Shell Type | Payload |
+|-------------|------------|---------|
+| Windows | `powershell` | Base64-encoded PowerShell reverse shell |
+| Linux/Unix | `bash` | Bash TCP reverse shell (/dev/tcp) |
+| Unknown | `python` | Cross-platform Python socket shell |
+
+**Example AI Flow:**
+```
+Phase 1: os_fingerprint → "Windows Server 2019"
+Phase 4: payload_generate → Auto-selects "powershell" 
+         Generates: powershell -Enc <base64_payload>
+         Includes: detected_os="Windows Server 2019"
+```
+
 ### Encoding Options
 - Base64
 - Hexadecimal
