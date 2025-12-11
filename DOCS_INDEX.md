@@ -1,6 +1,6 @@
 # Scorpion CLI Documentation Index
 
-Quick navigation for all Scorpion documentation.
+Complete navigation for all Scorpion documentation - **21 essential files** (cleaned up Dec 2025).
 
 ---
 
@@ -9,123 +9,98 @@ Quick navigation for all Scorpion documentation.
 **[Getting Started Guide](GETTING_STARTED.md)** ⭐  
 5-minute walkthrough from installation to first scan. Perfect for beginners.
 
+**[README.md](README.md)** 📖  
+Complete project overview, features, and architecture.
+
 ---
 
 ## 📖 Installation Guides
 
-Choose your platform:
-
 | Platform | Guide | Description |
 |----------|-------|-------------|
-| **Windows** | [INSTALL.md](INSTALL.md) | Complete Windows installation with PowerShell |
-| **Linux** | [INSTALL_LINUX.md](INSTALL_LINUX.md) | Ubuntu, Debian, Fedora, Arch instructions |
-| **Parrot OS** | [INSTALL_PARROT_OS.md](INSTALL_PARROT_OS.md) | Security-focused distro guide |
-| **All Platforms** | [GETTING_STARTED.md](GETTING_STARTED.md) | Quick 3-step universal install |
+| **Windows** | [INSTALL.md](INSTALL.md) | PowerShell installation with pip/pipx |
+| **Linux** | [INSTALL_LINUX.md](INSTALL_LINUX.md) | Ubuntu, Debian, Fedora, Arch, Kali |
+| **Parrot OS** | [INSTALL_PARROT_OS.md](INSTALL_PARROT_OS.md) | Security-optimized distribution setup |
 
 ---
 
-## ⚡ Quick References
+## ⚡ Core References
 
-| Document | Purpose | Best For |
+| Document | Purpose | Use When |
 |----------|---------|----------|
-| [QUICKSTART.md](QUICKSTART.md) | Fast examples and common use cases | Quick copy-paste commands |
-| [COMMANDS.md](COMMANDS.md) | Complete command reference | Looking up specific options |
-| [README.md](README.md) | Project overview and features | Understanding what Scorpion does |
+| [COMMANDS.md](COMMANDS.md) | Complete CLI reference | Looking up command syntax |
+| [GETTING_STARTED.md](GETTING_STARTED.md) | Quick start examples | First time using Scorpion |
+| [CHANGELOG.md](CHANGELOG.md) | Version history | Checking what's new |
 
 ---
 
-## 📋 Command Categories
+## 🎯 Feature Guides
 
-### Network Scanning
-- `scorpion scan` - TCP/UDP port scanning ([COMMANDS.md#scan](COMMANDS.md))
-- `scorpion ssl-analyze` - SSL/TLS analysis ([COMMANDS.md#ssl-analyze](COMMANDS.md))
+### Web Application Security
+- **[WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md)** - Complete web security testing (SQLi, XSS, SSRF, RCE)
 
-### Reconnaissance  
-- `scorpion recon-cmd` - DNS, WHOIS, headers ([COMMANDS.md#recon-cmd](COMMANDS.md))
-- `scorpion tech` - Technology detection ([COMMANDS.md#tech](COMMANDS.md))
+### Network & Infrastructure
+- **[OS_FINGERPRINTING_GUIDE.md](OS_FINGERPRINTING_GUIDE.md)** - OS detection and banner grabbing
+- **[DECOY_SCANNING_GUIDE.md](DECOY_SCANNING_GUIDE.md)** - Stealth scanning with decoys
+- **[PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)** - Reverse/bind shells, web shells
 
-### Web Testing
-- `scorpion dirbust` - Directory discovery ([COMMANDS.md#dirbust](COMMANDS.md))
-- `scorpion crawl` - Web crawler ([COMMANDS.md#crawl](COMMANDS.md))
-- `scorpion api-test` - API security ([COMMANDS.md#api-test](COMMANDS.md))
-- `scorpion takeover` - Subdomain takeover ([COMMANDS.md#takeover](COMMANDS.md))
-
-### Cloud & Infrastructure
-- `scorpion cloud` - Cloud storage audit ([COMMANDS.md#cloud](COMMANDS.md))
-- `scorpion k8s` - Kubernetes audit ([COMMANDS.md#k8s](COMMANDS.md))
-- `scorpion container` - Container registry audit ([COMMANDS.md#container](COMMANDS.md))
-
-### Reporting
-- `scorpion suite` - Combined security suite ([COMMANDS.md#suite](COMMANDS.md))
-- `scorpion report` - HTML report generation ([COMMANDS.md#report](COMMANDS.md))
+### Advanced Features
+- **[ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)** - Rate limiting, threading, custom headers
 
 ---
 
-## 🔍 Finding What You Need
+## 🤖 AI Pentesting Agent
 
-### "How do I install Scorpion?"
-→ [GETTING_STARTED.md](GETTING_STARTED.md) or [INSTALL.md](INSTALL.md)
+| Guide | Description |
+|-------|-------------|
+| **[AI_AGENT_ENHANCED_GUIDE.md](AI_AGENT_ENHANCED_GUIDE.md)** | Complete AI agent usage - OCP professional level |
+| **[AI_OCP_IMPLEMENTATION.md](AI_OCP_IMPLEMENTATION.md)** | Implementation details and methodology |
+| **[AI_COMMAND_EXECUTION.md](AI_COMMAND_EXECUTION.md)** | Direct command execution (Windows/Linux/macOS) |
 
-### "What commands are available?"
-→ [COMMANDS.md](COMMANDS.md)
+**Quick Start**:
+```bash
+scorpion ai-pentest -t target.com --primary-goal web_exploitation --risk-tolerance high
+```
+---
 
-### "Show me quick examples"
-→ [QUICKSTART.md](QUICKSTART.md)
+## 📊 Project Information
 
-### "How do I run a full security suite?"
-→ [COMMANDS.md#suite](COMMANDS.md) or [QUICKSTART.md#suite--reporting](QUICKSTART.md)
-
-### "How do I generate a report?"
-→ [COMMANDS.md#report](COMMANDS.md) or [GETTING_STARTED.md#generate-a-report](GETTING_STARTED.md)
-
-### "Linux-specific instructions?"
-→ [INSTALL_LINUX.md](INSTALL_LINUX.md)
-
-### "I'm getting errors"
-→ [GETTING_STARTED.md#troubleshooting](GETTING_STARTED.md) or [INSTALL.md](INSTALL.md)
+| Document | Description |
+|----------|-------------|
+| [NEW_FEATURES.md](NEW_FEATURES.md) | Recently added capabilities |
+| [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) | Feature status and roadmap |
+| [ENHANCEMENT_ROADMAP.md](ENHANCEMENT_ROADMAP.md) | Planned improvements |
+| [VULNERABILITY_REPORTING.md](VULNERABILITY_REPORTING.md) | Security disclosure policy |
+| [PRESENTATION.md](PRESENTATION.md) | Project presentation and demos |
+| [CHANGELOG.md](CHANGELOG.md) | Version history |
 
 ---
 
-## 📦 Development Documentation
+## 💡 Quick Navigation
 
-| File | Purpose |
-|------|---------|
-| [tools/python_scorpion/README.md](tools/python_scorpion/README.md) | Python package details and build instructions |
-
----
-
-## 🔒 Legal & Security
-
-**Important:** Always obtain explicit permission before testing any system.
-
-- Review [README.md#security--ethics](README.md) for responsible use guidelines
-- Unauthorized testing may violate laws in your jurisdiction
-- Follow responsible disclosure practices
+**I want to...**
+- ⚡ **Get started fast** → [GETTING_STARTED.md](GETTING_STARTED.md)
+- 📖 **Learn all commands** → [COMMANDS.md](COMMANDS.md)
+- 🐧 **Install on Linux** → [INSTALL_LINUX.md](INSTALL_LINUX.md)
+- 🌐 **Test web apps** → [WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md)
+- 🕵️ **Stealth scanning** → [DECOY_SCANNING_GUIDE.md](DECOY_SCANNING_GUIDE.md)
+- 💣 **Generate payloads** → [PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)
+- 🤖 **Use AI agent** → [AI_AGENT_ENHANCED_GUIDE.md](AI_AGENT_ENHANCED_GUIDE.md)
+- 🔧 **Advanced features** → [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
 
 ---
 
 ## 🆘 Getting Help
 
-1. **Check documentation** using this index
-2. **Read error messages** - they often contain solutions
-3. **Review troubleshooting** in [GETTING_STARTED.md](GETTING_STARTED.md)
-4. **Open an issue** on [GitHub](https://github.com/Prince12sam/Scorpion/issues)
+1. Check this index for relevant documentation
+2. Review [GETTING_STARTED.md](GETTING_STARTED.md) for troubleshooting
+3. Read error messages - they contain solutions
+4. Open an issue on [GitHub](https://github.com/Prince12sam/Scorpion/issues)
 
 ---
 
-## 📝 Quick Command Cheat Sheet
-
-```bash
-# Installation
-python -m pip install -e tools/python_scorpion
-
-# Help
-scorpion --help
-scorpion scan --help
-
-# Quick scans
-scorpion scan -t example.com --web
-scorpion ssl-analyze -t example.com
+**Last Updated**: December 11, 2025  
+**Total Documentation**: 21 essential files (cleaned & organized)
 scorpion recon-cmd -t example.com
 
 # Full suite + report
