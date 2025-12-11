@@ -2,13 +2,37 @@ import asyncio
 import socket
 from typing import Dict, List
 import os
+import sys
 
 def _is_admin_windows() -> bool:
+    """Check if running as administrator on Windows."""
     try:
         import ctypes
         return bool(ctypes.windll.shell32.IsUserAnAdmin())
     except Exception:
         return False
+
+def _is_root_unix() -> bool:
+    """Check if running as root on Unix-like systems (Linux, macOS, etc.)."""
+    try:
+        return os.geteuid() == 0
+    except AttributeError:
+        # os.geteuid() doesn't exist on Windows
+        return False
+
+def _has_required_privileges() -> bool:
+    """Check if current user has required privileges for raw packet operations."""
+    if os.name == 'nt':  # Windows
+        return _is_admin_windows()
+    else:  # Unix-like (Linux, macOS, BSD, etc.)
+        return _is_root_unix()
+
+def _get_privilege_error_message(operation: str = "This operation") -> str:
+    """Get platform-specific error message for privilege requirements."""
+    if os.name == 'nt':  # Windows
+        return f"{operation} requires administrator privileges. Run PowerShell as Administrator."
+    else:  # Unix-like
+        return f"{operation} requires root privileges. Run with sudo or as root."
 
 def _syn_probe_sync(host: str, port: int, timeout: float) -> Dict:
     """Production SYN scan - NO dummy data."""
@@ -111,9 +135,9 @@ def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str) -
     return {"port": port, "state": "unknown", "reason": "unexpected"}
 
 async def async_syn_scan(host: str, ports: List[int], concurrency: int = 200, timeout: float = 1.0, rate_limit: float = 0.0, iface: str = "") -> List[Dict]:
-    """Production SYN scanner - NO dummy data, admin check enforced."""
-    if os.name == 'nt' and not _is_admin_windows():
-        raise PermissionError("SYN scan requires admin on Windows")
+    """Production SYN scanner - NO dummy data, admin/root check enforced."""
+    if not _has_required_privileges():
+        raise PermissionError(_get_privilege_error_message("SYN scan"))
     sem = asyncio.Semaphore(concurrency)
     results: List[Dict] = []
     interval = (1.0 / rate_limit) if rate_limit and rate_limit > 0 else 0.0
@@ -150,8 +174,8 @@ async def async_advanced_scan(
     NO dummy data - real Scapy packet crafting only.
     Requires admin/root privileges.
     """
-    if os.name == 'nt' and not _is_admin_windows():
-        raise PermissionError(f"{scan_type.upper()} scan requires admin on Windows")
+    if not _has_required_privileges():
+        raise PermissionError(_get_privilege_error_message(f"{scan_type.upper()} scan"))
     
     sem = asyncio.Semaphore(concurrency)
     results: List[Dict] = []

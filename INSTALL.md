@@ -34,19 +34,25 @@ cd Scorpion
 ```
 
 ### Step 2: Install Scorpion CLI
+
+**Option A: Direct Install (Windows/macOS)**
 ```bash
 python -m pip install -e tools/python_scorpion
 ```
 
-**Windows PowerShell** (if using a virtual environment):
+**Option B: Virtual Environment (Linux - Required for modern distros)**
+
+> **Note:** Modern Linux distributions (Ubuntu 23.04+, Kali, Parrot OS) implement PEP 668 and require virtual environments.
+
+**Windows PowerShell:**
 ```powershell
 # From repo root
 python -m venv .venv
-& .\.venv\Scripts\Activate.ps1
+& ..\.venv\Scripts\Activate.ps1
 python -m pip install -e tools\python_scorpion
 ```
 
-**Linux/macOS** (if using a virtual environment):
+**Linux/macOS:**
 ```bash
 # From repo root
 python3 -m venv .venv
@@ -103,11 +109,20 @@ pip install scapy
 scorpion scan -t example.com --syn --web --rate-limit 50
 ```
 
-**Linux (sudo):**
+**Linux (with venv - Recommended):**
 ```bash
-sudo pip install scapy
-sudo scorpion scan -t example.com --syn --web --rate-limit 50
+# Activate your venv first
+source .venv/bin/activate
+pip install scapy
+
+# Run with sudo using venv's Python
+sudo $(which python3) -m python_scorpion.cli scan -t example.com --syn --web --rate-limit 50
+
+# Or use sudo -E to preserve environment
+sudo -E env PATH=$PATH scorpion scan -t example.com --syn --web --rate-limit 50
 ```
+
+**Note:** Modern Linux (Ubuntu 23.04+, Kali, Parrot OS) implements PEP 668, which blocks `sudo pip install`. Always install packages in a virtual environment.
 
 ---
 
@@ -161,12 +176,14 @@ scorpion --help
 - Some scans may require "Run as Administrator" for advanced features
 
 ### Linux (Ubuntu, Debian, CentOS, etc.)
-- Some scans may require root: `sudo scorpion scan -t example.com -sS`
+- Some scans require root privileges
+- If using venv: `sudo -E env PATH=$PATH scorpion scan ...` or `sudo $(which python3) -m python_scorpion.cli scan ...`
 - Install build tools if needed: `sudo apt install build-essential`
 
 ### macOS
 - Use Terminal or iTerm2
-- Some scans may require root: `sudo scorpion scan -t example.com -sS`
+- Some scans require root privileges
+- If using venv: `sudo -E env PATH=$PATH scorpion scan ...`
 
 ---
 
@@ -196,9 +213,14 @@ scorpion --help
 **Solution:** Install Python and pip (see Prerequisites above)
 
 ### Permission errors on Linux/macOS
-**Solution:** Use `sudo` for privileged scans:
+**Solution:** Use `sudo` with venv-aware commands for privileged scans:
 ```bash
-sudo scorpion scan -t example.com -sS
+# If using venv (modern Linux):
+source .venv/bin/activate
+sudo -E env PATH=$PATH scorpion scan -t example.com --syn --web
+
+# Alternative:
+sudo $(which python3) -m python_scorpion.cli scan -t example.com --syn --web
 ```
 
 ### Python environment issues

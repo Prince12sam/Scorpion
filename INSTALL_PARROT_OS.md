@@ -1,6 +1,40 @@
-# Installing Scorpion CLI on Parrot OS
+# Installing Scorpion CLI on Parrot OS / Kali / Debian-based Linux
 
-**Quick Guide for Security Testers**
+**Universal Guide for Security Testing Distributions**
+
+> **Note:** This guide works on Parrot OS, Kali Linux, Ubuntu, Debian, and other Debian-based distributions.
+
+---
+
+## ⚠️ CRITICAL: Modern Linux Python Protection (PEP 668)
+
+**Modern Linux distributions (including Parrot OS, Kali, Ubuntu 23.04+) block system-wide pip installs to protect system Python.**
+
+### ✅ CORRECT Installation (Use Virtual Environment)
+
+```bash
+# Clone the repository
+git clone https://github.com/Prince12sam/Scorpion.git
+cd Scorpion
+
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install (NO sudo needed inside venv!)
+pip install -e tools/python_scorpion
+
+# Verify
+scorpion --help
+```
+
+### ❌ WRONG - This Will Fail:
+```bash
+sudo pip install -e tools/python_scorpion  # ❌ Error: externally-managed-environment
+pip install --break-system-packages ...    # ❌ DANGEROUS - Can break your OS!
+```
+
+**Why:** Modern Python (3.11+) implements PEP 668 security standard. Always use virtual environments for safety.
 
 ---
 
@@ -8,7 +42,7 @@
 
 ### Prerequisites
 
-Parrot OS comes with most tools pre-installed. You just need Python 3.10+:
+Most security distros come with Python pre-installed. Just verify:
 
 ```bash
 # Check if Python is installed
@@ -16,7 +50,7 @@ python3 --version
 
 # If not installed or version < 3.10, install it:
 sudo apt update
-sudo apt install -y python3 python3-pip
+sudo apt install -y python3 python3-pip python3-venv
 
 # Verify installation
 python3 --version  # Should show 3.10 or higher
@@ -36,40 +70,35 @@ git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
 ```
 
-### Step 2: Install Python Scorpion CLI
+### Step 2: Create Virtual Environment (Required!)
 
 ```bash
-# Install the Python CLI (editable dev install)
-python3 -m pip install --upgrade pip
-python3 -m pip install -e tools/python_scorpion
+# Create venv
+python3 -m venv .venv
+
+# Activate it
+source .venv/bin/activate
+
+# Your prompt should now show: (.venv)
 ```
 
-### Step 3: Verify CLI
+### Step 3: Install Scorpion CLI
 
 ```bash
-# Verify Python CLI is available
+# Install (NO sudo - you're inside venv!)
+pip install --upgrade pip
+pip install -e tools/python_scorpion
+```
+
+### Step 4: Verify Installation
+
+```bash
+# Verify CLI is available
 scorpion --help
 scorpion --version
 ```
 
-### Step 4: (Optional) Virtualenv
-
-```bash
-# Create and activate a venv for isolation
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -e tools/python_scorpion
-```
-
-You should see:
-```
-╔═══════════════════════════════════════════════════════════════╗
-║  ███████╗ ██████╗ ██████╗ ██████╗ ██████╗ ██╗ ██████╗ ███╗   ██╗  ║
-║                 Global Threat-Hunting Platform                ║
-╚═══════════════════════════════════════════════════════════════╝
-
-2.0.1
-```
+**✅ Success!** You should see Scorpion's help menu.
 
 ---
 
@@ -133,54 +162,118 @@ MAX_CONCURRENT_SCANS=100
 
 ## 🔧 Troubleshooting
 
-### Issue 1: Python/Pip Issues
+### Issue 1: "externally-managed-environment" Error ⚠️ MOST COMMON
+
+**Error:**
+```
+error: externally-managed-environment
+× This environment is externally managed
+```
+
+**Cause:** You used `sudo pip install` which tries system-wide install (blocked by PEP 668).
+
+**Solution:**
+```bash
+# Create and activate venv
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install WITHOUT sudo
+pip install -e tools/python_scorpion
+
+# Verify
+scorpion --help
+```
+
+**Why:** Modern Python (3.11+) protects system packages. ALWAYS use venv on Parrot/Kali/Ubuntu.
+
+### Issue 2: Python/Pip Version Issues
 
 ```bash
 # Ensure Python and pip are present
 python3 --version
 python3 -m pip --version
 
-# Reinstall pip if needed
-sudo apt install -y python3-pip
+# Install venv if missing
+sudo apt install -y python3-pip python3-venv python3-full
 ```
 
-### Issue 2: Permission Errors
+### Issue 3: Permission Errors (Old Python)
+
+If you're on older Python without PEP 668 and get permission errors:
 
 ```bash
-# If you get permission errors during pip install:
+# Option 1: Use --user flag (NOT recommended on modern Parrot)
 python3 -m pip install --user -e tools/python_scorpion
 
-# OR use a virtual environment:
+# Option 2: Use venv (RECOMMENDED)
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e tools/python_scorpion
 ```
 
-### Issue 3: CLI Not Found
+### Issue 4: CLI Not Found
 
 ```bash
+# Ensure venv is activated
+source .venv/bin/activate
+
 # Ensure install succeeded
-python3 -m pip install -e tools/python_scorpion
+pip install -e tools/python_scorpion
 which scorpion
 ```
 
-### Issue 4: SYN Scanning Requires Root
+### Issue 5: SYN Scanning Requires Root
 
-SYN scans need elevated privileges and Scapy:
+SYN scans need elevated privileges and Scapy. **Important:** You need to install Scapy INSIDE your venv, then use sudo with the venv Python:
+
+#### Method 1: Using sudo with venv (Recommended)
 
 ```bash
-# Install Scapy
-sudo pip install scapy
+# First, activate venv and install Scapy
+source .venv/bin/activate
+pip install scapy
 
-# Run SYN scan with sudo
-sudo scorpion scan -t example.com --syn --web --rate-limit 50
+# Find your venv's Python path
+which python3
+# Example output: /path/to/Scorpion/.venv/bin/python3
 
-# Optional: specify network interface
-sudo scorpion scan -t example.com --syn --web --iface eth0
+# Run SYN scan with sudo using venv's Python
+sudo /path/to/Scorpion/.venv/bin/python3 -m python_scorpion.cli scan -t example.com --syn --web --rate-limit 50
+
+# Or create an alias for convenience:
+alias scorpion-sudo='sudo $(which python3) -m python_scorpion.cli'
+scorpion-sudo scan -t example.com --syn --web
+```
+
+#### Method 2: Using sudo -E (Keep Environment)
+
+```bash
+# Activate venv
+source .venv/bin/activate
+
+# Install Scapy in venv
+pip install scapy
+
+# Run with sudo -E to preserve environment
+sudo -E env PATH=$PATH scorpion scan -t example.com --syn --web --rate-limit 50
 
 # List available interfaces
 scorpion scan --list-ifaces
 ```
+
+#### Method 3: Grant Python CAP_NET_RAW capability (Advanced)
+
+```bash
+# This allows Python to use raw sockets without sudo
+sudo setcap cap_net_raw+ep $(readlink -f $(which python3))
+
+# Now you can run without sudo (after activating venv)
+source .venv/bin/activate
+scorpion scan -t example.com --syn --web
+```
+
+**Note:** Method 3 has security implications - it allows ANY Python script to use raw sockets.
 
 ---
 
@@ -199,7 +292,10 @@ scorpion scan -t example.com --fast         # Preset: quick scan
 scorpion scan -t example.com -u 53,161      # UDP scan
 
 # SYN Scan (requires root + scapy)
-sudo scorpion scan -t example.com --syn --web --rate-limit 50
+# Using venv with sudo:
+sudo -E env PATH=$PATH scorpion scan -t example.com --syn --web --rate-limit 50
+# Or:
+sudo $(which python3) -m python_scorpion.cli scan -t example.com --syn --web
 
 # SSL/TLS Analysis
 scorpion ssl-analyze -t example.com -p 443 -T 5
@@ -306,8 +402,7 @@ scorpion dirbust example.com --concurrency 10
 scorpion tech example.com
 scorpion crawl example.com --start https://example.com
 
-# Only SYN scans need sudo:
-sudo scorpion scan -t example.com --syn --web
+# Only SYN scans need sudo (use with venv):\nsudo -E env PATH=$PATH scorpion scan -t example.com --syn --web
 ```
 
 ### 3. Save Results in ~/results

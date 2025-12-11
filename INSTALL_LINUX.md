@@ -1,14 +1,22 @@
 # Scorpion — Linux Install & Usage Quick Guide
 
-This guide helps you install and run Scorpion on Linux (Ubuntu/Debian/Fedora/Arch, etc.). Commands use bash. Adjust package manager commands for your distro.
+This guide helps you install and run Scorpion on Linux (Ubuntu/Debian/Fedora/Arch/Kali/Parrot, etc.). Commands use bash. Adjust package manager commands for your distro.
 
 ## Prerequisites
 - Python 3.10+ (`python3 --version`)
 - Build tools for Python packages (optional): `sudo apt-get install -y build-essential libffi-dev libssl-dev`
 
+## ⚠️ IMPORTANT: Python Virtual Environment Required
+
+Modern Linux distributions implement PEP 668, which blocks system-wide pip installs. **Always use a virtual environment.**
+
 ## Install
 ```bash
-cd /path/to/open_project
+# Clone or navigate to project
+git clone https://github.com/Prince12sam/Scorpion.git
+cd Scorpion
+# or: cd /path/to/open_project
+
 python3 -m venv .venv
 source .venv/bin/activate
 
@@ -47,22 +55,44 @@ scorpion report --suite "$latest" --summary
 ```
 
 ## SYN Scan (raw packets)
-SYN scanning requires root privileges and Scapy.
+SYN scanning requires root privileges and Scapy. **Important:** Install Scapy in your venv, then use one of these methods:
+
+### Method 1: Using sudo with venv Python (Recommended)
 ```bash
-sudo -s
+# Activate venv and install Scapy
 source .venv/bin/activate
 pip install scapy
 
-# Optional: list interfaces
+# Run with sudo using venv's Python
+sudo $(which python3) -m python_scorpion.cli scan -t example.com --syn --web --rate-limit 50
+
+# Or create an alias:
+alias scorpion-sudo='sudo $(which python3) -m python_scorpion.cli'
+scorpion-sudo scan -t example.com --syn --web
+```
+
+### Method 2: Using sudo -E (Preserve Environment)
+```bash
+source .venv/bin/activate
+pip install scapy
+
+# Run with sudo -E to keep environment variables
+sudo -E env PATH=$PATH scorpion scan -t example.com --syn --web --rate-limit 50 --iface <iface-name>
+```
+
+### Optional: List Network Interfaces
+```bash
+# List available interfaces (no root needed)
 scorpion scan --list-ifaces
 
-# Run SYN scan with rate limit and optional interface
-scorpion scan -t example.com --syn --web --rate-limit 50 --iface <iface-name>
+# Or use system commands
+ip link
+ifconfig
 ```
 
 Notes:
-- If Scapy is not installed or you’re not root, `--syn` will error with guidance.
-- For interface names, use `ip link` or `scorpion scan --list-ifaces`.
+- If Scapy is not installed or you're not root, `--syn` will error with guidance.
+- The tool now properly detects Linux/Unix root privileges (not just Windows admin).
 
 ## Optional: Nuclei (Web Testing)
 To extend web testing with ProjectDiscovery Nuclei:

@@ -312,9 +312,13 @@ def scan(
                 if len(decoy_results['decoys_used']) > 5:
                     console.print(f"  ... and {len(decoy_results['decoys_used']) - 5} more")
                 
-            except PermissionError:
-                console.print("[red]Decoy scanning requires admin privileges (Windows) or root (Linux)[/red]")
-                console.print("[yellow]Tip: Run as administrator/root to enable decoy scanning[/yellow]")
+            except PermissionError as pe:
+                console.print(f"[red]{str(pe)}[/red]")
+                import os as os_module
+                if os_module.name == 'nt':
+                    console.print("[yellow]Windows: Run PowerShell as Administrator[/yellow]")
+                else:
+                    console.print("[yellow]Linux/Unix: Run with sudo -E env PATH=$PATH scorpion ...[/yellow]")
                 raise typer.Exit(code=1)
             except Exception as e:
                 console.print(f"[red]Decoy scan error: {e}[/red]")
@@ -323,9 +327,13 @@ def scan(
         if syn:
             try:
                 results = await async_syn_scan(tgt, targets, concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
-            except PermissionError:
-                console.print("SYN scan requires admin privileges (Windows) or root (Linux).", style="red")
-                console.print("Tip: Run as administrator/root, or use regular TCP scan without --syn.", style="yellow")
+            except PermissionError as pe:
+                console.print(str(pe), style="red")
+                import os as os_module
+                if os_module.name == 'nt':
+                    console.print("Windows: Run PowerShell as Administrator", style="yellow")
+                else:
+                    console.print("Linux/Unix: Run with 'sudo -E env PATH=$PATH scorpion ...' or 'sudo $(which python3) -m python_scorpion.cli ...'", style="yellow")
                 raise typer.Exit(code=1)
             except Exception as e:
                 console.print(f"SYN scan error: {e}", style="red")
@@ -334,9 +342,13 @@ def scan(
         elif fin:
             try:
                 results = await async_advanced_scan(tgt, targets, "fin", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
-            except PermissionError:
-                console.print("FIN scan requires admin privileges (Windows) or root (Linux).", style="red")
-                console.print("Tip: Run as administrator/root, or use regular TCP scan.", style="yellow")
+            except PermissionError as pe:
+                console.print(str(pe), style="red")
+                import os as os_module
+                if os_module.name == 'nt':
+                    console.print("Windows: Run PowerShell as Administrator", style="yellow")
+                else:
+                    console.print("Linux/Unix: Run with sudo", style="yellow")
                 raise typer.Exit(code=1)
             except Exception as e:
                 console.print(f"FIN scan error: {e}", style="red")
@@ -345,9 +357,13 @@ def scan(
         elif xmas:
             try:
                 results = await async_advanced_scan(tgt, targets, "xmas", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
-            except PermissionError:
-                console.print("XMAS scan requires admin privileges (Windows) or root (Linux).", style="red")
-                console.print("Tip: Run as administrator/root, or use regular TCP scan.", style="yellow")
+            except PermissionError as pe:
+                console.print(str(pe), style="red")
+                import os as os_module
+                if os_module.name == 'nt':
+                    console.print("Windows: Run PowerShell as Administrator", style="yellow")
+                else:
+                    console.print("Linux/Unix: Run with sudo", style="yellow")
                 raise typer.Exit(code=1)
             except Exception as e:
                 console.print(f"XMAS scan error: {e}", style="red")
@@ -356,9 +372,13 @@ def scan(
         elif null:
             try:
                 results = await async_advanced_scan(tgt, targets, "null", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
-            except PermissionError:
-                console.print("NULL scan requires admin privileges (Windows) or root (Linux).", style="red")
-                console.print("Tip: Run as administrator/root, or use regular TCP scan.", style="yellow")
+            except PermissionError as pe:
+                console.print(str(pe), style="red")
+                import os as os_module
+                if os_module.name == 'nt':
+                    console.print("Windows: Run PowerShell as Administrator", style="yellow")
+                else:
+                    console.print("Linux/Unix: Run with sudo", style="yellow")
                 raise typer.Exit(code=1)
             except Exception as e:
                 console.print(f"NULL scan error: {e}", style="red")
@@ -367,9 +387,13 @@ def scan(
         elif ack:
             try:
                 results = await async_advanced_scan(tgt, targets, "ack", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
-            except PermissionError:
-                console.print("ACK scan requires admin privileges (Windows) or root (Linux).", style="red")
-                console.print("Tip: Run as administrator/root, or use regular TCP scan.", style="yellow")
+            except PermissionError as pe:
+                console.print(str(pe), style="red")
+                import os as os_module
+                if os_module.name == 'nt':
+                    console.print("Windows: Run PowerShell as Administrator", style="yellow")
+                else:
+                    console.print("Linux/Unix: Run with sudo", style="yellow")
                 raise typer.Exit(code=1)
             except Exception as e:
                 console.print(f"ACK scan error: {e}", style="red")
@@ -448,9 +472,14 @@ def scan(
                     except:
                         pass
                         
-            except PermissionError:
-                console.print("[red]OS detection requires admin privileges (Windows) or root (Linux)[/red]")
-                console.print("[yellow]Tip: Run as administrator/root to enable OS fingerprinting[/yellow]")
+            except PermissionError as pe:
+                console.print(f"[red]{str(pe)}[/red]")
+                import os as os_module
+                if os_module.name == 'nt':
+                    console.print("[yellow]Windows: Run PowerShell as Administrator[/yellow]")
+                else:
+                    console.print("[yellow]Linux/Unix: Run with sudo or as root[/yellow]")
+                    console.print("[yellow]Example: sudo -E env PATH=$PATH scorpion scan ...[/yellow]")
             except Exception as e:
                 console.print(f"[yellow]OS detection error: {e}[/yellow]")
                 console.print("[yellow]Ensure Scapy is installed: pip install scapy[/yellow]")
