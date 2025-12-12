@@ -82,20 +82,17 @@ def _banner_callback(
     # If an image path exists, show a panel referencing it (no external deps required)
     # Note: Print the ASCII banner first, then show image reference below it if present
 
-    ascii_banner = (
-        "\n"
-        "╔══════════════════════════════════════════════════════════════════════╗\n"
-        "║   ███████╗ ██████╗ ██████╗ ██████╗ ██████╗ ██╗ ██████╗ ███╗   ██╗   ║\n"
-        "║   ██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔══██╗██║██╔═══██╗████╗  ██║   ║\n"
-        "║   ███████╗██║     ██║   ██║██████╔╝██████╔╝██║██║   ██║██╔██╗ ██║   ║\n"
-        "║   ╚════██║██║     ██║   ██║██╔══██╗██╔═══╝ ██║██║   ██║██║╚██╗██║   ║\n"
-        "║   ███████║╚██████╗╚██████╔╝██║  ██║██║     ██║╚██████╔╝██║ ╚████║   ║\n"
-        "║   ╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ║\n"
-        "║                                                                      ║\n"
-        "║         Scorpion — Security Testing & Threat-Hunting CLI            ║\n"
-        "╚══════════════════════════════════════════════════════════════════════╝\n"
-    )
-    console.print(ascii_banner, style="green")
+    # Banner with red borders and yellow SCORPION text
+    console.print("\n[red]╔══════════════════════════════════════════════════════════════════════╗[/red]")
+    console.print("[red]║[/red]   [yellow]███████╗ ██████╗ ██████╗ ██████╗ ██████╗ ██╗ ██████╗ ███╗   ██╗[/yellow]   [red]║[/red]")
+    console.print("[red]║[/red]   [yellow]██╔════╝██╔════╝██╔═══██╗██╔══██╗██╔══██╗██║██╔═══██╗████╗  ██║[/yellow]   [red]║[/red]")
+    console.print("[red]║[/red]   [yellow]███████╗██║     ██║   ██║██████╔╝██████╔╝██║██║   ██║██╔██╗ ██║[/yellow]   [red]║[/red]")
+    console.print("[red]║[/red]   [yellow]╚════██║██║     ██║   ██║██╔══██╗██╔═══╝ ██║██║   ██║██║╚██╗██║[/yellow]   [red]║[/red]")
+    console.print("[red]║[/red]   [yellow]███████║╚██████╗╚██████╔╝██║  ██║██║     ██║╚██████╔╝██║ ╚████║[/yellow]   [red]║[/red]")
+    console.print("[red]║[/red]   [yellow]╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝[/yellow]   [red]║[/red]")
+    console.print("[red]║[/red]                                                                      [red]║[/red]")
+    console.print("[red]║[/red]         [yellow]Scorpion — Security Testing & Threat-Hunting CLI[/yellow]            [red]║[/red]")
+    console.print("[red]╚══════════════════════════════════════════════════════════════════════╝[/red]\n")
     if img_path:
         console.print(Panel.fit(f"Scorpion Banner Image: {img_path}", title="Scorpion", border_style="green"))
     # Show CLI help beneath the banner on root invocation
@@ -135,6 +132,7 @@ def scan(
     fast: bool = typer.Option(False, "--fast", help="Preset: --timeout 2.0 --retries 1 --concurrency 60 --only-open"),
     web: bool = typer.Option(False, "--web", help="Preset: ports 80,443,8080 and only-open"),
     infra: bool = typer.Option(False, "--infra", help="Preset: common infra ports and only-open"),
+    full: bool = typer.Option(False, "--full", help="Preset: comprehensive scan of 50+ common ports (web, db, infra, apps)"),
     syn: bool = typer.Option(False, "--syn", "-sS", help="TCP SYN scan (stealth, requires admin/root + scapy)"),
     fin: bool = typer.Option(False, "--fin", "-sF", help="TCP FIN scan (stealth, requires admin/root + scapy)"),
     xmas: bool = typer.Option(False, "--xmas", "-sX", help="TCP XMAS scan (stealth, requires admin/root + scapy)"),
@@ -257,11 +255,22 @@ def scan(
             concurrency_local = 60
             # Don't auto-enable only_open - show all ports for transparency
         if web:
-            ports_local = "80,443,8080"
+            ports_local = "80,443,8080,8443,8000,8888,3000,5000,9000"
             # Show all scanned ports for transparency (closed/filtered too)
         if infra:
             ports_local = "22,25,53,80,110,143,443,3389,5432,3306"
             # Show all scanned ports for transparency (closed/filtered too)
+        if full:
+            # Comprehensive port list: web, database, infra, remote access, apps
+            ports_local = (
+                "21,22,23,25,53,80,110,111,135,139,143,443,445,465,587,993,995,"  # Standard services
+                "1433,1521,3306,3389,5432,5900,6379,8080,8443,8888,"  # Databases & remote access
+                "27017,5601,9200,9300,11211,6379,50000,"  # NoSQL & caching
+                "3000,5000,8000,8009,8081,8082,8090,9000,9090,9091,9999,"  # Web apps
+                "2222,2375,2376,4243,4444,5555,7001,7002,8161,8181,10000"  # Alt ports & management
+            )
+            console.print("[cyan]Full scan enabled: Scanning 50+ common ports across all service categories[/cyan]")
+            console.print("[yellow]Tip: This may take longer. Use -T aggressive or --fast for speed[/yellow]")
 
         # Parse ports
         targets: List[int] = []
@@ -475,26 +484,73 @@ def scan(
                 payload["decoy_scan"] = decoy_results
             with open(output, "w", encoding="utf-8") as f:
                 json.dump(payload, f, ensure_ascii=False, indent=2)
-            console.print(f"Saved: {output}")
-        # output table
-        table = Table(title=f"Port Scan: {tgt}", box=box.MINIMAL_DOUBLE_HEAD)
-        table.add_column("Port", style="cyan")
-        table.add_column("State", style="green")
-        table.add_column("Service", style="yellow")
-        table.add_column("Banner/Reason", style="magenta")
-        # basic port->service map as fallback
-        port_map = {21:"ftp",22:"ssh",23:"telnet",25:"smtp",53:"dns",80:"http",110:"pop3",143:"imap",443:"https",465:"smtps",587:"smtp",993:"imaps",995:"pop3s",3306:"mysql",3389:"rdp",6379:"redis",27017:"mongodb",5432:"postgres",8080:"http"}
+            console.print(f"[green]Results saved to:[/green] {output}")
+        
+        # Nmap-style scan header
+        import datetime
+        scan_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z")
+        scan_type = "SYN" if syn else ("FIN" if fin else ("XMAS" if xmas else ("NULL" if null else ("ACK" if ack else "TCP Connect"))))
+        
+        console.print(f"\n[bold cyan]Starting Scorpion 2.0[/bold cyan] ( https://github.com/Prince12sam/Scorpion ) at {scan_time}")
+        console.print(f"[cyan]Scan Type:[/cyan] {scan_type} Scan")
+        console.print(f"[cyan]Scan report for:[/cyan] {tgt}")
+        
+        # Resolve IP for display (like nmap shows both hostname and IP)
+        import socket
+        try:
+            ip_addr = socket.gethostbyname(tgt)
+            if ip_addr != tgt:  # Only show if hostname was provided
+                console.print(f"[dim]({ip_addr})[/dim]")
+        except:
+            pass
+        
+        # Show scan details
+        port_count = len(targets)
+        console.print(f"[cyan]Ports scanned:[/cyan] {port_count} port(s)")
+        if decoy_results:
+            console.print(f"[cyan]Decoy IPs:[/cyan] {len(decoy_results['decoys_used'])} (position {decoy_results['real_ip_position'] + 1})")
+        console.print()  # Blank line before table
+        
+        # output table - Nmap style
+        table = Table(box=box.SIMPLE, show_header=True, header_style="bold cyan", border_style="dim")
+        table.add_column("PORT", style="cyan", no_wrap=True)
+        table.add_column("STATE", style="white", no_wrap=True)
+        table.add_column("SERVICE", style="white")
+        
+        # Extended port->service map (nmap-style)
+        port_map = {
+            21:"ftp", 22:"ssh", 23:"telnet", 25:"smtp", 53:"dns", 67:"dhcp", 68:"dhcp", 69:"tftp",
+            80:"http", 110:"pop3", 111:"rpcbind", 135:"msrpc", 139:"netbios-ssn", 143:"imap",
+            161:"snmp", 389:"ldap", 443:"https", 445:"microsoft-ds", 465:"smtps", 587:"submission",
+            636:"ldaps", 993:"imaps", 995:"pop3s", 1433:"ms-sql-s", 1521:"oracle", 2049:"nfs",
+            3306:"mysql", 3389:"ms-wbt-server", 5000:"upnp", 5432:"postgresql", 5900:"vnc",
+            6379:"redis", 8000:"http-alt", 8080:"http-proxy", 8443:"https-alt", 8888:"http-alt",
+            9000:"cslistener", 9200:"elasticsearch", 11211:"memcache", 27017:"mongodb"
+        }
         
         # Apply only_open filter if requested
         rows = [r for r in results if (r["state"]=="open" or not only_open_local)]
         
-        # Color-code states
+        # Display results in nmap style
         for r in rows:
-            rsn = r.get("reason", "")
-            svc = "" if raw else port_map.get(r["port"], "")
+            port = r["port"]
             state = r["state"]
             
-            # Color states like nmap
+            # Port column: format as "PORT/tcp" (nmap style)
+            port_display = f"{port}/tcp"
+            
+            # Service detection (prefer version_detect banner, fallback to port map)
+            service = ""
+            if not raw:
+                # Check if we have version detection info
+                banner = r.get("reason", "")
+                if version_detect and banner:
+                    # Extract service from banner (e.g., "SSH-2.0-OpenSSH_8.2" -> "ssh")
+                    service = banner.split()[0].split('-')[0].lower() if banner else port_map.get(port, "")
+                else:
+                    service = port_map.get(port, "")
+            
+            # Color-code states like nmap
             if state == "open":
                 state_colored = f"[green]{state}[/green]"
             elif state == "closed":
@@ -504,25 +560,30 @@ def scan(
             else:
                 state_colored = state
             
-            table.add_row(str(r["port"]), state_colored, svc, rsn)
+            table.add_row(port_display, state_colored, service)
         
         console.print(table)
         
-        # Statistics summary (like nmap)
+        # Nmap-style statistics summary
         open_ports = [r['port'] for r in results if r['state']=='open']
         closed_ports = [r['port'] for r in results if r['state']=='closed']
         filtered_ports = [r['port'] for r in results if r['state'] in ['filtered', 'open|filtered']]
         
-        console.print(f"\n[cyan]Scan Statistics:[/cyan]")
-        console.print(f"  [green]Open:[/green] {len(open_ports)} port(s)")
-        if closed_ports:
-            console.print(f"  [red]Closed:[/red] {len(closed_ports)} port(s)")
-        if filtered_ports:
-            console.print(f"  [yellow]Filtered:[/yellow] {len(filtered_ports)} port(s)")
-        console.print(f"  [cyan]Total scanned:[/cyan] {len(results)} port(s)")
+        # "Not shown:" line (nmap style) - only if we filtered out closed/filtered ports
+        if only_open_local:
+            not_shown = len(closed_ports) + len(filtered_ports)
+            if not_shown > 0:
+                console.print(f"[dim]Not shown: {not_shown} closed ports[/dim]")
         
+        # Summary line
+        if not open_ports:
+            console.print(f"\n[yellow]All {len(results)} scanned ports are closed or filtered[/yellow]")
+        
+        # Scan completion message (nmap style)
+        console.print(f"\n[cyan]Scorpion done:[/cyan] 1 IP address (1 host up) scanned")
         if open_ports:
-            console.print(f"\n[green]Open ports:[/green] {open_ports}")
+            console.print(f"[green]{len(open_ports)} port(s) open[/green]")
+
 
         # OS Detection if requested
         if os_detect and open_ports:

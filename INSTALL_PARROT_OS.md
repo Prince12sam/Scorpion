@@ -73,21 +73,35 @@ cd Scorpion
 ### Step 2: Create Virtual Environment (Required!)
 
 ```bash
-# Create venv
-python3 -m venv .venv
+# Remove any existing venv (if recreating)
+rm -rf .venv
+
+# Create fresh venv (ensure isolation from system)
+python3 -m venv --clear .venv
 
 # Activate it
 source .venv/bin/activate
 
 # Your prompt should now show: (.venv)
+
+# Verify you're using venv's Python and pip
+which python
+which pip
+# Both should show paths inside .venv directory
 ```
 
 ### Step 3: Install Scorpion CLI
 
 ```bash
-# Install (NO sudo - you're inside venv!)
+# Upgrade pip first (inside venv)
 pip install --upgrade pip
+
+# Install (NO sudo - you're inside venv!)
 pip install -e tools/python_scorpion
+
+# If you get "externally-managed-environment" error:
+# Use the venv's pip directly:
+.venv/bin/pip install -e tools/python_scorpion
 ```
 
 ### Step 4: Verify Installation
@@ -170,13 +184,25 @@ error: externally-managed-environment
 × This environment is externally managed
 ```
 
-**Cause:** You used `sudo pip install` which tries system-wide install (blocked by PEP 668).
+**Cause:** You used `sudo pip install` which tries system-wide install (blocked by PEP 668), OR your venv is incorrectly linked to system Python.
 
-**Solution:**
+**Solution A - Recreate Virtual Environment (RECOMMENDED):**
 ```bash
-# Create and activate venv
-python3 -m venv .venv
+# Remove old venv if exists
+rm -rf .venv
+
+# Create fresh venv without system packages
+python3 -m venv --clear .venv
+
+# Activate it
 source .venv/bin/activate
+
+# Verify you're using venv's pip (should show .venv path)
+which pip
+which python
+
+# Upgrade pip first
+pip install --upgrade pip
 
 # Install WITHOUT sudo
 pip install -e tools/python_scorpion
@@ -185,7 +211,38 @@ pip install -e tools/python_scorpion
 scorpion --help
 ```
 
-**Why:** Modern Python (3.11+) protects system packages. ALWAYS use venv on Parrot/Kali/Ubuntu.
+**Solution B - If Still Fails (Force Install in venv):**
+```bash
+# Activate venv
+source .venv/bin/activate
+
+# Use venv's pip directly with full path
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -e tools/python_scorpion
+
+# Verify
+.venv/bin/scorpion --help
+```
+
+**Solution C - Alternative: Use python3-full and recreate:**
+```bash
+# Ensure python3-full is installed
+sudo apt install -y python3-full python3-pip python3-venv
+
+# Remove old venv
+rm -rf .venv
+
+# Create new venv
+python3 -m venv .venv
+
+# Activate
+source .venv/bin/activate
+
+# Install
+pip install -e tools/python_scorpion
+```
+
+**Why:** Modern Python (3.11+) protects system packages. ALWAYS use venv on Parrot/Kali/Ubuntu. Sometimes the venv needs to be recreated to properly isolate from system Python.
 
 ### Issue 2: Python/Pip Version Issues
 
