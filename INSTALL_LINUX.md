@@ -16,7 +16,6 @@ Modern Linux distributions implement PEP 668, which blocks system-wide pip insta
 # Clone or navigate to project
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
-# or: cd /path/to/open_project
 
 python3 -m venv .venv
 source .venv/bin/activate
