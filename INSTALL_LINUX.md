@@ -4,6 +4,7 @@ This guide helps you install and run Scorpion on Linux (Ubuntu/Debian/Fedora/Arc
 
 ## Prerequisites
 - Python 3.10+ (`python3 --version`)
+- Python venv module: `sudo apt install -y python3-venv python3-full` (Ubuntu 23.04+) or `sudo apt install -y python3-venv` (older)
 - Build tools for Python packages (optional): `sudo apt-get install -y build-essential libffi-dev libssl-dev`
 
 ## ⚠️ IMPORTANT: Python Virtual Environment Required

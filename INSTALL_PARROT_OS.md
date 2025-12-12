@@ -50,7 +50,7 @@ python3 --version
 
 # If not installed or version < 3.10, install it:
 sudo apt update
-sudo apt install -y python3 python3-pip python3-venv
+sudo apt install -y python3 python3-pip python3-venv python3-full
 
 # Verify installation
 python3 --version  # Should show 3.10 or higher

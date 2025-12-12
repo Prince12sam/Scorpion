@@ -126,7 +126,7 @@ def scan(
     retries: int = typer.Option(0, "--retries", "-R", help="Retries on timeouts (reserved)"),
     udp: bool = typer.Option(False, "--udp", "-U", help="Enable UDP scanning (best-effort)"),
     udp_ports: Optional[str] = typer.Option(None, "--udp-ports", "-u", help="UDP ports range/list; default top ports if omitted"),
-    only_open: bool = typer.Option(False, "--only-open", "-O", help="Show only open ports in output"),
+    only_open: bool = typer.Option(False, "--only-open", "-O", help="Show only open ports (hide closed/filtered; like nmap --open)"),
     raw: bool = typer.Option(False, "--raw", help="Show raw banner only; do not infer service names"),
     no_write: bool = typer.Option(False, "--no-write", help="Do not send probe bytes; connect-and-read only"),
     version_detect: bool = typer.Option(False, "--version-detect", "-sV", help="Enable service version detection (like nmap -sV)"),
@@ -225,13 +225,13 @@ def scan(
             timeout_local = 2.0
             retries_local = 1
             concurrency_local = 60
-            only_open_local = True
+            # Don't auto-enable only_open - show all ports for transparency
         if web:
             ports_local = "80,443,8080"
-            only_open_local = True
+            # Show all scanned ports for transparency (closed/filtered too)
         if infra:
             ports_local = "22,25,53,80,110,143,443,3389,5432,3306"
-            only_open_local = True
+            # Show all scanned ports for transparency (closed/filtered too)
 
         # Parse ports
         targets: List[int] = []
@@ -425,14 +425,45 @@ def scan(
         table.add_column("Banner/Reason", style="magenta")
         # basic port->service map as fallback
         port_map = {21:"ftp",22:"ssh",23:"telnet",25:"smtp",53:"dns",80:"http",110:"pop3",143:"imap",443:"https",465:"smtps",587:"smtp",993:"imaps",995:"pop3s",3306:"mysql",3389:"rdp",6379:"redis",27017:"mongodb",5432:"postgres",8080:"http"}
+        
+        # Apply only_open filter if requested
         rows = [r for r in results if (r["state"]=="open" or not only_open_local)]
+        
+        # Color-code states
         for r in rows:
             rsn = r.get("reason", "")
             svc = "" if raw else port_map.get(r["port"], "")
-            table.add_row(str(r["port"]), r["state"], svc, rsn)
+            state = r["state"]
+            
+            # Color states like nmap
+            if state == "open":
+                state_colored = f"[green]{state}[/green]"
+            elif state == "closed":
+                state_colored = f"[red]{state}[/red]"
+            elif state == "filtered":
+                state_colored = f"[yellow]{state}[/yellow]"
+            else:
+                state_colored = state
+            
+            table.add_row(str(r["port"]), state_colored, svc, rsn)
+        
         console.print(table)
+        
+        # Statistics summary (like nmap)
         open_ports = [r['port'] for r in results if r['state']=='open']
-        console.print(f"Open ports: {open_ports}")
+        closed_ports = [r['port'] for r in results if r['state']=='closed']
+        filtered_ports = [r['port'] for r in results if r['state'] in ['filtered', 'open|filtered']]
+        
+        console.print(f"\n[cyan]Scan Statistics:[/cyan]")
+        console.print(f"  [green]Open:[/green] {len(open_ports)} port(s)")
+        if closed_ports:
+            console.print(f"  [red]Closed:[/red] {len(closed_ports)} port(s)")
+        if filtered_ports:
+            console.print(f"  [yellow]Filtered:[/yellow] {len(filtered_ports)} port(s)")
+        console.print(f"  [cyan]Total scanned:[/cyan] {len(results)} port(s)")
+        
+        if open_ports:
+            console.print(f"\n[green]Open ports:[/green] {open_ports}")
 
         # OS Detection if requested
         if os_detect and open_ports:
@@ -1675,82 +1706,145 @@ def payload(
 
 @app.command("ai-pentest")
 def ai_pentest_command(
-    target: str = typer.Option(..., "--target", "-t", help="Target for AI penetration test"),
+    # Target Configuration
+    target: str = typer.Option(..., "--target", "-t", help="Target host/domain for AI penetration test"),
+    
+    # Testing Goals & Strategy
     primary_goal: str = typer.Option(
         "comprehensive_assessment",
-        "--primary-goal",
-        help="Primary objective: comprehensive_assessment, privilege_escalation, data_access, network_mapping, web_exploitation, gain_shell_access, vulnerability_discovery, infrastructure_assessment, cloud_security_audit, api_security_testing"
+        "--primary-goal", "-g",
+        help="Primary objective (comprehensive_assessment, privilege_escalation, data_access, network_mapping, web_exploitation, gain_shell_access, vulnerability_discovery, infrastructure_assessment, cloud_security_audit, api_security_testing)"
     ),
     secondary_goals: str = typer.Option(
         "",
         "--secondary-goals",
-        help="Comma-separated secondary goals"
+        help="Comma-separated secondary goals (e.g., 'data_access,network_mapping')"
     ),
-    time_limit: int = typer.Option(120, "--time-limit", help="Time limit in minutes"),
-    stealth_level: str = typer.Option(
-        "moderate",
-        "--stealth-level",
-        help="Stealth level: low, moderate, high"
-    ),
-    autonomy: str = typer.Option(
-        "semi_autonomous",
-        "--autonomy",
-        help="Autonomy level: supervised, semi_autonomous, fully_autonomous"
-    ),
-    risk_tolerance: str = typer.Option(
-        "medium",
-        "--risk-tolerance",
-        help="Risk tolerance: low, medium, high"
-    ),
+    time_limit: int = typer.Option(120, "--time-limit", help="Maximum test duration in minutes"),
+    max_iterations: int = typer.Option(10, "--max-iterations", help="Maximum AI decision-action iterations"),
+    
+    # AI Configuration
     ai_provider: str = typer.Option(
         "openai",
         "--ai-provider",
-        help="AI provider: openai, anthropic, custom"
-    ),
-    api_key: Optional[str] = typer.Option(
-        None,
-        "--api-key",
-        help="AI API key (or set SCORPION_AI_API_KEY env var)"
-    ),
-    api_endpoint: Optional[str] = typer.Option(
-        None,
-        "--api-endpoint",
-        help="Custom API endpoint (for custom provider)"
+        help="AI provider: openai (GPT-4/3.5), anthropic (Claude), custom (OpenAI-compatible API)"
     ),
     model: str = typer.Option(
         "gpt-4",
         "--model",
-        help="AI model: gpt-4, gpt-3.5-turbo, claude-3-opus-20240229, etc."
+        help="AI model: gpt-4, gpt-3.5-turbo, gpt-4-turbo, claude-3-opus-20240229, claude-3-sonnet-20240229, etc."
     ),
-    learning_mode: bool = typer.Option(False, "--learning-mode", help="Enable learning mode"),
-    max_iterations: int = typer.Option(10, "--max-iterations", help="Maximum test iterations"),
-    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file for results"),
+    api_key: Optional[str] = typer.Option(
+        None,
+        "--api-key",
+        help="AI API key (or set SCORPION_AI_API_KEY environment variable)"
+    ),
+    api_endpoint: Optional[str] = typer.Option(
+        None,
+        "--api-endpoint",
+        help="Custom API endpoint (for custom provider, e.g., local LLM server)"
+    ),
+    
+    # Testing Behavior
+    stealth_level: str = typer.Option(
+        "moderate",
+        "--stealth-level", "-s",
+        help="Stealth level: low (fast/noisy), moderate (balanced), high (slow/stealthy)"
+    ),
+    autonomy: str = typer.Option(
+        "semi_autonomous",
+        "--autonomy", "-a",
+        help="Autonomy level: supervised (confirm each action), semi_autonomous (confirm high-risk), fully_autonomous (no confirmation - DANGEROUS)"
+    ),
+    risk_tolerance: str = typer.Option(
+        "medium",
+        "--risk-tolerance", "-r",
+        help="Risk tolerance: low (passive only), medium (active scanning), high (exploitation - requires authorization)"
+    ),
+    
+    # Advanced Options
+    learning_mode: bool = typer.Option(False, "--learning-mode", help="Enable AI learning mode (experimental)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file for detailed results"),
 ):
     """
-    AI-powered autonomous penetration testing.
+    🤖 AI-Powered Autonomous Penetration Testing
     
-    Uses AI (OpenAI, Anthropic, etc.) to intelligently orchestrate security testing.
-    The AI analyzes findings and determines optimal next actions to achieve your goal.
+    Uses Large Language Models (LLMs) to intelligently orchestrate security testing.
+    The AI analyzes findings in real-time and autonomously determines the optimal
+    next actions to achieve your security testing goals.
     
-    ⚠️  WARNING: Only test systems you own or have explicit written authorization to test.
-    Unauthorized penetration testing is illegal and may result in criminal prosecution.
+    \b
+    ⚠️  CRITICAL WARNING:
+    • Only test systems you OWN or have EXPLICIT WRITTEN AUTHORIZATION to test
+    • Unauthorized penetration testing is ILLEGAL and may result in:
+      - Criminal prosecution
+      - Significant fines
+      - Imprisonment
     
-    Examples:
-        # Basic AI pentest (requires API key)
-        scorpion ai-pentest -t example.com --api-key sk-...
-        
-        # Comprehensive assessment with OpenAI
-        scorpion ai-pentest -t example.com --api-key sk-... --primary-goal comprehensive_assessment
-        
-        # High stealth with Anthropic Claude
-        scorpion ai-pentest -t example.com --ai-provider anthropic --api-key sk-ant-... --model claude-3-opus-20240229 --stealth-level high
-        
-        # Using environment variable for API key
-        export SCORPION_AI_API_KEY=sk-...
-        scorpion ai-pentest -t example.com
-        
-        # Custom OpenAI-compatible endpoint
-        scorpion ai-pentest -t example.com --ai-provider custom --api-endpoint http://localhost:1234/v1/chat/completions --api-key local
+    \b
+    🎯 Primary Goals:
+    • comprehensive_assessment  - Full security assessment (default)
+    • privilege_escalation      - Find privilege escalation paths
+    • data_access              - Identify data access vulnerabilities
+    • network_mapping          - Map network topology and services
+    • web_exploitation         - Focus on web application vulnerabilities
+    • gain_shell_access        - Attempt to gain shell access
+    • vulnerability_discovery  - Discover as many vulnerabilities as possible
+    • infrastructure_assessment - Assess infrastructure security
+    • cloud_security_audit     - Cloud security assessment
+    • api_security_testing     - API security testing
+    
+    \b
+    📖 Examples:
+    
+      # Basic AI pentest with OpenAI GPT-4
+      scorpion ai-pentest -t example.com --api-key sk-...
+      
+      # Comprehensive assessment with high stealth
+      scorpion ai-pentest -t example.com --api-key sk-... -g comprehensive_assessment -s high
+      
+      # Web exploitation focus with Anthropic Claude
+      scorpion ai-pentest -t example.com --ai-provider anthropic --api-key sk-ant-... \\
+        --model claude-3-opus-20240229 -g web_exploitation
+      
+      # Using environment variable for API key (recommended)
+      export SCORPION_AI_API_KEY=sk-...
+      scorpion ai-pentest -t example.com -g network_mapping
+      
+      # Custom OpenAI-compatible endpoint (local LLM)
+      scorpion ai-pentest -t example.com --ai-provider custom \\
+        --api-endpoint http://localhost:1234/v1/chat/completions --api-key local
+      
+      # High-risk exploitation mode (requires written authorization!)
+      scorpion ai-pentest -t example.com --api-key sk-... -r high -a fully_autonomous \\
+        -g gain_shell_access --time-limit 60
+    
+    \b
+    🔑 API Key Setup:
+      # Linux/macOS
+      export SCORPION_AI_API_KEY='your-api-key-here'
+      
+      # Windows PowerShell
+      $env:SCORPION_AI_API_KEY='your-api-key-here'
+      
+      # Or use --api-key flag
+      scorpion ai-pentest -t example.com --api-key your-api-key-here
+    
+    \b
+    📊 How It Works:
+    1. AI analyzes the target and primary goal
+    2. AI selects and orchestrates appropriate Scorpion tools
+    3. AI analyzes results and adapts strategy dynamically
+    4. AI continues until goal achieved or time limit reached
+    5. Comprehensive report generated with findings and recommendations
+    
+    \b
+    🛡️  Safety Features:
+    • Supervised mode: Confirms each action before execution
+    • Semi-autonomous mode: Confirms high-risk actions only (default)
+    • Risk tolerance controls: Prevents exploitation without authorization
+    • Time limits: Prevents runaway testing
+    • Detailed logging: Full audit trail of AI decisions and actions
     """
     
     # Legal/ethical warning

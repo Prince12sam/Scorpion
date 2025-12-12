@@ -8,7 +8,10 @@ echo ""
 # Check Python installation
 if ! command -v python3 &> /dev/null; then
     echo "❌ Python 3 is not installed!"
-    echo "Please install Python 3.10 or higher"
+    echo "Please install Python 3.10 or higher:"
+    echo "  Ubuntu/Debian: sudo apt install -y python3 python3-pip python3-venv python3-full"
+    echo "  Fedora/RHEL:   sudo dnf install -y python3 python3-pip"
+    echo "  Arch:          sudo pacman -S python python-pip"
     exit 1
 fi
 

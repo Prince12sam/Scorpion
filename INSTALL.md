@@ -48,7 +48,7 @@ python -m pip install -e tools/python_scorpion
 ```powershell
 # From repo root
 python -m venv .venv
-& ..\.venv\Scripts\Activate.ps1
+& .\.venv\Scripts\Activate.ps1
 python -m pip install -e tools\python_scorpion
 ```
 

@@ -35,9 +35,20 @@ cd Scorpion
 ```
 
 ### 2️⃣ Install Scorpion CLI
+
+**Windows/macOS:**
 ```bash
 python -m pip install -e tools/python_scorpion
 ```
+
+**Linux (with virtual environment - recommended):**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e tools/python_scorpion
+```
+
+> **Note:** Modern Linux distributions (Ubuntu 23.04+, Kali, Parrot OS) require virtual environments due to PEP 668.
 
 ### 3️⃣ Verify Installation
 ```bash
