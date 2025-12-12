@@ -118,6 +118,43 @@ scorpion report --suite "$latest" --summary
 
 ## ✨ Features
 
+### 🤖 AI-Powered Penetration Testing ⭐ **NEW!**
+- **Autonomous Security Testing:** AI agent that plans and executes comprehensive pentests
+- **OWASP Top 10 Testing:** Complete coverage of all 10 categories (SQLi, XSS, broken access, SSRF, etc.)
+- **API Security Scanning:** REST, GraphQL, JWT testing with authentication bypass detection
+- **Vulnerability Discovery:** Automatic identification of SQLi, XSS, RCE, SSRF, command injection, XXE, SSTI
+- **Shell Enumeration:** Aggressive tactics to gain shell access on authorized targets
+- **Smart Exploitation:** Context-aware payload generation based on OS fingerprinting
+- **FREE AI Models:** GitHub Models integration (no cost, no credit card)
+- **Multiple Providers:** OpenAI (GPT-4), Anthropic (Claude), GitHub Models, custom LLMs
+- **Auto-Detection:** Automatically detects AI provider from API key format
+- **Testing Goals:** Comprehensive assessment, shell access, web exploitation, vulnerability discovery, API testing
+- **Risk Levels:** Configurable from passive reconnaissance to active exploitation
+- **Detailed Reporting:** Full finding logs with PoC and remediation recommendations
+
+**Quick Start:**
+```bash
+# Set API key (auto-detects provider)
+export SCORPION_AI_API_KEY='ghp_your_github_token'
+
+# Run AI-powered pentest
+scorpion ai-pentest -t example.com
+
+# OWASP Top 10 web vulnerability scan
+scorpion ai-pentest -t webapp.com -g web_exploitation -r medium
+
+# API security testing (REST, GraphQL, JWT)
+scorpion ai-pentest -t api.example.com -g api_security_testing -r medium
+
+# Aggressive vulnerability discovery
+scorpion ai-pentest -t target.com -g vulnerability_discovery -r high
+
+# Shell access (AUTHORIZED ONLY!)
+scorpion ai-pentest -t target.com -g gain_shell_access -r high -a fully_autonomous
+```
+
+📖 **Setup Guide:** [GITHUB_MODELS_SETUP.md](GITHUB_MODELS_SETUP.md) - Get FREE AI in 2 minutes!
+
 ### 🎯 Core Security Testing
 - **Port Scanning:** Fast async TCP/UDP scanning with service detection + **OS fingerprinting**
 - **Decoy Scanning:** IDS/IPS evasion through IP spoofing (random, subnet, manual decoys) ⭐ **NEW!**

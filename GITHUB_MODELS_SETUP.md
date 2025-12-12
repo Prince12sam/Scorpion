@@ -34,11 +34,20 @@ export SCORPION_AI_API_KEY='ghp_your_token_here'
 ### Step 3: Run AI Pentest
 
 ```bash
-# Using GitHub Models (FREE!)
-scorpion ai-pentest -t example.com --ai-provider github --model gpt-4o-mini
+# Simplified - Auto-detects GitHub Models from API key!
+scorpion ai-pentest -t example.com
 
-# Or with environment variable set:
-scorpion ai-pentest -t example.com --ai-provider github --model gpt-4o-mini
+# OWASP Top 10 Web Vulnerability Scan
+scorpion ai-pentest -t example.com -g web_exploitation -r medium
+
+# API Security Testing (REST, GraphQL, JWT)
+scorpion ai-pentest -t api.example.com -g api_security_testing -r medium
+
+# Or explicitly specify model:
+scorpion ai-pentest -t example.com --model gpt-4o
+
+# For aggressive shell/vulnerability discovery:
+scorpion ai-pentest -t example.com -g gain_shell_access -r high
 ```
 
 ---
@@ -70,35 +79,36 @@ scorpion ai-pentest -t example.com --ai-provider github --model gpt-4o-mini
 
 ### Basic Pentest (Recommended)
 ```bash
-scorpion ai-pentest -t example.com \
-  --ai-provider github \
-  --model gpt-4o-mini \
-  --api-key ghp_your_token
+# Just set API key and run - auto-detects provider!
+export SCORPION_AI_API_KEY='ghp_your_token'
+scorpion ai-pentest -t example.com
 ```
 
 ### Comprehensive Assessment
 ```bash
-scorpion ai-pentest -t example.com \
-  --ai-provider github \
-  --model gpt-4o \
-  --goal comprehensive_assessment \
-  --stealth-level moderate
+scorpion ai-pentest -t example.com -g comprehensive_assessment
 ```
 
-### Web Exploitation Focus
+### Web Exploitation & Shell Access (HIGH RISK)
 ```bash
+# Aggressive vulnerability discovery and exploitation
 scorpion ai-pentest -t example.com \
-  --ai-provider github \
-  --model Llama-3.1-70B-Instruct \
-  --goal web_exploitation
+  -g gain_shell_access \
+  -r high \
+  -a fully_autonomous
+```
+
+### Vulnerability Discovery
+```bash
+# Focus on finding exploitable vulnerabilities
+scorpion ai-pentest -t example.com \
+  -g vulnerability_discovery \
+  -r medium
 ```
 
 ### API Security Testing
 ```bash
-scorpion ai-pentest -t api.example.com \
-  --ai-provider github \
-  --model gpt-4o-mini \
-  --goal api_security_testing
+scorpion ai-pentest -t api.example.com -g api_security_testing
 ```
 
 ---
@@ -186,25 +196,58 @@ echo $SCORPION_AI_API_KEY
 
 ---
 
-## 🎓 Example Workflow
+## 🎓 Example Workflows
 
-### Complete Security Assessment (FREE)
+### 1. Complete Security Assessment (FREE)
 
 ```bash
 # 1. Set up GitHub token
 export SCORPION_AI_API_KEY='ghp_your_token'
 
-# 2. Run comprehensive pentest
-scorpion ai-pentest -t example.com \
-  --ai-provider github \
-  --model gpt-4o-mini \
-  --goal comprehensive_assessment \
-  --stealth-level moderate \
-  --output-dir results/
+# 2. Run comprehensive pentest with auto-detection
+scorpion ai-pentest -t example.com -g comprehensive_assessment
 
 # 3. Review results
-ls -lh results/
-cat results/ai_pentest_example.com_*.json
+ls -lh ai_pentest_example.com_*.json
+```
+
+### 2. Aggressive Vulnerability Discovery
+
+```bash
+# Find exploitable vulnerabilities
+scorpion ai-pentest -t vulnerable-site.com \
+  -g vulnerability_discovery \
+  -r high \
+  --time-limit 30
+```
+
+### 3. Shell Access (AUTHORIZED TARGETS ONLY)
+
+```bash
+# ⚠️ WARNING: Only use on authorized targets!
+# Aggressive shell enumeration and exploitation
+scorpion ai-pentest -t target.com \
+  -g gain_shell_access \
+  -r high \
+  -a fully_autonomous \
+  --time-limit 60
+
+# AI will:
+# - Scan all ports for services
+# - Test default credentials
+# - Fuzzing for injection points
+# - Generate reverse shell payloads
+# - Bruteforce weak services
+```
+
+### 4. Web Application Exploitation
+
+```bash
+# Focus on web vulnerabilities
+scorpion ai-pentest -t webapp.example.com \
+  -g web_exploitation \
+  -r medium \
+  --stealth-level high
 ```
 
 ---

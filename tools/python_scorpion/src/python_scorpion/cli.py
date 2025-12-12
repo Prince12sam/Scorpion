@@ -1987,7 +1987,7 @@ def ai_pentest_command(
     ai_provider: str = typer.Option(
         "openai",
         "--ai-provider",
-        help="AI provider: openai (GPT-4/3.5), anthropic (Claude), github (GitHub Models - FREE), custom (OpenAI-compatible API)"
+        help="AI provider (auto-detected from API key): openai (GPT-4/3.5), anthropic (Claude), github (GitHub Models - FREE), custom (OpenAI-compatible API)"
     ),
     model: str = typer.Option(
         "gpt-4",
@@ -2064,16 +2064,16 @@ def ai_pentest_command(
       scorpion ai-pentest -t example.com --ai-provider github \\
         --api-key ghp_... --model gpt-4o-mini
       
+      # Simplified - just set API key and run (auto-detects provider!)
+      export SCORPION_AI_API_KEY=ghp_...
+      scorpion ai-pentest -t example.com
+      
       # Comprehensive assessment with high stealth
       scorpion ai-pentest -t example.com --api-key sk-... -g comprehensive_assessment -s high
       
       # Web exploitation focus with Anthropic Claude
       scorpion ai-pentest -t example.com --ai-provider anthropic --api-key sk-ant-... \\
         --model claude-3-opus-20240229 -g web_exploitation
-      
-      # Using environment variable for API key (recommended)
-      export SCORPION_AI_API_KEY=sk-...
-      scorpion ai-pentest -t example.com -g network_mapping
       
       # Custom OpenAI-compatible endpoint (local LLM)
       scorpion ai-pentest -t example.com --ai-provider custom \\
@@ -2137,6 +2137,24 @@ def ai_pentest_command(
             console.print("\n  # Or use flag:")
             console.print("  scorpion ai-pentest -t example.com --api-key sk-...")
             raise typer.Exit(1)
+    
+    # Auto-detect AI provider from API key format if not specified
+    if ai_provider == "openai":  # Default value
+        if api_key.startswith("ghp_") or api_key.startswith("github_pat_"):
+            ai_provider = "github"
+            if model == "gpt-4":  # Still default
+                model = "gpt-4o-mini"  # Better default for GitHub
+            console.print("[cyan]Auto-detected provider:[/cyan] GitHub Models (FREE)")
+        elif api_key.startswith("sk-ant-"):
+            ai_provider = "anthropic"
+            if model == "gpt-4":
+                model = "claude-3-sonnet-20240229"
+            console.print("[cyan]Auto-detected provider:[/cyan] Anthropic Claude")
+        elif api_key.startswith("sk-proj-") or api_key.startswith("sk-"):
+            console.print("[cyan]Using provider:[/cyan] OpenAI")
+        else:
+            console.print("[yellow]Warning: Could not auto-detect provider from API key format[/yellow]")
+            console.print(f"[yellow]Using default: {ai_provider}[/yellow]")
     
     # Validate inputs
     try:
