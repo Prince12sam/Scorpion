@@ -4,6 +4,7 @@ import sys
 from typing import List, Optional, cast
 import os
 import datetime
+from pathlib import Path
 
 import typer
 import rich
@@ -15,6 +16,24 @@ console = Console()
 from rich.console import Console
 from rich.table import Table
 from rich import box
+
+# Load .env file if it exists (for API keys)
+try:
+    from dotenv import load_dotenv
+    # Look for .env in current directory and parent directories
+    env_path = Path.cwd() / '.env'
+    if env_path.exists():
+        load_dotenv(env_path)
+    else:
+        # Try parent directories (in case user is in subdirectory)
+        for parent in Path.cwd().parents:
+            env_path = parent / '.env'
+            if env_path.exists():
+                load_dotenv(env_path)
+                break
+except ImportError:
+    # python-dotenv not installed, environment variables still work
+    pass
 
 from .scanner import async_port_scan, async_udp_scan, async_syn_scan, async_advanced_scan
 from .ssl_analyzer import analyze_ssl

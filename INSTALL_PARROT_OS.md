@@ -114,6 +114,33 @@ scorpion --version
 
 **✅ Success!** You should see Scorpion's help menu.
 
+### Step 5: Configure API Keys (Optional - for AI Features)
+
+**For AI-powered penetration testing**, you need an OpenAI API key:
+
+```bash
+# Automated setup (recommended)
+./setup-first-time.sh
+
+# Or manual setup:
+cp .env.example .env
+nano .env
+```
+
+Add to `.env`:
+```env
+SCORPION_AI_API_KEY=sk-proj-your-actual-key-here
+```
+
+📖 **Complete setup guide:** [API_KEY_SETUP.md](API_KEY_SETUP.md)  
+🔑 **Get OpenAI key:** https://platform.openai.com/api-keys
+
+**Commands that need API key:**
+- `scorpion ai-pentest` - AI-powered penetration testing
+
+**Commands that work without API key:**
+- All other commands (scan, recon, ssl-analyze, etc.)
+
 ---
 
 ## 🧪 Test Your Installation
