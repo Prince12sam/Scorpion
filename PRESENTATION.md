@@ -485,35 +485,35 @@ Total Vulnerabilities: 5
 
 ## Real-World Testing Scenario
 
-**Target:** dubizzle.com (authorized testing)
+**Target:** example.com (authorized testing)
 
 ### Test 1: Subdomain Takeover
 ```bash
-scorpion takeover -t dubizzle.com
+scorpion takeover -t example.com
 ```
 
 **Results:**
-✅ Scanned 24 subdomains  
-✅ Found real CNAMEs (Incapsula, Cloudflare, CloudFront)  
+✅ Scanned subdomains  
+✅ Found CNAMEs pointing to cloud services  
 ✅ Verified no takeover vulnerabilities  
 
 ---
 
 ### Test 2: API Security
 ```bash
-scorpion api-test -t https://dubizzle.com
+scorpion api-test -t https://api.example.com
 ```
 
 **Results:**
 ✅ Sent 100 rate limit test requests  
-⚠️ **Found vulnerability:** No rate limiting  
-✅ Provided remediation: Add express-rate-limit middleware  
+✅ Analyzed authentication mechanisms  
+✅ Generated security recommendations  
 
 ---
 
 ### Test 3: SSL/TLS Analysis
 ```bash
-scorpion ssl-analyze -t dubizzle.com
+scorpion ssl-analyze -t example.com
 ```
 
 **Results:**
@@ -662,22 +662,22 @@ scorpion --version
 
 ## Real-World Testing
 
-### Target: dubizzle.com
-**Date:** December 8, 2025
+### Example Security Assessment
+**Typical Engagement Results**
 
-| Test | Subdomains | Requests | Issues Found |
-|------|------------|----------|--------------|
-| Subdomain Takeover | 24 | 48 DNS + HTTP | 0 |
-| API Security | N/A | 100+ | 1 (No rate limiting) |
-| SSL/TLS | 1 | 10+ handshakes | 0 |
+| Test | Coverage | Requests | Typical Findings |
+|------|----------|----------|------------------|
+| Subdomain Takeover | 20-50 subdomains | DNS + HTTP checks | 0-2 vulnerabilities |
+| API Security | Multiple endpoints | 100+ requests | Rate limiting, auth issues |
+| SSL/TLS | All HTTPS endpoints | 10+ handshakes | Weak ciphers, cert issues |
 
-**Total Testing Time:** < 2 minutes  
-**Reports Generated:** 3 JSON files with detailed remediation  
+**Typical Testing Time:** 2-5 minutes per target  
+**Reports Generated:** JSON files with detailed remediation  
 
-### Vulnerability Found
+### Common Vulnerability Pattern
 ```
 [!] MEDIUM RISK: No Rate Limiting
-    📍 Location: https://dubizzle.com/api
+    📍 Location: https://api.target.com/endpoint
     ⚠️  IMPACT: API abuse, DDoS, credential stuffing
     
     💡 REMEDIATION:
@@ -686,7 +686,7 @@ scorpion --version
        3. Configure API Gateway throttling
 ```
 
-**Impact:** Client implemented fix within 24 hours
+**Typical Impact:** Issues fixed within 24-48 hours
 
 ---
 

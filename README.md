@@ -34,6 +34,17 @@ git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
 ```
 
+**Optional - Automated Setup:**
+```bash
+# Linux/Mac - runs installation + API setup
+./setup-first-time.sh
+
+# Windows - runs installation + API setup
+.\setup-first-time.ps1
+```
+
+Or manually:
+
 ### 2️⃣ Install Scorpion CLI
 
 **Windows/macOS:**
@@ -55,6 +66,25 @@ pip install -e tools/python_scorpion
 scorpion --version
 scorpion --help
 ```
+
+### 4️⃣ Configure API Keys (Optional - for AI features)
+
+```bash
+# Copy example configuration
+cp .env.example .env  # Linux/Mac
+copy .env.example .env  # Windows
+
+# Edit and add your API keys
+nano .env  # or use any text editor
+```
+
+**Add your OpenAI API key** to `.env`:
+```env
+SCORPION_AI_API_KEY=sk-proj-your-actual-key-here
+```
+
+📖 **Complete setup guide:** [API_KEY_SETUP.md](API_KEY_SETUP.md)  
+🔑 **Get OpenAI key:** https://platform.openai.com/api-keys
 
 **That's it!** You're ready to run security scans.
 
@@ -665,18 +695,17 @@ The Python high-concurrency variant lives under `tools/python_scorpion` and prov
 
 ```powershell
 # Setup (Windows PowerShell)
-cd "c:\Users\prince.sam_dubizzle\Downloads\open_project\tools\python_scorpion"
-py -3.13 -m venv .venv; .\.venv\Scripts\Activate.ps1
-pip install -U pip
-pip install typer rich httpx dnspython cryptography python-whois
+cd tools\python_scorpion
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 pip install -e .
 
 # Commands
-scorpion scan dubizzle.com --ports 1-1024 --concurrency 300 --timeout 1.0
-scorpion ssl-analyze dubizzle.com --port 443 --output ..\..\results\ssl_dubizzle_python.json
-scorpion takeover dubizzle.com --output ..\..\results\takeover_dubizzle_python.json
-scorpion api-test dubizzle.com --output ..\..\results\api_dubizzle_python.json
-scorpion recon-cmd dubizzle.com --output ..\..\results\recon_dubizzle_python.json
+scorpion scan example.com --ports 1-1024 --concurrency 300 --timeout 1.0
+scorpion ssl-analyze example.com --port 443 --output results\ssl_report.json
+scorpion takeover example.com --output results\takeover_report.json
+scorpion api-test https://api.example.com --output results\api_report.json
+scorpion recon-cmd example.com --output results\recon_report.json
 ```
 
 Outputs follow the enhanced reporting format with Location, Impact, Remediation, and Severity, saved under `results/`.

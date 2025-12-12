@@ -123,16 +123,16 @@ bash build-linux.sh
 
 ```powershell
 # Port scan 1-1024 with concurrency 300
-scorpion scan dubizzle.com --ports 1-1024 --concurrency 300 --timeout 1.0
+scorpion scan example.com --ports 1-1024 --concurrency 300 --timeout 1.0
 
 # Include UDP top ports (best-effort)
-scorpion scan dubizzle.com --ports 1-1024 --udp --udp-ports 53,123,161,500,137,138,67,68,69,1900
+scorpion scan scanme.nmap.org --ports 1-1024 --udp --udp-ports 53,123,161,500,137,138,67,68,69,1900
 
 # TLS/SSL analysis and save report
-scorpion ssl-analyze google.com --port 443 --output ssl_google.json
+scorpion ssl-analyze example.com --port 443 --output ssl_report.json
 
 # Dirbusting (built-in wordlist)
-scorpion dirbust example.com --concurrency 50 --output results/dirb_example.json
+scorpion dirbust testphp.vulnweb.com --concurrency 50 --output results/dirb_report.json
 
 # Tech fingerprinting
 scorpion tech example.com --output results/tech_example.json
