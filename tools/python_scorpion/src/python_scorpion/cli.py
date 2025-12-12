@@ -2123,9 +2123,23 @@ def ai_pentest_command(
     console.print("[yellow]  • Imprisonment[/yellow]")
     console.print("[red]═══════════════════════════════════════════════════════════════[/red]\n")
     
-    # Get API key from env if not provided
+    # Get API key from env if not provided (auto-discover across common vars)
     if not api_key:
+        # Preferred env var
         api_key = os.getenv("SCORPION_AI_API_KEY")
+        # Fallbacks: pick the first available
+        if not api_key:
+            env_candidates = [
+                ("GITHUB_TOKEN", os.getenv("GITHUB_TOKEN")),
+                ("GITHUB_PAT", os.getenv("GITHUB_PAT")),
+                ("OPENAI_API_KEY", os.getenv("OPENAI_API_KEY")),
+                ("ANTHROPIC_API_KEY", os.getenv("ANTHROPIC_API_KEY")),
+            ]
+            for name, value in env_candidates:
+                if value:
+                    api_key = value
+                    console.print(f"[cyan]✓ Found API key in {name}[/cyan]")
+                    break
         if not api_key:
             console.print("[red]ERROR: AI API key required.[/red]")
             console.print("[yellow]Provide via --api-key flag or set SCORPION_AI_API_KEY environment variable.[/yellow]")
@@ -2150,7 +2164,7 @@ def ai_pentest_command(
         raise typer.Exit(1)
     
     # Auto-detect AI provider from API key format if not specified
-    if ai_provider == "openai":  # Default value
+    if ai_provider == "openai":  # Default value; will be overridden by detection
         if api_key.startswith("ghp_") or api_key.startswith("github_pat_"):
             ai_provider = "github"
             if model == "gpt-4":  # Still default
@@ -2173,6 +2187,26 @@ def ai_pentest_command(
                 console.print("[yellow]  Expected: sk-proj-... (50+ chars) or sk-... (40+ chars)[/yellow]")
                 console.print(f"[yellow]  Your key: {api_key[:15]}... ({len(api_key)} chars)[/yellow]")
                 console.print("[yellow]  Get valid key: https://platform.openai.com/api-keys[/yellow]")
+        else:
+            # If key format not recognized, try to infer based on which env provided it
+            # Common patterns: GITHUB_TOKEN/GITHUB_PAT → github; OPENAI_API_KEY → openai; ANTHROPIC_API_KEY → anthropic
+            source_hint = None
+            if os.getenv("GITHUB_TOKEN") == api_key or os.getenv("GITHUB_PAT") == api_key:
+                source_hint = "github"
+            elif os.getenv("OPENAI_API_KEY") == api_key:
+                source_hint = "openai"
+            elif os.getenv("ANTHROPIC_API_KEY") == api_key:
+                source_hint = "anthropic"
+            if source_hint:
+                ai_provider = source_hint
+                console.print(f"[cyan]✓ Inferred provider from env var:[/cyan] {source_hint}")
+            else:
+                console.print("[yellow]⚠ Warning: Could not auto-detect provider from API key format[/yellow]")
+                console.print(f"[yellow]  API key starts with: {api_key[:10]}...[/yellow]")
+                console.print(f"[yellow]  Using default provider: {ai_provider}[/yellow]")
+                console.print("[yellow]  If this fails, specify provider explicitly:[/yellow]")
+                console.print("[yellow]    --ai-provider github  (for GitHub Models)[/yellow]")
+                console.print("[yellow]    --ai-provider openai  (for OpenAI)[/yellow]")
         else:
             console.print("[yellow]⚠ Warning: Could not auto-detect provider from API key format[/yellow]")
             console.print(f"[yellow]  API key starts with: {api_key[:10]}...[/yellow]")
