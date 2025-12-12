@@ -1987,12 +1987,12 @@ def ai_pentest_command(
     ai_provider: str = typer.Option(
         "openai",
         "--ai-provider",
-        help="AI provider: openai (GPT-4/3.5), anthropic (Claude), custom (OpenAI-compatible API)"
+        help="AI provider: openai (GPT-4/3.5), anthropic (Claude), github (GitHub Models - FREE), custom (OpenAI-compatible API)"
     ),
     model: str = typer.Option(
         "gpt-4",
         "--model",
-        help="AI model: gpt-4, gpt-3.5-turbo, gpt-4-turbo, claude-3-opus-20240229, claude-3-sonnet-20240229, etc."
+        help="AI model: gpt-4, gpt-4o, gpt-4o-mini, gpt-3.5-turbo, claude-3-opus-20240229, claude-3-sonnet-20240229, etc."
     ),
     api_key: Optional[str] = typer.Option(
         None,
@@ -2059,6 +2059,10 @@ def ai_pentest_command(
     
       # Basic AI pentest with OpenAI GPT-4
       scorpion ai-pentest -t example.com --api-key sk-...
+      
+      # Using GitHub Models (FREE) with GPT-4o-mini
+      scorpion ai-pentest -t example.com --ai-provider github \\
+        --api-key ghp_... --model gpt-4o-mini
       
       # Comprehensive assessment with high stealth
       scorpion ai-pentest -t example.com --api-key sk-... -g comprehensive_assessment -s high
