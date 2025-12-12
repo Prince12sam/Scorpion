@@ -488,7 +488,8 @@ def scan(
         
         # Nmap-style scan header
         import datetime
-        scan_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M %Z")
+        # Cross-platform time format (avoid %Z which fails on some systems)
+        scan_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
         scan_type = "SYN" if syn else ("FIN" if fin else ("XMAS" if xmas else ("NULL" if null else ("ACK" if ack else "TCP Connect"))))
         
         console.print(f"\n[bold cyan]Starting Scorpion 2.0[/bold cyan] ( https://github.com/Prince12sam/Scorpion ) at {scan_time}")
@@ -816,7 +817,7 @@ def api_test(host: str, output: Optional[str] = None, bursts: int = 20):
 def recon_cmd(
     host: Optional[str] = typer.Argument(None, help="Target host (positional)"),
     target: Optional[str] = typer.Option(None, "--target", "-t", help="Alias for host (supports -t)"),
-    output: Optional[str] = None,
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file path"),
 ):
     """Reconnaissance: DNS records, HTTP headers, server/CDN/WAF hints, WHOIS."""
     tgt = target or host
@@ -828,10 +829,14 @@ def recon_cmd(
     if output:
         with open(output, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
-        console.print(f"Saved: {output}")
+        console.print(f"[green]Results saved to:[/green] {output}")
 
 @app.command("recon")
-def recon_alias(host: Optional[str] = None, output: Optional[str] = None, target: Optional[str] = None):
+def recon_alias(
+    host: Optional[str] = typer.Argument(None, help="Target host (positional)"),
+    target: Optional[str] = typer.Option(None, "--target", "-t", help="Alias for host (supports -t)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file path"),
+):
     """Alias for recon (compat with legacy Node CLI)."""
     recon_cmd(host=host, target=target, output=output)
 
