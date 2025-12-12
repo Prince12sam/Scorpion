@@ -2207,13 +2207,6 @@ def ai_pentest_command(
                 console.print("[yellow]  If this fails, specify provider explicitly:[/yellow]")
                 console.print("[yellow]    --ai-provider github  (for GitHub Models)[/yellow]")
                 console.print("[yellow]    --ai-provider openai  (for OpenAI)[/yellow]")
-        else:
-            console.print("[yellow]⚠ Warning: Could not auto-detect provider from API key format[/yellow]")
-            console.print(f"[yellow]  API key starts with: {api_key[:10]}...[/yellow]")
-            console.print(f"[yellow]  Using default provider: {ai_provider}[/yellow]")
-            console.print("[yellow]  If this fails, specify provider explicitly:[/yellow]")
-            console.print("[yellow]    --ai-provider github  (for GitHub Models)[/yellow]")
-            console.print("[yellow]    --ai-provider openai  (for OpenAI)[/yellow]")
     else:
         # Provider was explicitly specified
         console.print(f"[cyan]✓ Using provider:[/cyan] {ai_provider} (explicitly specified)")
