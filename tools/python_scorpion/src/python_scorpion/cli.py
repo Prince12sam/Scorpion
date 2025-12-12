@@ -19,6 +19,7 @@ from rich import box
 from .scanner import async_port_scan, async_udp_scan, async_syn_scan, async_advanced_scan
 from .ssl_analyzer import analyze_ssl
 from .takeover import takeover_scan
+from .subdomain_enum import enumerate_subdomains
 from .api import api_probe
 from .recon import recon
 from .dirbuster import dirbust_scan
@@ -623,6 +624,122 @@ def takeover(host: str, output: Optional[str] = None, timeout: float = 5.0):
         with open(output, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
         console.print(f"Saved: {output}")
+
+@app.command()
+def subdomain(
+    domain: str = typer.Argument(..., help="Target domain (e.g., example.com)"),
+    wordlist: Optional[str] = typer.Option(None, "--wordlist", "-w", help="Path to custom subdomain wordlist file"),
+    ct_logs: bool = typer.Option(True, "--ct-logs/--no-ct-logs", help="Query Certificate Transparency logs"),
+    check_http: bool = typer.Option(False, "--http", help="Check HTTP/HTTPS accessibility of found subdomains"),
+    concurrency: int = typer.Option(50, "--concurrency", "-c", help="Concurrent DNS queries"),
+    timeout: float = typer.Option(2.0, "--timeout", "-t", help="Timeout per DNS query (seconds)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file"),
+):
+    """
+    Enumerate subdomains using DNS brute-force and Certificate Transparency logs.
+    
+    Techniques used:
+    - DNS brute-forcing with built-in wordlist (top 100 common subdomains)
+    - Certificate Transparency log queries (crt.sh)
+    - Optional HTTP/HTTPS accessibility checks
+    
+    Examples:
+      scorpion subdomain example.com
+      scorpion subdomain example.com --wordlist custom.txt --http
+      scorpion subdomain example.com --no-ct-logs -c 100
+    """
+    async def run():
+        console.print(f"\n[cyan]═══ Subdomain Enumeration: {domain} ═══[/cyan]\n")
+        
+        # Load custom wordlist if provided
+        wordlist_items = None
+        if wordlist:
+            try:
+                with open(wordlist, "r", encoding="utf-8") as f:
+                    wordlist_items = [line.strip() for line in f if line.strip() and not line.startswith("#")]
+                console.print(f"[green]✓[/green] Loaded custom wordlist: {len(wordlist_items)} entries")
+            except Exception as e:
+                console.print(f"[red]Error loading wordlist: {e}[/red]")
+                raise typer.Exit(code=1)
+        else:
+            console.print(f"[cyan]Using default wordlist (100 common subdomains)[/cyan]")
+        
+        console.print(f"[cyan]Concurrency:[/cyan] {concurrency} | [cyan]Timeout:[/cyan] {timeout}s")
+        console.print(f"[cyan]CT Logs:[/cyan] {'Enabled' if ct_logs else 'Disabled'} | [cyan]HTTP Check:[/cyan] {'Enabled' if check_http else 'Disabled'}")
+        console.print()
+        
+        # Run enumeration
+        try:
+            result = await enumerate_subdomains(
+                domain=domain,
+                wordlist=wordlist_items,
+                use_ct_logs=ct_logs,
+                check_http=check_http,
+                concurrency=concurrency,
+                timeout=timeout
+            )
+            
+            # Display results
+            stats = result["statistics"]
+            subdomains = result["subdomains"]
+            
+            console.print(f"[green]✓ Enumeration Complete[/green]\n")
+            console.print(f"[cyan]Statistics:[/cyan]")
+            console.print(f"  Total Found: [green]{stats['total_found']}[/green] subdomain(s)")
+            console.print(f"  From DNS Bruteforce: {stats['from_bruteforce']}")
+            console.print(f"  From CT Logs: {stats['from_ct_logs']}")
+            console.print(f"  Wordlist Size: {stats['wordlist_size']}")
+            console.print()
+            
+            if subdomains:
+                # Create results table
+                table = Table(title=f"Discovered Subdomains ({len(subdomains)})", box=box.MINIMAL_DOUBLE_HEAD)
+                table.add_column("Subdomain", style="cyan", no_wrap=False)
+                table.add_column("IP Address(es)", style="green")
+                table.add_column("CNAME", style="yellow")
+                table.add_column("HTTP", style="magenta")
+                
+                for sub in subdomains:
+                    subdomain_name = sub.get("subdomain", "")
+                    ips = ", ".join(sub.get("ips", []))
+                    cname = sub.get("cname", "-")
+                    
+                    # HTTP status
+                    http_status = "-"
+                    if "http" in sub:
+                        http_info = sub["http"]
+                        if http_info.get("https", {}).get("accessible"):
+                            status_code = http_info["https"].get("status_code", "")
+                            http_status = f"✓ HTTPS ({status_code})"
+                        elif http_info.get("http", {}).get("accessible"):
+                            status_code = http_info["http"].get("status_code", "")
+                            http_status = f"✓ HTTP ({status_code})"
+                    
+                    table.add_row(subdomain_name, ips, cname, http_status)
+                
+                console.print(table)
+                console.print()
+                
+                # Show subdomain list for easy copy-paste
+                console.print("[cyan]Subdomain List:[/cyan]")
+                for sub in subdomains:
+                    console.print(f"  • {sub.get('subdomain')}")
+            else:
+                console.print("[yellow]No subdomains found[/yellow]")
+            
+            # Save output
+            if output:
+                with open(output, "w", encoding="utf-8") as f:
+                    json.dump(result, f, indent=2, ensure_ascii=False)
+                console.print(f"\n[green]✓ Saved results to: {output}[/green]")
+        
+        except Exception as e:
+            console.print(f"[red]Error during enumeration: {e}[/red]")
+            import traceback
+            traceback.print_exc()
+            raise typer.Exit(code=1)
+    
+    asyncio.run(run())
 
 @app.command()
 def api_test(host: str, output: Optional[str] = None, bursts: int = 20):
