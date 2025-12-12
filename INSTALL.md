@@ -209,6 +209,50 @@ python -m pip install -e tools/python_scorpion
 scorpion --help
 ```
 
+### Remove AI API keys (disable AI features)
+If you set AI provider keys and want to remove them without uninstalling Scorpion, clear them from your environment and `.env`.
+
+**Windows (PowerShell):**
+```powershell
+# Remove from current session
+Remove-Item Env:SCORPION_AI_API_KEY -ErrorAction SilentlyContinue
+Remove-Item Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
+Remove-Item Env:GITHUB_PAT -ErrorAction SilentlyContinue
+Remove-Item Env:OPENAI_API_KEY -ErrorAction SilentlyContinue
+Remove-Item Env:ANTHROPIC_API_KEY -ErrorAction SilentlyContinue
+
+# If set persistently for your user
+[Environment]::SetEnvironmentVariable("SCORPION_AI_API_KEY", $null, "User")
+[Environment]::SetEnvironmentVariable("GITHUB_TOKEN", $null, "User")
+[Environment]::SetEnvironmentVariable("GITHUB_PAT", $null, "User")
+[Environment]::SetEnvironmentVariable("OPENAI_API_KEY", $null, "User")
+[Environment]::SetEnvironmentVariable("ANTHROPIC_API_KEY", $null, "User")
+
+# Optional: clear from project .env
+# Edit .env and remove lines for the keys above
+```
+
+**Linux/macOS (bash/zsh):**
+```bash
+# Remove from current shell
+unset SCORPION_AI_API_KEY
+unset GITHUB_TOKEN
+unset GITHUB_PAT
+unset OPENAI_API_KEY
+unset ANTHROPIC_API_KEY
+
+# If added persistently, remove export lines from:
+# ~/.bashrc, ~/.zshrc, ~/.profile, or ~/.bash_profile
+
+# Optional: clear from project .env
+sed -i.bak '/SCORPION_AI_API_KEY\|GITHUB_TOKEN\|GITHUB_PAT\|OPENAI_API_KEY\|ANTHROPIC_API_KEY/d' .env
+```
+
+**Verify:**
+```bash
+scorpion ai-pentest --help  # AI features won’t select a provider
+```
+
 ### Pip/Python not found
 **Solution:** Install Python and pip (see Prerequisites above)
 
