@@ -1,6 +1,7 @@
 import asyncio
 import socket
-from typing import Dict, List
+import re
+from typing import Dict, List, Optional
 import os
 import sys
 
@@ -33,6 +34,52 @@ def _get_privilege_error_message(operation: str = "This operation") -> str:
         return f"{operation} requires administrator privileges. Run PowerShell as Administrator."
     else:  # Unix-like
         return f"{operation} requires root privileges. Run with sudo or as root."
+
+def _validate_hostname(host: str) -> bool:
+    """Validate hostname/IP to prevent injection attacks."""
+    if not host or len(host) > 253:
+        return False
+    
+    # Check for valid IP address
+    try:
+        socket.inet_aton(host)
+        return True
+    except socket.error:
+        pass
+    
+    # Check for valid hostname (RFC 1123)
+    hostname_pattern = re.compile(
+        r'^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)*'
+        r'[a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?$'
+    )
+    return bool(hostname_pattern.match(host))
+
+def _resolve_hostname(host: str, timeout: float = 3.0) -> Optional[str]:
+    """Safely resolve hostname to IP with timeout."""
+    try:
+        # Try to parse as IP first
+        socket.inet_aton(host)
+        return host
+    except socket.error:
+        pass
+    
+    # Resolve hostname
+    try:
+        result = socket.getaddrinfo(host, None, socket.AF_INET, socket.SOCK_STREAM)
+        if result:
+            return result[0][4][0]
+    except (socket.gaierror, socket.timeout, OSError):
+        return None
+    
+    return None
+
+def _validate_port(port: int) -> bool:
+    """Validate port number is in valid range."""
+    return isinstance(port, int) and 1 <= port <= 65535
+
+def _validate_ports(ports: List[int]) -> List[int]:
+    """Validate and filter port list, removing invalid ports."""
+    return [p for p in ports if _validate_port(p)]
 
 def _syn_probe_sync(host: str, port: int, timeout: float) -> Dict:
     """Production SYN scan - NO dummy data."""
@@ -136,6 +183,20 @@ def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str) -
 
 async def async_syn_scan(host: str, ports: List[int], concurrency: int = 200, timeout: float = 1.0, rate_limit: float = 0.0, iface: str = "") -> List[Dict]:
     """Production SYN scanner - NO dummy data, admin/root check enforced."""
+    # Input validation
+    if not _validate_hostname(host):
+        raise ValueError(f"Invalid hostname or IP address: {host}")
+    
+    ports = _validate_ports(ports)
+    if not ports:
+        raise ValueError("No valid ports provided")
+    
+    if concurrency < 1 or concurrency > 10000:
+        raise ValueError(f"Invalid concurrency: {concurrency}. Must be between 1 and 10000")
+    
+    if timeout <= 0 or timeout > 300:
+        raise ValueError(f"Invalid timeout: {timeout}. Must be between 0 and 300 seconds")
+    
     if not _has_required_privileges():
         raise PermissionError(_get_privilege_error_message("SYN scan"))
     sem = asyncio.Semaphore(concurrency)
@@ -174,6 +235,23 @@ async def async_advanced_scan(
     NO dummy data - real Scapy packet crafting only.
     Requires admin/root privileges.
     """
+    # Input validation
+    if not _validate_hostname(host):
+        raise ValueError(f"Invalid hostname or IP address: {host}")
+    
+    ports = _validate_ports(ports)
+    if not ports:
+        raise ValueError("No valid ports provided")
+    
+    if scan_type not in {"fin", "xmas", "null", "ack"}:
+        raise ValueError(f"Invalid scan type: {scan_type}. Must be one of: fin, xmas, null, ack")
+    
+    if concurrency < 1 or concurrency > 10000:
+        raise ValueError(f"Invalid concurrency: {concurrency}. Must be between 1 and 10000")
+    
+    if timeout <= 0 or timeout > 300:
+        raise ValueError(f"Invalid timeout: {timeout}. Must be between 0 and 300 seconds")
+    
     if not _has_required_privileges():
         raise PermissionError(_get_privilege_error_message(f"{scan_type.upper()} scan"))
     
@@ -459,6 +537,20 @@ async def async_port_scan(host: str, ports: List[int], concurrency: int = 200, t
     Production TCP port scanner with optional version detection.
     NO dummy data - all results from real network responses.
     """
+    # Input validation
+    if not _validate_hostname(host):
+        raise ValueError(f"Invalid hostname or IP address: {host}")
+    
+    ports = _validate_ports(ports)
+    if not ports:
+        raise ValueError("No valid ports provided")
+    
+    if concurrency < 1 or concurrency > 10000:
+        raise ValueError(f"Invalid concurrency: {concurrency}. Must be between 1 and 10000")
+    
+    if timeout <= 0 or timeout > 300:
+        raise ValueError(f"Invalid timeout: {timeout}. Must be between 0 and 300 seconds")
+    
     sem = asyncio.Semaphore(concurrency)
     results: List[Dict] = []
 
@@ -548,6 +640,21 @@ def _udp_probe_sync(host: str, port: int, timeout: float) -> Dict:
     return {"port": port, "state": state, "reason": reason}
 
 async def async_udp_scan(host: str, ports: List[int], concurrency: int = 200, timeout: float = 1.0) -> List[Dict]:
+    """Production UDP port scanner with service-specific probes."""
+    # Input validation
+    if not _validate_hostname(host):
+        raise ValueError(f"Invalid hostname or IP address: {host}")
+    
+    ports = _validate_ports(ports)
+    if not ports:
+        raise ValueError("No valid ports provided")
+    
+    if concurrency < 1 or concurrency > 10000:
+        raise ValueError(f"Invalid concurrency: {concurrency}. Must be between 1 and 10000")
+    
+    if timeout <= 0 or timeout > 300:
+        raise ValueError(f"Invalid timeout: {timeout}. Must be between 0 and 300 seconds")
+    
     sem = asyncio.Semaphore(concurrency)
     results: List[Dict] = []
 

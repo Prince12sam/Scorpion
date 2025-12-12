@@ -122,11 +122,11 @@ def scan(
     target: Optional[str] = typer.Option(None, "--target", "-t", help="Alias for host (supports -t)"),
     ports: str = "1-1024",
     concurrency: int = typer.Option(200, "--concurrency", "-C", help="Concurrent probes"),
-    timeout: float = typer.Option(1.0, "--timeout", "-T", help="Timeout seconds per probe"),
+    timeout: float = typer.Option(1.0, "--timeout", help="Timeout seconds per probe"),
     retries: int = typer.Option(0, "--retries", "-R", help="Retries on timeouts (reserved)"),
     udp: bool = typer.Option(False, "--udp", "-U", help="Enable UDP scanning (best-effort)"),
     udp_ports: Optional[str] = typer.Option(None, "--udp-ports", "-u", help="UDP ports range/list; default top ports if omitted"),
-    only_open: bool = typer.Option(False, "--only-open", "-O", help="Show only open ports (hide closed/filtered; like nmap --open)"),
+    only_open: bool = typer.Option(False, "--only-open", help="Show only open ports (hide closed/filtered; like nmap --open)"),
     raw: bool = typer.Option(False, "--raw", help="Show raw banner only; do not infer service names"),
     no_write: bool = typer.Option(False, "--no-write", help="Do not send probe bytes; connect-and-read only"),
     version_detect: bool = typer.Option(False, "--version-detect", "-sV", help="Enable service version detection (like nmap -sV)"),
@@ -175,6 +175,26 @@ def scan(
             console.print("Provide a host (positional) or --target", style="red")
             raise typer.Exit(code=2)
         
+        # Input validation
+        if not tgt or not tgt.strip():
+            console.print("[red]Error: Target hostname/IP is required[/red]")
+            raise typer.Exit(code=2)
+        
+        tgt = tgt.strip()
+        
+        # Validate hostname/IP format
+        import socket
+        try:
+            # Try to resolve hostname
+            socket.getaddrinfo(tgt, None)
+        except socket.gaierror:
+            console.print(f"[red]Error: Cannot resolve hostname '{tgt}'[/red]")
+            console.print("[yellow]Tip: Check spelling or try using IP address directly[/yellow]")
+            raise typer.Exit(code=2)
+        except Exception as e:
+            console.print(f"[red]Error validating target: {e}[/red]")
+            raise typer.Exit(code=2)
+        
         # Apply timing templates (nmap-style T0-T5)
         timeout_local = timeout
         retries_local = retries
@@ -219,6 +239,15 @@ def scan(
                 console.print(f"Invalid timing template: {timing}", style="red")
                 console.print("Valid options: paranoid, sneaky, polite, normal, aggressive, insane (or T0-T5)", style="yellow")
                 raise typer.Exit(code=2)
+        
+        # Validate timeout and concurrency
+        if timeout_local <= 0 or timeout_local > 300:
+            console.print(f"[red]Error: Invalid timeout {timeout_local}. Must be between 0 and 300 seconds[/red]")
+            raise typer.Exit(code=2)
+        
+        if concurrency_local < 1 or concurrency_local > 10000:
+            console.print(f"[red]Error: Invalid concurrency {concurrency_local}. Must be between 1 and 10000[/red]")
+            raise typer.Exit(code=2)
         
         # Apply presets (can override timing)
         if fast:
@@ -327,6 +356,9 @@ def scan(
         if syn:
             try:
                 results = await async_syn_scan(tgt, targets, concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except ValueError as ve:
+                console.print(f"[red]Input validation error: {ve}[/red]")
+                raise typer.Exit(code=2)
             except PermissionError as pe:
                 console.print(str(pe), style="red")
                 import os as os_module
@@ -342,6 +374,9 @@ def scan(
         elif fin:
             try:
                 results = await async_advanced_scan(tgt, targets, "fin", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except ValueError as ve:
+                console.print(f"[red]Input validation error: {ve}[/red]")
+                raise typer.Exit(code=2)
             except PermissionError as pe:
                 console.print(str(pe), style="red")
                 import os as os_module
@@ -357,6 +392,9 @@ def scan(
         elif xmas:
             try:
                 results = await async_advanced_scan(tgt, targets, "xmas", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except ValueError as ve:
+                console.print(f"[red]Input validation error: {ve}[/red]")
+                raise typer.Exit(code=2)
             except PermissionError as pe:
                 console.print(str(pe), style="red")
                 import os as os_module
@@ -372,6 +410,9 @@ def scan(
         elif null:
             try:
                 results = await async_advanced_scan(tgt, targets, "null", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except ValueError as ve:
+                console.print(f"[red]Input validation error: {ve}[/red]")
+                raise typer.Exit(code=2)
             except PermissionError as pe:
                 console.print(str(pe), style="red")
                 import os as os_module
@@ -387,6 +428,9 @@ def scan(
         elif ack:
             try:
                 results = await async_advanced_scan(tgt, targets, "ack", concurrency=concurrency_local, timeout=timeout_local, rate_limit=rate_limit, iface=syn_iface)
+            except ValueError as ve:
+                console.print(f"[red]Input validation error: {ve}[/red]")
+                raise typer.Exit(code=2)
             except PermissionError as pe:
                 console.print(str(pe), style="red")
                 import os as os_module
@@ -401,11 +445,25 @@ def scan(
                 raise typer.Exit(code=1)
         else:
             # Regular TCP connect scan
-            results = await async_port_scan(tgt, targets, concurrency=concurrency_local, timeout=timeout_local, no_write=no_write, version_detection=version_detect)
+            try:
+                results = await async_port_scan(tgt, targets, concurrency=concurrency_local, timeout=timeout_local, no_write=no_write, version_detection=version_detect)
+            except ValueError as ve:
+                console.print(f"[red]Input validation error: {ve}[/red]")
+                raise typer.Exit(code=2)
+            except Exception as e:
+                console.print(f"[red]Scan error: {e}[/red]")
+                raise typer.Exit(code=1)
         
         # UDP scan if requested
         if udp and udp_targets:
-            results_udp = await async_udp_scan(tgt, udp_targets, concurrency=concurrency_local, timeout=timeout_local)
+            try:
+                results_udp = await async_udp_scan(tgt, udp_targets, concurrency=concurrency_local, timeout=timeout_local)
+            except ValueError as ve:
+                console.print(f"[red]Input validation error: {ve}[/red]")
+                raise typer.Exit(code=2)
+            except Exception as e:
+                console.print(f"[red]UDP scan error: {e}[/red]")
+                raise typer.Exit(code=1)
         
         # Output results
         if output:
