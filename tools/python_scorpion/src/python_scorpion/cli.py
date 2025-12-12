@@ -2131,12 +2131,23 @@ def ai_pentest_command(
             console.print("[yellow]Provide via --api-key flag or set SCORPION_AI_API_KEY environment variable.[/yellow]")
             console.print("\n[cyan]Examples:[/cyan]")
             console.print("  # Linux/Mac:")
-            console.print("  export SCORPION_AI_API_KEY='sk-...'")
+            console.print("  export SCORPION_AI_API_KEY='ghp_...'  # GitHub Models (FREE)")
             console.print("\n  # Windows PowerShell:")
-            console.print("  $env:SCORPION_AI_API_KEY='sk-...'")
+            console.print("  $env:SCORPION_AI_API_KEY='ghp_...'")
             console.print("\n  # Or use flag:")
-            console.print("  scorpion ai-pentest -t example.com --api-key sk-...")
+            console.print("  scorpion ai-pentest -t example.com --api-key ghp-...")
+            console.print("\n[green]Get FREE GitHub Models token:[/green] https://github.com/marketplace/models")
             raise typer.Exit(1)
+    
+    # Validate API key format
+    api_key = api_key.strip()
+    if len(api_key) < 10:
+        console.print(f"[red]ERROR: API key appears too short ({len(api_key)} characters)[/red]")
+        console.print("[yellow]Expected format:[/yellow]")
+        console.print("  GitHub Models: ghp_xxxxxxxxxxxxxxxxxxxx (40+ chars)")
+        console.print("  OpenAI: sk-proj-xxxxxxxxxxxxxxxx (50+ chars)")
+        console.print("  Anthropic: sk-ant-xxxxxxxxxxxxxxxx (40+ chars)")
+        raise typer.Exit(1)
     
     # Auto-detect AI provider from API key format if not specified
     if ai_provider == "openai":  # Default value
@@ -2144,17 +2155,35 @@ def ai_pentest_command(
             ai_provider = "github"
             if model == "gpt-4":  # Still default
                 model = "gpt-4o-mini"  # Better default for GitHub
-            console.print("[cyan]Auto-detected provider:[/cyan] GitHub Models (FREE)")
+            console.print("[cyan]✓ Auto-detected provider:[/cyan] GitHub Models (FREE)")
+            console.print(f"[cyan]✓ Using model:[/cyan] {model}")
         elif api_key.startswith("sk-ant-"):
             ai_provider = "anthropic"
             if model == "gpt-4":
                 model = "claude-3-sonnet-20240229"
-            console.print("[cyan]Auto-detected provider:[/cyan] Anthropic Claude")
+            console.print("[cyan]✓ Auto-detected provider:[/cyan] Anthropic Claude")
+            console.print(f"[cyan]✓ Using model:[/cyan] {model}")
         elif api_key.startswith("sk-proj-") or api_key.startswith("sk-"):
-            console.print("[cyan]Using provider:[/cyan] OpenAI")
+            # OpenAI keys can be sk-proj-xxx (newer) or sk-xxx (older)
+            console.print("[cyan]✓ Using provider:[/cyan] OpenAI")
+            console.print(f"[cyan]✓ Using model:[/cyan] {model}")
+            # Validate OpenAI key format more carefully
+            if not (api_key.startswith("sk-proj-") or (api_key.startswith("sk-") and len(api_key) > 40)):
+                console.print("[yellow]⚠ Warning: OpenAI API key format may be invalid[/yellow]")
+                console.print("[yellow]  Expected: sk-proj-... (50+ chars) or sk-... (40+ chars)[/yellow]")
+                console.print(f"[yellow]  Your key: {api_key[:15]}... ({len(api_key)} chars)[/yellow]")
+                console.print("[yellow]  Get valid key: https://platform.openai.com/api-keys[/yellow]")
         else:
-            console.print("[yellow]Warning: Could not auto-detect provider from API key format[/yellow]")
-            console.print(f"[yellow]Using default: {ai_provider}[/yellow]")
+            console.print("[yellow]⚠ Warning: Could not auto-detect provider from API key format[/yellow]")
+            console.print(f"[yellow]  API key starts with: {api_key[:10]}...[/yellow]")
+            console.print(f"[yellow]  Using default provider: {ai_provider}[/yellow]")
+            console.print("[yellow]  If this fails, specify provider explicitly:[/yellow]")
+            console.print("[yellow]    --ai-provider github  (for GitHub Models)[/yellow]")
+            console.print("[yellow]    --ai-provider openai  (for OpenAI)[/yellow]")
+    else:
+        # Provider was explicitly specified
+        console.print(f"[cyan]✓ Using provider:[/cyan] {ai_provider} (explicitly specified)")
+        console.print(f"[cyan]✓ Using model:[/cyan] {model}")
     
     # Validate inputs
     try:
