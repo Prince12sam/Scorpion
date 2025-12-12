@@ -1,0 +1,45 @@
+# Example Vulnerability Report
+#
+# This file demonstrates the JSON structure for vulnerability reports.
+# Real vulnerability data should NEVER be committed to version control.
+#
+# ⚠️ This is a template only - contains NO real vulnerability data
+
+{
+  "scan_metadata": {
+    "target": "example.com",
+    "scan_date": "2025-01-01T00:00:00Z",
+    "scanner_version": "2.0.1",
+    "scan_profile": "web",
+    "scan_mode": "passive"
+  },
+  "summary": {
+    "total_vulnerabilities": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  },
+  "vulnerabilities": [
+    {
+      "id": "EXAMPLE-001",
+      "title": "Example Vulnerability (Template)",
+      "severity": "info",
+      "category": "information_disclosure",
+      "description": "This is an example vulnerability entry for documentation purposes.",
+      "location": "https://example.com/path/to/resource",
+      "evidence": "Example evidence would appear here",
+      "remediation": "This field contains remediation guidance",
+      "references": [
+        "https://example.com/security-docs"
+      ]
+    }
+  ],
+  "recommendations": [
+    "Keep all software up to date",
+    "Follow security best practices",
+    "Conduct regular security assessments",
+    "Implement defense in depth"
+  ]
+}

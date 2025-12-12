@@ -1,0 +1,40 @@
+# Example Wordlist for Testing
+#
+# This is a SAFE example wordlist for demonstration purposes only.
+# For real penetration testing, use specialized wordlists like:
+# - SecLists: https://github.com/danielmiessler/SecLists
+# - FuzzDB: https://github.com/fuzzdb-project/fuzzdb
+#
+# ⚠️ WARNING: Only use for authorized testing on systems you own!
+
+# Common directory names (safe examples)
+admin
+api
+assets
+backup
+config
+data
+docs
+images
+js
+css
+static
+uploads
+downloads
+media
+files
+
+# Common file names (safe examples)
+index.html
+robots.txt
+sitemap.xml
+favicon.ico
+.htaccess
+web.config
+README.md
+LICENSE.txt
+
+# To create a custom wordlist:
+# 1. Copy this file: cp test-wordlist.example.txt test-wordlist.txt
+# 2. Add your custom paths (one per line)
+# 3. Use with dirbuster: scorpion dirbust example.com --wordlist test-wordlist.txt

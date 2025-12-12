@@ -1,13 +1,30 @@
-# Sample targets for scanning
-# One target per line - can be IP addresses, domains, or IP ranges
+# Example Targets File
+# 
+# This file demonstrates the format for specifying scan targets.
+# Replace these examples with your authorized test targets.
+#
+# ⚠️ WARNING: Only scan systems you own or have explicit written permission to test!
+#
+# Format: One target per line (hostname or IP address)
+# Comments start with #
 
-# Local network examples
-192.168.1.1
-localhost
-
-# Domain examples  
+# Example web applications (REPLACE WITH YOUR TARGETS)
 # example.com
-# testphp.vulnweb.com
+# testsite.yourcompany.com
+# 192.168.1.100
 
-# IP range examples (not implemented yet)
-# 192.168.1.0/24
+# Example internal networks (REPLACE WITH YOUR TARGETS)
+# 10.0.0.0/24
+# internal-app.local
+
+# IMPORTANT REMINDERS:
+# 1. Always get written authorization before scanning
+# 2. Document your testing scope and timeline
+# 3. Use appropriate rate limiting and stealth settings
+# 4. Follow responsible disclosure practices
+# 5. Keep detailed logs of your testing activities
+
+# To use this file:
+# 1. Copy this file: cp targets.example.txt targets.txt
+# 2. Edit targets.txt with your authorized targets
+# 3. Run scans: scorpion scan -t $(cat targets.txt | head -n1) --web

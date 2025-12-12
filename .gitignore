@@ -133,6 +133,10 @@ cli/data/
 *.tmp
 *.temp
 *.log
+audit.log
+security.log
+access.log
+error.log
 
 # Test files with sensitive data
 test-passwords.txt
@@ -156,11 +160,22 @@ exploit_*.json
 api_*.json
 ssl_*.json
 recon_*.json
+ai_pentest_*.json
+container_*.json
+dirbust_*.json
+crawl_*.json
+takeover_*.json
+cloud_*.json
+k8s_*.json
+nuclei_*.json
 
 # HTML reports
 report.html
 report_*.html
 summary_*.html
+vulnerability_report.html
+web-vulns.json
+vulns_*.json
 
 # Certificates
 certs/*.pem
