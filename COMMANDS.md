@@ -11,6 +11,7 @@ Complete reference for all Scorpion CLI commands and options.
 | `scan` | TCP/UDP port scanning | `scorpion scan -t example.com --web` |
 | `ssl-analyze` | SSL/TLS analysis | `scorpion ssl-analyze -t example.com` |
 | `recon-cmd` | Reconnaissance | `scorpion recon-cmd -t example.com` |
+| `subdomain` | Subdomain enumeration | `scorpion subdomain example.com` |
 | `takeover` | Subdomain takeover check | `scorpion takeover example.com` |
 | `api-test` | API security testing | `scorpion api-test example.com` |
 | `dirbust` | Directory discovery | `scorpion dirbust example.com` |
@@ -125,6 +126,74 @@ scorpion recon-cmd -t <target> [options]
 ### Example
 ```bash
 scorpion recon-cmd -t example.com --output results/recon.json
+```
+
+---
+
+## 🔍 subdomain - Subdomain Enumeration
+
+```bash
+scorpion subdomain <domain> [options]
+```
+
+Enumerate subdomains using DNS brute-forcing and Certificate Transparency logs.
+
+### Options
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-w, --wordlist` | Custom wordlist file | Built-in (100 common) |
+| `--ct-logs/--no-ct-logs` | Query CT logs | Enabled |
+| `--http` | Check HTTP accessibility | Disabled |
+| `-c, --concurrency` | Concurrent DNS queries | 50 |
+| `-t, --timeout` | DNS query timeout (seconds) | 2.0 |
+| `-o, --output` | Save JSON results | None |
+
+### Techniques
+- **DNS Brute-forcing**: Tests common subdomain names
+- **Certificate Transparency**: Queries crt.sh for subdomains
+- **HTTP Checks**: Verifies web accessibility (optional)
+- **CNAME Resolution**: Identifies redirect chains
+
+### Examples
+```bash
+# Basic enumeration (DNS + CT logs)
+scorpion subdomain example.com
+
+# Custom wordlist with HTTP checks
+scorpion subdomain example.com -w subdomains.txt --http
+
+# Fast scan (no CT logs, high concurrency)
+scorpion subdomain example.com --no-ct-logs -c 100
+
+# Save results to JSON
+scorpion subdomain example.com -o results/subdomains.json
+```
+
+### Output Format
+```json
+{
+  "domain": "example.com",
+  "subdomains": [
+    {
+      "subdomain": "www.example.com",
+      "ips": ["93.184.216.34"],
+      "cname": "example.edgekey.net",
+      "http": {
+        "https": {
+          "accessible": true,
+          "status_code": 200,
+          "title": "Example Domain"
+        }
+      }
+    }
+  ],
+  "statistics": {
+    "total_found": 5,
+    "from_bruteforce": 3,
+    "from_ct_logs": 2,
+    "wordlist_size": 100
+  }
+}
 ```
 
 ---

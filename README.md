@@ -160,6 +160,7 @@ scorpion ai-pentest -t target.com -g gain_shell_access -r high -a fully_autonomo
 - **Decoy Scanning:** IDS/IPS evasion through IP spoofing (random, subnet, manual decoys) ⭐ **NEW!**
 - **Payload Generation:** Reverse shells, bind shells, web shells for exploitation ⭐ **NEW!**
 - **SSL/TLS Analysis:** Certificate validation, cipher suites, protocol versions
+- **Subdomain Enumeration:** DNS brute-forcing + Certificate Transparency logs (100+ common subdomains)
 - **Subdomain Takeover:** Detection across 15+ cloud providers
 - **API Security:** Swagger/GraphQL testing, IDOR detection, rate limit checks
 - **Web Crawling:** Same-host crawler with secrets detection
@@ -167,6 +168,7 @@ scorpion ai-pentest -t target.com -g gain_shell_access -r high -a fully_autonomo
 
 ### 🔍 Reconnaissance
 - **DNS Enumeration:** A, AAAA, MX, TXT, NS records
+- **Subdomain Discovery:** Brute-force + CT logs with HTTP checks
 - **Technology Detection:** Framework, CDN, WAF identification
 - **WHOIS Lookup:** Domain registration details
 - **HTTP Analysis:** Headers, status codes, server fingerprinting
@@ -349,26 +351,30 @@ scorpion scan example.com --infra --os-detect
 ### Network Reconnaissance
 
 ```bash
-# DNS enumeration only
-scorpion recon -t example.com --dns
+# Basic reconnaissance (DNS, HTTP headers, WHOIS)
+scorpion recon-cmd -t example.com
 
-# WHOIS lookup
-scorpion recon -t example.com --whois
-
-# Subdomain discovery
-scorpion recon -t example.com --subdomain
-
-# Port scanning during recon
-scorpion recon -t example.com --ports
-
-# Full reconnaissance (all options)
-scorpion recon -t example.com --dns --whois --subdomain --ports
-
-# Network information gathering
-scorpion recon -t 192.168.1.1 --dns --ports
+# Save results to JSON
+scorpion recon-cmd -t example.com -o results/recon.json
 ```
 
-### Subdomain Takeover Detection ⭐ NEW
+### Subdomain Enumeration ⭐
+
+```bash
+# Enumerate subdomains (DNS brute-force + CT logs)
+scorpion subdomain example.com
+
+# Custom wordlist with HTTP checks
+scorpion subdomain example.com -w subdomains.txt --http
+
+# Fast scan (no CT logs, high concurrency)
+scorpion subdomain example.com --no-ct-logs -c 100
+
+# Save results
+scorpion subdomain example.com -o results/subdomains.json
+```
+
+### Subdomain Takeover Detection ⭐
 
 ```bash
 # Scan for subdomain takeover vulnerabilities
