@@ -200,13 +200,27 @@ def scan(
         
         tgt = tgt.strip()
         
-        # Validate hostname/IP format
+        # Parse URL to extract hostname (handle http://, https://, port numbers)
         import socket
+        from urllib.parse import urlparse
+        
+        # Remove protocol prefix if present
+        target_to_validate = tgt
+        if "://" in tgt:
+            parsed = urlparse(tgt)
+            target_to_validate = parsed.hostname or parsed.netloc.split(':')[0]
+        # Remove port number if present (e.g., "192.168.1.1:8080" -> "192.168.1.1")
+        elif ":" in tgt and not tgt.count(":") > 1:  # Not IPv6
+            target_to_validate = tgt.split(":")[0]
+        
+        # Validate hostname/IP format
         try:
             # Try to resolve hostname
-            socket.getaddrinfo(tgt, None)
+            socket.getaddrinfo(target_to_validate, None)
+            # Use cleaned hostname for scanning
+            tgt = target_to_validate
         except socket.gaierror:
-            console.print(f"[red]Error: Cannot resolve hostname '{tgt}'[/red]")
+            console.print(f"[red]Error: Cannot resolve hostname '{target_to_validate}'[/red]")
             console.print("[yellow]Tip: Check spelling or try using IP address directly[/yellow]")
             raise typer.Exit(code=2)
         except Exception as e:
