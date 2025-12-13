@@ -2138,9 +2138,12 @@ def ai_pentest_command(
     console.print("[red]═══════════════════════════════════════════════════════════════[/red]\n")
     
     # Get API key from env if not provided (auto-discover across common vars)
+    api_key_source = None
     if not api_key:
         # Preferred env var
         api_key = os.getenv("SCORPION_AI_API_KEY")
+        if api_key:
+            api_key_source = "SCORPION_AI_API_KEY"
         # Fallbacks: pick the first available
         if not api_key:
             env_candidates = [
@@ -2152,19 +2155,50 @@ def ai_pentest_command(
             for name, value in env_candidates:
                 if value:
                     api_key = value
+                    api_key_source = name
                     console.print(f"[cyan]✓ Found API key in {name}[/cyan]")
                     break
+    else:
+        api_key_source = "--api-key flag"
+    
+    # Show success message if API key was found from environment
+    if api_key and api_key_source and api_key_source != "--api-key flag":
+        console.print(f"[green]✓ API key loaded from {api_key_source}[/green]")
+        console.print(f"[dim]  Key preview: {api_key[:15]}...{api_key[-4:]} ({len(api_key)} chars)[/dim]\n")
         if not api_key:
             console.print("[red]ERROR: AI API key required.[/red]")
-            console.print("[yellow]Provide via --api-key flag or set SCORPION_AI_API_KEY environment variable.[/yellow]")
-            console.print("\n[cyan]Examples:[/cyan]")
-            console.print("  # Linux/Mac:")
-            console.print("  export SCORPION_AI_API_KEY='ghp_...'  # GitHub Models (FREE)")
-            console.print("\n  # Windows PowerShell:")
-            console.print("  $env:SCORPION_AI_API_KEY='ghp_...'")
-            console.print("\n  # Or use flag:")
-            console.print("  scorpion ai-pentest -t example.com --api-key ghp-...")
-            console.print("\n[green]Get FREE GitHub Models token:[/green] https://github.com/marketplace/models")
+            console.print("[yellow]✨ Setup your API key ONCE, then use AI commands anytime![/yellow]\n")
+            
+            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+            console.print("[green bold]📖 ONE-TIME SETUP (Recommended)[/green bold]")
+            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+            
+            console.print("[white]1. Create .env file in Scorpion directory:[/white]")
+            console.print('   [cyan]echo "SCORPION_AI_API_KEY=ghp_your_token" >> .env[/cyan]')
+            
+            console.print("\n[white]2. Then use AI commands WITHOUT --api-key:[/white]")
+            console.print("   [cyan]scorpion ai-pentest -t example.com[/cyan]")
+            
+            console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+            console.print("[green bold]⚡ ALTERNATIVE: Set Environment Variable[/green bold]")
+            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+            
+            console.print("[white]Linux/Mac/Kali:[/white]")
+            console.print("  [cyan]export SCORPION_AI_API_KEY='ghp_...'[/cyan]")
+            
+            console.print("\n[white]Windows PowerShell:[/white]")
+            console.print("  [cyan]$env:SCORPION_AI_API_KEY='ghp_...'[/cyan]")
+            
+            console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+            console.print("[green bold]🔑 Get FREE API Key[/green bold]")
+            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+            
+            console.print("[white]GitHub Models (FREE & Recommended):[/white]")
+            console.print("  1. Visit: [cyan]https://github.com/marketplace/models[/cyan]")
+            console.print("  2. Generate token: [cyan]https://github.com/settings/tokens[/cyan]")
+            console.print("  3. Select scopes: [yellow]codespace, read:user, user:email[/yellow]")
+            
+            console.print("\n[dim]📚 Full guides: API_KEY_SETUP.md | GITHUB_MODELS_SETUP.md | AI_PENTEST_GUIDE.md[/dim]")
             raise typer.Exit(1)
     
     # Validate API key format
