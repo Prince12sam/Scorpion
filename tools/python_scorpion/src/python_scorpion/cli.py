@@ -2207,67 +2207,14 @@ def ai_pentest_command(
             console.print("\n[dim]📚 Full guides: API_KEY_SETUP.md | GITHUB_MODELS_SETUP.md | AI_PENTEST_GUIDE.md[/dim]")
             raise typer.Exit(1)
     
-    # Validate API key format
+    # Validate API key format - just basic checks, let provider validate
     api_key = api_key.strip()
-    if len(api_key) < 10:
-        console.print(f"[red]ERROR: API key appears too short ({len(api_key)} characters)[/red]")
-        console.print("[yellow]Expected format:[/yellow]")
-        console.print("  GitHub Models: ghp_xxxxxxxxxxxxxxxxxxxx (40+ chars)")
-        console.print("  OpenAI: sk-proj-xxxxxxxxxxxxxxxx (50+ chars)")
-        console.print("  Anthropic: sk-ant-xxxxxxxxxxxxxxxx (40+ chars)")
-        raise typer.Exit(1)
-    
-    # Detect placeholder/example API keys
-    placeholder_patterns = [
-        "your_token", "your_key", "your-token", "your-key",
-        "your_api_key", "your-api-key", "example", "placeholder",
-        "xxxxx", "yyyyy", "zzzzz", "12345", "abcde",
-        "ghp_your", "sk-your", "sk-proj-your"
-    ]
-    api_key_lower = api_key.lower()
-    if any(pattern in api_key_lower for pattern in placeholder_patterns):
-        console.print("[red]═══════════════════════════════════════════════════════════════[/red]")
-        console.print("[red bold]           ⚠️  PLACEHOLDER API KEY DETECTED ⚠️                [/red bold]")
-        console.print("[red]═══════════════════════════════════════════════════════════════[/red]\n")
-        
-        console.print(f"[yellow]You're using a placeholder/example API key:[/yellow]")
-        console.print(f"[red]  {api_key[:30]}...[/red]\n")
-        
-        console.print("[white bold]❌ This will NOT work! You need a REAL API key.[/white bold]\n")
-        
-        console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
-        console.print("[green bold]✅ How to Get a REAL API Key (FREE)[/green bold]")
-        console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
-        
-        console.print("[white]1. Visit GitHub Models:[/white]")
-        console.print("   [cyan]https://github.com/marketplace/models[/cyan]")
-        console.print("   [dim](Click 'Get started' button)[/dim]\n")
-        
-        console.print("[white]2. Generate a Personal Access Token:[/white]")
-        console.print("   [cyan]https://github.com/settings/tokens[/cyan]")
-        console.print("   [dim](Click 'Generate new token' → 'Generate new token (classic)')[/dim]\n")
-        
-        console.print("[white]3. Select these scopes:[/white]")
-        console.print("   [yellow]☑ codespace[/yellow]")
-        console.print("   [yellow]☑ read:user[/yellow]")
-        console.print("   [yellow]☑ user:email[/yellow]\n")
-        
-        console.print("[white]4. Copy the REAL token (starts with ghp_):[/white]")
-        console.print("   [green]Example: ghp_1A2b3C4d5E6f7G8h9I0j1K2l3M4n5O6p7Q8r9S0t[/green]")
-        console.print("   [red]NOT: ghp_your_token or ghp_xxxxxxxxxxxx[/red]\n")
-        
-        console.print("[white]5. Replace placeholder in .env file:[/white]")
-        console.print("   [cyan]nano .env[/cyan]")
-        console.print("   [dim]Change: SCORPION_AI_API_KEY=ghp_your_token[/dim]")
-        console.print("   [green]To: SCORPION_AI_API_KEY=ghp_1A2b3C4d5E6f7G8h9I0j1K2l3M4n5O6p7Q8r9S0t[/green]\n")
-        
-        console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
-        console.print("[dim]📚 Full guide: GITHUB_MODELS_SETUP.md[/dim]")
-        raise typer.Exit(1)
     
     # Auto-detect AI provider from API key format if not specified
     if ai_provider == "openai":  # Default value; will be overridden by detection
-        if api_key.startswith("ghp_") or api_key.startswith("github_pat_"):
+        # GitHub tokens: ghp_ (classic), gho_ (OAuth), ghu_ (user-to-server), 
+        # ghs_ (server-to-server), ghr_ (refresh), github_pat_ (fine-grained)
+        if api_key.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_")):
             ai_provider = "github"
             if model == "gpt-4":  # Still default
                 model = "gpt-4o-mini"  # Better default for GitHub
