@@ -60,6 +60,9 @@ class APISecurityTester:
         """Discover API endpoints from OpenAPI/Swagger spec or crawling"""
         endpoints = []
         
+        if not self.session:
+            return endpoints
+        
         # Try OpenAPI/Swagger spec
         if openapi_spec_url:
             spec_endpoints = await self._parse_openapi_spec(openapi_spec_url)
@@ -87,6 +90,8 @@ class APISecurityTester:
     async def _parse_openapi_spec(self, spec_url: str) -> List[APIEndpoint]:
         """Parse OpenAPI/Swagger specification"""
         endpoints = []
+        if not self.session:
+            return endpoints
         try:
             async with self.session.get(spec_url) as resp:
                 if resp.status == 200:
@@ -113,6 +118,9 @@ class APISecurityTester:
     async def test_authentication(self) -> List[APISecurityFinding]:
         """Test authentication mechanisms"""
         findings = []
+        
+        if not self.session:
+            return findings
         
         # Test for broken authentication
         test_endpoints = ['/api/login', '/api/auth', '/api/token']
@@ -196,26 +204,27 @@ class APISecurityTester:
                     ))
             
             # Test alg:none vulnerability
-            try:
-                none_token = jwt.encode(decoded, key='', algorithm='none')
-                # Try using the none token
-                async with self.session.get(
-                    urljoin(self.base_url, '/api/user'),
-                    headers={'Authorization': f'Bearer {none_token}'}
-                ) as resp:
-                    if resp.status == 200:
-                        findings.append(APISecurityFinding(
-                            severity='critical',
-                            category='jwt_security',
-                            endpoint='/api/*',
-                            description='JWT accepts alg:none (algorithm confusion)',
-                            evidence='Server accepted unsigned JWT token',
-                            remediation='Reject tokens with alg:none, validate algorithm',
-                            cwe_id='CWE-347',
-                            cvss_score=9.1
-                        ))
-            except:
-                pass
+            if self.session:
+                try:
+                    none_token = jwt.encode(decoded, key='', algorithm='none')
+                    # Try using the none token
+                    async with self.session.get(
+                        urljoin(self.base_url, '/api/user'),
+                        headers={'Authorization': f'Bearer {none_token}'}
+                    ) as resp:
+                        if resp.status == 200:
+                            findings.append(APISecurityFinding(
+                                severity='critical',
+                                category='jwt_security',
+                                endpoint='/api/*',
+                                description='JWT accepts alg:none (algorithm confusion)',
+                                evidence='Server accepted unsigned JWT token',
+                                remediation='Reject tokens with alg:none, validate algorithm',
+                                cwe_id='CWE-347',
+                                cvss_score=9.1
+                            ))
+                except:
+                    pass
             
             # Test weak signing key
             weak_keys = ['secret', 'key', 'password', '12345', 'admin', 'test']
@@ -244,6 +253,9 @@ class APISecurityTester:
     async def test_idor(self) -> List[APISecurityFinding]:
         """Test for Insecure Direct Object Reference (IDOR)"""
         findings = []
+        
+        if not self.session:
+            return findings
         
         # Common IDOR patterns
         idor_endpoints = [
@@ -281,6 +293,10 @@ class APISecurityTester:
     async def test_graphql(self, graphql_endpoint: str = '/graphql') -> List[APISecurityFinding]:
         """Test GraphQL-specific vulnerabilities"""
         findings = []
+        
+        if not self.session:
+            return findings
+        
         url = urljoin(self.base_url, graphql_endpoint)
         
         # Test introspection
@@ -366,6 +382,9 @@ class APISecurityTester:
         """Test for missing or weak rate limiting"""
         findings = []
         
+        if not self.session:
+            return findings
+        
         test_endpoints = ['/api/login', '/api/register', '/api/search']
         
         for path in test_endpoints:
@@ -399,6 +418,9 @@ class APISecurityTester:
     async def test_mass_assignment(self) -> List[APISecurityFinding]:
         """Test for mass assignment vulnerabilities"""
         findings = []
+        
+        if not self.session:
+            return findings
         
         # Common endpoints that might have mass assignment
         test_endpoints = ['/api/user', '/api/profile', '/api/account']
