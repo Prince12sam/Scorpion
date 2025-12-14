@@ -157,14 +157,21 @@ scorpion ai-pentest -t target.com -g gain_shell_access -r high -a fully_autonomo
 
 ### 🎯 Core Security Testing
 - **Port Scanning:** Fast async TCP/UDP scanning with service detection + **OS fingerprinting**
-- **Decoy Scanning:** IDS/IPS evasion through IP spoofing (random, subnet, manual decoys) ⭐ **NEW!**
-- **Payload Generation:** Reverse shells, bind shells, web shells for exploitation ⭐ **NEW!**
+- **Decoy Scanning:** IDS/IPS evasion through IP spoofing (random, subnet, manual decoys)
+- **Payload Generation:** Reverse shells, bind shells, web shells for exploitation
 - **SSL/TLS Analysis:** Certificate validation, cipher suites, protocol versions
 - **Subdomain Enumeration:** DNS brute-forcing + Certificate Transparency logs (100+ common subdomains)
 - **Subdomain Takeover:** Detection across 15+ cloud providers
 - **API Security:** Swagger/GraphQL testing, IDOR detection, rate limit checks
 - **Web Crawling:** Same-host crawler with secrets detection
 - **Directory Discovery:** Built-in wordlists with wildcard filtering
+
+### 🔥 Advanced Pentesting (NEW!)
+- **API Security Testing:** REST/GraphQL/JWT comprehensive testing - authentication bypass, IDOR, mass assignment, GraphQL DoS ⭐
+- **Database Pentesting:** SQL/NoSQL injection (error-based, blind, time-based, UNION), database fingerprinting ⭐
+- **Post-Exploitation:** Linux/Windows privilege escalation checks, credential harvesting, persistence techniques ⭐
+- **CI/CD Integration:** SARIF output, JUnit XML, GitHub Actions/GitLab CI/Jenkins workflow generation ⭐
+- **Custom AI Instructions:** Guide AI pentesting with custom prompts (`-i` flag) for targeted testing ⭐
 
 ### 🔍 Reconnaissance
 - **DNS Enumeration:** A, AAAA, MX, TXT, NS records

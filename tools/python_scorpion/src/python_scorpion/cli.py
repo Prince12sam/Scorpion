@@ -48,6 +48,10 @@ from .crawler import crawl as web_crawl
 from .cloud import cloud_audit
 from .k8s import k8s_audit
 from .container_sec import container_audit
+from .api_security import APISecurityTester
+from .db_pentest import DatabasePentester
+from .post_exploit import PostExploitation
+from .ci_integration import CICDIntegration, run_ci_scan
 from .web_owasp import web_owasp_passive
 from .web_pentest import AdvancedWebTester
 from .os_fingerprint import OSFingerprinter
@@ -1976,6 +1980,225 @@ def payload(
     except Exception as e:
         console.print(f"[red]Error generating payload: {e}[/red]")
         raise typer.Exit(1)
+
+
+@app.command()
+def api_security(
+    target: str = typer.Option(..., "--target", "-t", help="API base URL (e.g., https://api.example.com)"),
+    openapi_spec: Optional[str] = typer.Option(None, "--spec", help="OpenAPI/Swagger spec URL"),
+    jwt_token: Optional[str] = typer.Option(None, "--jwt", help="JWT token to test"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+):
+    """
+    🔐 Comprehensive API Security Testing
+    
+    Tests REST/GraphQL/gRPC APIs for vulnerabilities:
+    - Authentication bypass & default credentials
+    - JWT security (alg:none, weak keys, sensitive data)
+    - IDOR (Insecure Direct Object Reference)
+    - GraphQL introspection & DoS
+    - Rate limiting
+    - Mass assignment
+    """
+    
+    async def run():
+        async with APISecurityTester(target) as tester:
+            try:
+                results = await tester.run_full_assessment(openapi_spec, jwt_token)
+                
+                # Display summary
+                console.print(f"\n[cyan]{'=' * 60}[/cyan]")
+                console.print(f"[bold green]API Security Assessment Complete[/bold green]")
+                console.print(f"[cyan]{'=' * 60}[/cyan]\n")
+                
+                console.print(f"[yellow]Target:[/yellow] {results['target']}")
+                console.print(f"[yellow]Endpoints:[/yellow] {results['endpoints_discovered']}")
+                console.print(f"[yellow]Total Findings:[/yellow] {results['total_findings']}\n")
+                
+                # Severity breakdown
+                severity = results['severity_counts']
+                console.print(f"[red]  Critical:[/red] {severity['critical']}")
+                console.print(f"[red]  High:[/red] {severity['high']}")
+                console.print(f"[yellow]  Medium:[/yellow] {severity['medium']}")
+                console.print(f"[blue]  Low:[/blue] {severity['low']}")
+                console.print(f"[cyan]  Info:[/cyan] {severity['info']}\n")
+                
+                # Display findings
+                if results['findings']:
+                    console.print(f"[bold]Findings:[/bold]\n")
+                    for i, finding in enumerate(results['findings'][:10], 1):
+                        console.print(f"[{i}] [{finding['severity'].upper()}] {finding['description']}")
+                        console.print(f"    Endpoint: {finding['endpoint']}")
+                        console.print(f"    Evidence: {finding['evidence'][:100]}")
+                        console.print(f"    Fix: {finding['remediation'][:100]}\n")
+                
+                # Save to file
+                if output:
+                    with open(output, 'w') as f:
+                        json.dump(results, f, indent=2)
+                    console.print(f"[green]Results saved to: {output}[/green]")
+                
+            except Exception as e:
+                console.print(f"[red]Error: {e}[/red]")
+                raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def db_pentest(
+    target: str = typer.Option(..., "--target", "-t", help="Target URL with parameter (e.g., https://site.com/page?id=1)"),
+    param: str = typer.Option("id", "--param", "-p", help="Parameter name to test"),
+    method: str = typer.Option("GET", "--method", "-m", help="HTTP method (GET/POST)"),
+    db_type: Optional[str] = typer.Option(None, "--db-type", help="Database type (mysql, postgresql, mssql, oracle, mongodb)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+):
+    """
+    🗃️  Database Penetration Testing
+    
+    Tests for SQL/NoSQL injection vulnerabilities:
+    - Error-based SQL injection
+    - Boolean-based blind SQL injection  
+    - Time-based blind SQL injection
+    - UNION-based SQL injection
+    - NoSQL injection (MongoDB, etc.)
+    - Database fingerprinting
+    - Privilege escalation checks
+    """
+    
+    async def run():
+        tester = DatabasePentester(target)
+        
+        try:
+            results = await tester.run_full_assessment(param, method.upper())
+            
+            # Save to file
+            if output:
+                with open(output, 'w') as f:
+                    json.dump(results, f, indent=2)
+                console.print(f"\n[green]Results saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def post_exploit(
+    os_type: Optional[str] = typer.Option(None, "--os", help="Operating system (linux, windows, darwin)"),
+    execute: bool = typer.Option(False, "--execute", "-e", help="Execute enumeration commands (USE WITH CAUTION!)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+):
+    """
+    🔓 Post-Exploitation Enumeration
+    
+    ⚠️  WARNING: Only use on systems you own or have authorization to test!
+    
+    Provides enumeration commands for:
+    - Privilege escalation vectors (SUID, sudo, kernel exploits)
+    - Credential harvesting (files, history, SSH keys)
+    - Persistence mechanisms (cron, registry, SSH keys)
+    - Lateral movement (network scanning, pivoting)
+    
+    Linux checks: SUID binaries, sudo, writable /etc/passwd, kernel exploits
+    Windows checks: Unquoted service paths, AlwaysInstallElevated, stored credentials
+    """
+    
+    async def run():
+        post_ex = PostExploitation(os_type)
+        
+        try:
+            console.print("[red]⚠️  WARNING: Only use on authorized systems![/red]\n")
+            
+            results = await post_ex.run_full_enumeration(execute_commands=execute)
+            
+            # Display summary
+            console.print(f"\n[cyan]{'=' * 60}[/cyan]")
+            console.print(f"[bold green]Post-Exploitation Enumeration Complete[/bold green]")
+            console.print(f"[cyan]{'=' * 60}[/cyan]\n")
+            
+            console.print(f"[yellow]Privilege Escalation Checks:[/yellow] {len(results['privilege_escalation'])}")
+            console.print(f"[yellow]Persistence Techniques:[/yellow] {len(results['persistence'])}")
+            console.print(f"[yellow]Lateral Movement Techniques:[/yellow] {len(results['lateral_movement'])}\n")
+            
+            # Show sample commands
+            if results['privilege_escalation']:
+                console.print(f"[bold]Sample Privilege Escalation Commands:[/bold]")
+                for check in results['privilege_escalation'][:3]:
+                    console.print(f"\n[green]{check['description']}[/green]")
+                    for cmd in check['commands'][:2]:
+                        console.print(f"  $ {cmd}")
+            
+            # Save to file
+            if output:
+                with open(output, 'w') as f:
+                    json.dump(results, f, indent=2)
+                console.print(f"\n[green]Results saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def ci_scan(
+    input_file: str = typer.Option(..., "--input", "-i", help="Input JSON file from previous scan"),
+    fail_on_critical: bool = typer.Option(True, "--fail-on-critical", help="Fail build on critical findings"),
+    fail_on_high: bool = typer.Option(False, "--fail-on-high", help="Fail build on high severity findings"),
+    max_medium: int = typer.Option(10, "--max-medium", help="Maximum allowed medium severity findings"),
+    sarif_output: Optional[str] = typer.Option(None, "--sarif-output", help="Generate SARIF report for GitHub Security"),
+    junit_output: Optional[str] = typer.Option(None, "--junit-output", help="Generate JUnit XML for test reporting"),
+    generate_workflow: Optional[str] = typer.Option(None, "--generate-workflow", help="Generate CI config (github, gitlab, jenkins)"),
+):
+    """
+    🔄 CI/CD Integration & Security Gates
+    
+    Integrates Scorpion scans into CI/CD pipelines:
+    - SARIF output for GitHub Security tab
+    - JUnit XML for test reporting
+    - Configurable failure thresholds
+    - Workflow generation (GitHub Actions, GitLab CI, Jenkins)
+    
+    Examples:
+      # Check thresholds and fail build if needed
+      scorpion ci-scan --input api-results.json --fail-on-critical --fail-on-high
+      
+      # Generate SARIF for GitHub
+      scorpion ci-scan --input api-results.json --sarif-output scorpion.sarif
+      
+      # Generate GitHub Actions workflow
+      scorpion ci-scan --generate-workflow github > .github/workflows/security.yml
+    """
+    
+    if generate_workflow:
+        ci = CICDIntegration()
+        if generate_workflow == 'github':
+            print(ci.generate_github_actions_workflow())
+        elif generate_workflow == 'gitlab':
+            print(ci.generate_gitlab_ci_config())
+        elif generate_workflow == 'jenkins':
+            print(ci.generate_jenkins_pipeline())
+        else:
+            console.print(f"[red]Unknown CI platform: {generate_workflow}[/red]")
+            console.print("[yellow]Supported: github, gitlab, jenkins[/yellow]")
+            raise typer.Exit(1)
+        return
+    
+    # Run CI scan
+    exit_code = asyncio.run(run_ci_scan(
+        input_file,
+        fail_on_critical,
+        fail_on_high,
+        max_medium,
+        sarif_output,
+        junit_output
+    ))
+    
+    raise typer.Exit(exit_code)
 
 
 @app.command("ai-pentest")

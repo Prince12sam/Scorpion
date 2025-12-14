@@ -28,6 +28,20 @@ scorpion --version
 scorpion --help
 ```
 
+### 🔄 After Pulling New Updates
+If you pull new updates from Git, reinstall to load new features:
+```bash
+# Deactivate and reactivate virtual environment
+deactivate
+source .venv/bin/activate
+
+# Reinstall to pick up new commands
+pip install -e tools/python_scorpion --force-reinstall --no-deps
+
+# Verify new features are available
+scorpion --help | grep -E "api-security|db-pentest|post-exploit|ci-scan"
+```
+
 ## Common Commands
 ```bash
 # Port scan (web preset)
