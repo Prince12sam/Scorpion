@@ -2038,6 +2038,11 @@ def ai_pentest_command(
     
     # Advanced Options
     learning_mode: bool = typer.Option(False, "--learning-mode", help="Enable AI learning mode (experimental)"),
+    custom_instructions: Optional[str] = typer.Option(
+        None,
+        "--instructions", "-i",
+        help="Custom instructions/prompt to guide AI behavior (e.g., 'Focus on API endpoints', 'Test for IDOR vulnerabilities')"
+    ),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file for detailed results"),
 ):
     """
@@ -2096,6 +2101,15 @@ def ai_pentest_command(
       # High-risk exploitation mode (requires written authorization!)
       scorpion ai-pentest -t example.com --api-key sk-... -r high -a fully_autonomous \\
         -g gain_shell_access --time-limit 60
+      
+      # Custom instructions to guide AI behavior
+      scorpion ai-pentest -t example.com -i "Focus on API endpoints and test for IDOR vulnerabilities"
+      
+      # Multiple custom guidance examples
+      scorpion ai-pentest -t example.com -i "Test GraphQL endpoints for injection attacks"
+      scorpion ai-pentest -t example.com -i "Prioritize authentication bypass and JWT vulnerabilities"
+      scorpion ai-pentest -t example.com -i "Look for SSRF in file upload features and image processing"
+      scorpion ai-pentest -t example.com -i "Focus on subdomain enumeration and takeover vulnerabilities"
     
     \b
     🔑 API Key Setup:
@@ -2307,18 +2321,26 @@ def ai_pentest_command(
         api_endpoint=api_endpoint,
         model=model,
         learning_mode=learning_mode,
-        max_iterations=max_iterations
+        max_iterations=max_iterations,
+        custom_instructions=custom_instructions
     )
     
     # Display configuration
-    console.print(Panel.fit(
+    config_text = (
         f"[cyan]Target:[/cyan] {target}\n"
         f"[cyan]Primary Goal:[/cyan] {primary_goal}\n"
         f"[cyan]AI Provider:[/cyan] {ai_provider} ({model})\n"
         f"[cyan]Stealth Level:[/cyan] {stealth_level}\n"
         f"[cyan]Risk Tolerance:[/cyan] {risk_tolerance}\n"
         f"[cyan]Autonomy:[/cyan] {autonomy}\n"
-        f"[cyan]Time Limit:[/cyan] {time_limit} minutes",
+        f"[cyan]Time Limit:[/cyan] {time_limit} minutes"
+    )
+    
+    if custom_instructions:
+        config_text += f"\n[yellow]Custom Instructions:[/yellow] {custom_instructions[:100]}{'...' if len(custom_instructions) > 100 else ''}"
+    
+    console.print(Panel.fit(
+        config_text,
         title="🤖 AI Penetration Test Configuration",
         border_style="green"
     ))
