@@ -55,7 +55,13 @@ from .ci_integration import CICDIntegration, run_ci_scan
 from .web_owasp import web_owasp_passive
 from .web_pentest import AdvancedWebTester
 from .os_fingerprint import OSFingerprinter
-from .payload_generator import PayloadGenerator, PayloadType, PayloadFormat
+# Optional import: payload generator (avoid breaking CLI if missing in editable install)
+try:
+    from .payload_generator import PayloadGenerator, PayloadType, PayloadFormat
+except ImportError:  # pragma: no cover
+    PayloadGenerator = None  # type: ignore
+    PayloadType = None  # type: ignore
+    PayloadFormat = None  # type: ignore
 from .decoy_scanner import DecoyScanner, parse_decoy_option, DecoyConfig
 from .ai_pentest import (
     AIPentestAgent,
@@ -1847,6 +1853,16 @@ def payload(
     Generate exploitation payloads for penetration testing.
     Creates reverse shells, bind shells, web shells, and encoded payloads.
     """
+    # Defer helpful guidance if optional module wasn't importable
+    if PayloadGenerator is None:
+        console.print("[red]Payload module not available in current environment.[/red]")
+        console.print("[yellow]Fix on Parrot OS:[/yellow]")
+        console.print("  1. Activate your venv: source .venv/bin/activate")
+        console.print("  2. Refresh editable install: python -m pip install -e tools/python_scorpion")
+        console.print("  3. Verify import:")
+        console.print("     python -c \"from python_scorpion.payload_generator import PayloadGenerator; print('OK')\"")
+        raise typer.Exit(1)
+
     generator = PayloadGenerator()
     
     # List available payloads
