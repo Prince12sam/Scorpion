@@ -286,9 +286,9 @@ async def async_advanced_scan(
     rate_limit: float = 0.0,
     iface: str = "",
     evade_fw: bool = False,
-    stealth_level: str = \"normal\",
+    stealth_level: str = "normal",
 ) -> List[Dict]:
-    \"\"\"
+    """
     Production advanced scanner (FIN, XMAS, NULL, ACK) with firewall evasion.
     NO dummy data - real Scapy packet crafting only.
     Requires admin/root privileges.
