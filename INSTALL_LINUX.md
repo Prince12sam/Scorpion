@@ -124,3 +124,30 @@ To extend web testing with ProjectDiscovery Nuclei:
 - "Command not found": ensure you ran `pip install -e tools/python_scorpion` inside the venv and that `source .venv/bin/activate` is active.
 - Permission errors for SYN: run as root and verify `pip install scapy` succeeded.
 - Network issues: check DNS/firewall; try `ping example.com` and `curl https://example.com`.
+
+### Diagnostics & Repair (venv + editable install)
+If the CLI crashes with `ModuleNotFoundError: python_scorpion.<module>` after pulling updates, refresh the editable install and verify paths.
+
+```bash
+# From repo root
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip uninstall -y python-scorpion
+python -m pip install -e tools/python_scorpion
+
+# Verify the package includes all modules
+python - <<'PY'
+import pkgutil, python_scorpion
+print('package file:', python_scorpion.__file__)
+mods = {m.name for m in pkgutil.iter_modules(python_scorpion.__path__)}
+print('has payload_generator?:', 'payload_generator' in mods)
+PY
+
+# Confirm the scorpion launcher comes from your venv
+readlink -f $(which scorpion)
+
+# Try the CLI again
+scorpion --help
+```
+
+If the `payload` subcommand reports the payload module missing, repeat the reinstall above. The CLI now provides friendly repair hints instead of crashing.
