@@ -12,8 +12,7 @@ The AI pentesting agent can now **execute system commands directly** on the atta
 
 The AI can run commands on your local machine during penetration testing operations:
 
-- **Windows**: PowerShell commands
-- **Linux**: Bash commands  
+- **Linux/macOS**: Bash commands  
 - **macOS**: Bash commands
 
 ---

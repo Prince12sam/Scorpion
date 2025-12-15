@@ -29,10 +29,10 @@ scorpion db-pentest -t "https://site.com/api?id=1" --db-type mysql -o sqli.json
 ### 3. Post-Exploitation
 ```bash
 scorpion post-exploit --os linux
-scorpion post-exploit --os windows --output privesc.json
+scorpion post-exploit --os darwin --output macos-privesc.json
 scorpion post-exploit --execute  # ⚠️ AUTHORIZED ONLY
 ```
-**Provides:** Privesc checks, credential harvesting, persistence, lateral movement
+**Provides:** Privesc checks, credential harvesting, persistence, lateral movement (Linux/macOS)
 
 ### 4. CI/CD Integration
 ```bash

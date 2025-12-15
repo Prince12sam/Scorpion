@@ -2087,7 +2087,7 @@ def db_pentest(
 
 @app.command()
 def post_exploit(
-    os_type: Optional[str] = typer.Option(None, "--os", help="Operating system (linux, windows, darwin)"),
+    os_type: Optional[str] = typer.Option(None, "--os", help="Operating system (linux, darwin)"),
     execute: bool = typer.Option(False, "--execute", "-e", help="Execute enumeration commands (USE WITH CAUTION!)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
 ):
@@ -2099,11 +2099,10 @@ def post_exploit(
     Provides enumeration commands for:
     - Privilege escalation vectors (SUID, sudo, kernel exploits)
     - Credential harvesting (files, history, SSH keys)
-    - Persistence mechanisms (cron, registry, SSH keys)
+    - Persistence mechanisms (cron, SSH keys)
     - Lateral movement (network scanning, pivoting)
     
-    Linux checks: SUID binaries, sudo, writable /etc/passwd, kernel exploits
-    Windows checks: Unquoted service paths, AlwaysInstallElevated, stored credentials
+    Linux/macOS checks: SUID binaries, sudo, writable /etc/passwd, kernel exploits
     """
     
     async def run():

@@ -867,24 +867,24 @@ Provides enumeration commands and techniques for:
 ### Options
 | Flag | Description | Example |
 |------|-------------|---------|
-| `--os` | Operating system | `--os linux` or `--os windows` |
+| `--os` | Operating system | `--os linux` or `--os darwin` |
 | `-e, --execute` | Execute commands (CAUTION!) | `-e` |
 | `-o, --output` | Save results to JSON | `-o post-exploit.json` |
 
 ### Examples
-```bash
+````bash
 # Linux privilege escalation checks
 scorpion post-exploit --os linux
 
-# Windows privilege escalation checks with command execution
-scorpion post-exploit --os windows --execute --output windows-privesc.json
+# macOS privilege escalation checks with command execution
+scorpion post-exploit --os darwin --execute --output macos-privesc.json
 
 # Auto-detect OS and show techniques
 scorpion post-exploit
 ```
 
 ### What You Get
-**Linux:**
+**Linux/macOS:**
 - SUID/SGID binary checks
 - Sudo privileges enumeration
 - Writable /etc/passwd detection
@@ -892,15 +892,8 @@ scorpion post-exploit
 - Cron job analysis
 - Credential file searches
 - Docker escape techniques
-
-**Windows:**
-- Unquoted service path detection
-- Weak service permissions
-- AlwaysInstallElevated checks
-- Stored credential searches
-- Mimikatz opportunities
-- PowerShell history analysis
-- Token privilege checks
+- SSH key harvesting
+- PATH hijacking vectors
 
 ---
 

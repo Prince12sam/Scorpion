@@ -31,7 +31,7 @@ This is a major breaking release that removes all web interface components and f
 - **Documentation**: Completely rewritten README.md for CLI usage only
 
 ### Added ✨
-- **Installation Scripts**: Simple `install.bat` and `install.sh` for easy setup
+- **Installation Scripts**: Simple `install.sh` for easy setup on Linux/macOS
 - **Quick Start Guide**: New QUICKSTART.md with common usage examples
 - **Migration Guide**: MIGRATION.md explaining changes from v1.x to v2.0
 - **Streamlined Structure**: Clean project structure focused on CLI functionality

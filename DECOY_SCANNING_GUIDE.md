@@ -48,7 +48,7 @@ When decoy scanning is enabled, Scorpion:
 
 ### Administrator/Root Privileges
 
-Decoy scanning **requires** administrator (Windows) or root (Linux) privileges because it:
+Decoy scanning **requires** root (Linux/macOS) privileges because it:
 - Creates raw sockets for packet crafting
 - Sets IP_HDRINCL socket option to control IP headers
 - Crafts packets with spoofed source IPs
@@ -476,16 +476,12 @@ alert tcp any any -> $HOME_NET any (msg:"Possible Decoy Scan Detected"; \
 
 **Error:**
 ```
-[red]Decoy scanning requires admin privileges (Windows) or root (Linux)[/red]
+[red]Decoy scanning requires root (Linux/macOS) privileges[/red]
 ```
 
 **Solutions:**
 
-**Windows:**
-1. Right-click PowerShell → "Run as Administrator"
-2. Run `scorpion scan ...` command again
-
-**Linux:**
+**Linux/macOS:**
 ```bash
 # Option 1: Use sudo
 sudo scorpion scan target.com --syn --decoy RND:5

@@ -1,7 +1,7 @@
 # Scorpion CLI Security Tool 🦂
 
 [![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/Prince12sam/Scorpion)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org/)
 
@@ -36,23 +36,15 @@ cd Scorpion
 
 **Optional - Automated Setup:**
 ```bash
-# Linux/Mac - runs installation + API setup
+# Linux/macOS - runs installation + API setup
 ./setup-first-time.sh
-
-# Windows - runs installation + API setup
-.\setup-first-time.ps1
 ```
 
 Or manually:
 
 ### 2️⃣ Install Scorpion CLI
 
-**Windows/macOS:**
-```bash
-python -m pip install -e tools/python_scorpion
-```
-
-**Linux (with virtual environment - recommended):**
+**Linux/macOS (with virtual environment - recommended):**
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -71,11 +63,10 @@ scorpion --help
 
 ```bash
 # Copy example configuration
-cp .env.example .env  # Linux/Mac
-copy .env.example .env  # Windows
+cp .env.example .env
 
 # Edit and add your API keys
-nano .env  # or use any text editor
+nano .env  # or use any text editor (vim, vi, etc.)
 ```
 
 **Add your OpenAI API key** to `.env`:

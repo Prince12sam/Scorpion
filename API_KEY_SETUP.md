@@ -11,9 +11,6 @@ Complete guide for configuring API keys in Scorpion CLI.
 ```bash
 # Copy the example file
 cp .env.example .env
-
-# Windows PowerShell:
-copy .env.example .env
 ```
 
 ### Step 2: Add Your OpenAI API Key
@@ -68,7 +65,7 @@ scorpion ai-pentest -t example.com
 **Pros:** Works immediately, no files needed  
 **Cons:** Resets when you close terminal
 
-#### Linux / macOS / Parrot OS:
+#### Linux / macOS:
 
 ```bash
 # Set for current session
@@ -77,33 +74,6 @@ export SCORPION_AI_API_KEY='sk-proj-your-actual-key-here'
 # Make it permanent (add to ~/.bashrc or ~/.zshrc)
 echo "export SCORPION_AI_API_KEY='sk-proj-your-actual-key-here'" >> ~/.bashrc
 source ~/.bashrc
-```
-
-#### Windows PowerShell:
-
-```powershell
-# Set for current session
-$env:SCORPION_AI_API_KEY='sk-proj-your-actual-key-here'
-
-# Make it permanent (add to PowerShell profile)
-# Open profile:
-notepad $PROFILE
-
-# Add this line:
-$env:SCORPION_AI_API_KEY='sk-proj-your-actual-key-here'
-
-# Save and reload:
-. $PROFILE
-```
-
-#### Windows Command Prompt:
-
-```cmd
-# Set for current session
-set SCORPION_AI_API_KEY=sk-proj-your-actual-key-here
-
-# Make it permanent (system-wide)
-setx SCORPION_AI_API_KEY "sk-proj-your-actual-key-here"
 ```
 
 ---
@@ -159,14 +129,8 @@ scorpion ai-pentest -t example.com --api-key sk-proj-your-actual-key-here
 ### Test 1: Check Environment Variable
 
 ```bash
-# Linux/Mac/Parrot:
+# Linux/macOS:
 echo $SCORPION_AI_API_KEY
-
-# Windows PowerShell:
-echo $env:SCORPION_AI_API_KEY
-
-# Windows CMD:
-echo %SCORPION_AI_API_KEY%
 ```
 
 **Expected:** Should show your API key (or at least first few characters)
@@ -200,14 +164,12 @@ scorpion ai-pentest -t example.com --mode passive
 
 1. **Check .env file exists:**
    ```bash
-   ls -la .env  # Linux/Mac
-   dir .env     # Windows
+   ls -la .env
    ```
 
 2. **Verify .env content:**
    ```bash
-   cat .env     # Linux/Mac
-   type .env    # Windows
+   cat .env
    ```
 
 3. **Check for typos:**
@@ -218,7 +180,7 @@ scorpion ai-pentest -t example.com --mode passive
 4. **Reload environment:**
    ```bash
    # Close and reopen terminal, OR:
-   source .env  # Linux/Mac
+   source .env
    ```
 
 ### Error: "Invalid API key"

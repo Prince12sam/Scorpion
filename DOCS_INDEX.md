@@ -18,7 +18,7 @@ Complete project overview, features, and architecture.
 
 | Platform | Guide | Description |
 |----------|-------|-------------|
-| **Windows** | [INSTALL.md](INSTALL.md) | PowerShell installation with pip/pipx |
+| **Linux/macOS** | [INSTALL.md](INSTALL.md) | Installation with pip in virtual environment |
 | **Linux** | [INSTALL_LINUX.md](INSTALL_LINUX.md) | Ubuntu, Debian, Fedora, Arch, Kali |
 | **Parrot OS** | [INSTALL_PARROT_OS.md](INSTALL_PARROT_OS.md) | Security-optimized distribution setup |
 
@@ -58,7 +58,7 @@ Complete project overview, features, and architecture.
 | **[API_KEY_SETUP.md](API_KEY_SETUP.md)** | Detailed API key configuration |
 | **[AI_AGENT_ENHANCED_GUIDE.md](AI_AGENT_ENHANCED_GUIDE.md)** | Complete AI agent usage - OCP professional level |
 | **[AI_OCP_IMPLEMENTATION.md](AI_OCP_IMPLEMENTATION.md)** | Implementation details and methodology |
-| **[AI_COMMAND_EXECUTION.md](AI_COMMAND_EXECUTION.md)** | Direct command execution (Windows/Linux/macOS) |
+| **[AI_COMMAND_EXECUTION.md](AI_COMMAND_EXECUTION.md)** | Direct command execution (Linux/macOS) |
 
 **Quick Start**:
 ```bash
