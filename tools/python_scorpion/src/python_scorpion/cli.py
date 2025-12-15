@@ -2401,47 +2401,45 @@ def ai_pentest_command(
     if api_key and api_key_source and api_key_source != "--api-key flag":
         console.print(f"[green]✓ API key loaded from {api_key_source}[/green]")
         console.print(f"[dim]  Key preview: {api_key[:15]}...{api_key[-4:]} ({len(api_key)} chars)[/dim]\n")
-        if not api_key:
-            console.print("[red]ERROR: AI API key required.[/red]")
-            console.print("[yellow]✨ Setup your API key ONCE, then use AI commands anytime![/yellow]\n")
-            
-            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
-            console.print("[green bold]📖 ONE-TIME SETUP (Recommended)[/green bold]")
-            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
-            
-            console.print("[white]1. Get a REAL token from GitHub (starts with ghp_):[/white]")
-            console.print("   [cyan]https://github.com/settings/tokens[/cyan]")
-            
-            console.print("\n[white]2. Create .env file with YOUR REAL token:[/white]")
-            console.print('   [cyan]echo "SCORPION_AI_API_KEY=ghp_YOUR_ACTUAL_TOKEN_HERE" >> .env[/cyan]')
-            console.print("   [yellow]⚠️  Replace ghp_YOUR_ACTUAL_TOKEN_HERE with your real token![/yellow]")
-            
-            console.print("\n[white]3. Then use AI commands WITHOUT --api-key:[/white]")
-            console.print("   [cyan]scorpion ai-pentest -t example.com[/cyan]")
-            
-            console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
-            console.print("[green bold]⚡ ALTERNATIVE: Set Environment Variable[/green bold]")
-            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
-            
-            console.print("[white]Linux/Mac/Kali:[/white]")
-            console.print("  [cyan]export SCORPION_AI_API_KEY='ghp_YOUR_ACTUAL_TOKEN_HERE'[/cyan]")
-            console.print("  [yellow]⚠️  Use YOUR real token, not 'ghp_...'[/yellow]")
-            
-            console.print("\n[white]Windows PowerShell:[/white]")
-            console.print("  [cyan]$env:SCORPION_AI_API_KEY='ghp_YOUR_ACTUAL_TOKEN_HERE'[/cyan]")
-            console.print("  [yellow]⚠️  Use YOUR real token, not 'ghp_...'[/yellow]")
-            
-            console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
-            console.print("[green bold]🔑 Get FREE API Key[/green bold]")
-            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
-            
-            console.print("[white]GitHub Models (FREE & Recommended):[/white]")
-            console.print("  1. Visit: [cyan]https://github.com/marketplace/models[/cyan]")
-            console.print("  2. Generate token: [cyan]https://github.com/settings/tokens[/cyan]")
-            console.print("  3. Select scopes: [yellow]codespace, read:user, user:email[/yellow]")
-            
-            console.print("\n[dim]📚 Full guides: API_KEY_SETUP.md | GITHUB_MODELS_SETUP.md | AI_PENTEST_GUIDE.md[/dim]")
-            raise typer.Exit(1)
+    
+    # Check if API key is missing
+    if not api_key:
+        console.print("[red]ERROR: AI API key required.[/red]")
+        console.print("[yellow]✨ Setup your API key ONCE, then use AI commands anytime![/yellow]\n")
+        
+        console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+        console.print("[green bold]📖 ONE-TIME SETUP (Recommended)[/green bold]")
+        console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+        
+        console.print("[white]1. Get a REAL token from GitHub (starts with ghp_):[/white]")
+        console.print("   [cyan]https://github.com/settings/tokens[/cyan]")
+        
+        console.print("\n[white]2. Create .env file with YOUR REAL token:[/white]")
+        console.print('   [cyan]echo "SCORPION_AI_API_KEY=ghp_YOUR_ACTUAL_TOKEN_HERE" >> .env[/cyan]')
+        console.print("   [yellow]⚠️  Replace ghp_YOUR_ACTUAL_TOKEN_HERE with your real token![/yellow]")
+        
+        console.print("\n[white]3. Then use AI commands WITHOUT --api-key:[/white]")
+        console.print("   [cyan]scorpion ai-pentest -t example.com[/cyan]")
+        
+        console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+        console.print("[green bold]⚡ ALTERNATIVE: Set Environment Variable[/green bold]")
+        console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+        
+        console.print("[white]Linux/macOS/Kali:[/white]")
+        console.print("  [cyan]export SCORPION_AI_API_KEY='ghp_YOUR_ACTUAL_TOKEN_HERE'[/cyan]")
+        console.print("  [yellow]⚠️  Use YOUR real token, not 'ghp_...'[/yellow]")
+        
+        console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+        console.print("[green bold]🔑 Get FREE API Key[/green bold]")
+        console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+        
+        console.print("[white]GitHub Models (FREE & Recommended):[/white]")
+        console.print("  1. Visit: [cyan]https://github.com/marketplace/models[/cyan]")
+        console.print("  2. Generate token: [cyan]https://github.com/settings/tokens[/cyan]")
+        console.print("  3. Select scopes: [yellow]codespace, read:user, user:email[/yellow]")
+        
+        console.print("\n[dim]📚 Full guides: API_KEY_SETUP.md | GITHUB_MODELS_SETUP.md | AI_PENTEST_GUIDE.md[/dim]")
+        raise typer.Exit(1)
     
     # Validate API key format - just basic checks, let provider validate
     api_key = api_key.strip()
