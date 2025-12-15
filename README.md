@@ -1,6 +1,6 @@
 # Scorpion CLI Security Tool 🦂
 
-[![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/Prince12sam/Scorpion)
+[![Version](https://img.shields.io/badge/version-2.0.2-blue.svg)](https://github.com/Prince12sam/Scorpion)
 [![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org/)

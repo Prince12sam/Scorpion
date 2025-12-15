@@ -41,15 +41,26 @@ class APISecurityFinding:
 class APISecurityTester:
     """Comprehensive API Security Testing"""
     
-    def __init__(self, base_url: str, timeout: int = 10):
+    def __init__(self, base_url: str, timeout: int = 10, max_connections: int = 100):
         self.base_url = base_url.rstrip('/')
         self.timeout = timeout
+        self.max_connections = max_connections
         self.endpoints: List[APIEndpoint] = []
         self.findings: List[APISecurityFinding] = []
         self.session: Optional[aiohttp.ClientSession] = None
         
     async def __aenter__(self):
-        self.session = aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout))
+        # Configure connection pool with limits for better resource management
+        connector = aiohttp.TCPConnector(
+            limit=self.max_connections,
+            limit_per_host=30,
+            ttl_dns_cache=300,
+            enable_cleanup_closed=True
+        )
+        self.session = aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=self.timeout),
+            connector=connector
+        )
         return self
         
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -81,7 +92,7 @@ class APISecurityTester:
                 async with self.session.get(url, allow_redirects=False) as resp:
                     if resp.status < 400:
                         endpoints.append(APIEndpoint(method='GET', path=path))
-            except:
+            except (aiohttp.ClientError, asyncio.TimeoutError):
                 pass
         
         self.endpoints = endpoints
@@ -111,7 +122,7 @@ class APISecurityTester:
                                     params=params,
                                     auth_required='security' in method_spec
                                 ))
-        except:
+        except (aiohttp.ClientError, json.JSONDecodeError, KeyError):
             pass
         return endpoints
     

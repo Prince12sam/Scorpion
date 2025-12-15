@@ -10,7 +10,7 @@ def _is_admin_windows() -> bool:
     try:
         import ctypes
         return bool(ctypes.windll.shell32.IsUserAnAdmin())
-    except Exception:
+    except (AttributeError, OSError):
         return False
 
 def _is_root_unix() -> bool:

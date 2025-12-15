@@ -1,6 +1,6 @@
 [project]
 name = "python-scorpion"
-version = "0.1.0"
+version = "2.0.2"
 description = "Scorpion security toolkit (Python heavy-weight variant)"
 readme = "README.md"
 authors = [{ name = "Scorpion Team" }]

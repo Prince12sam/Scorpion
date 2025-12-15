@@ -711,6 +711,6 @@ scorpion suite -t your-target.com --profile web --mode passive --output-dir resu
 
 ---
 
-**Version**: 2.0.1  
+**Version**: 2.0.2  
 **Platform**: Parrot OS / Debian / Ubuntu / Kali Linux  
 **Last Updated**: December 15, 2025

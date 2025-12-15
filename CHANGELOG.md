@@ -5,6 +5,49 @@ All notable changes to the Scorpion CLI Security Tool will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.2] - 2025-12-15
+
+### Added ✨
+- **Developer Attribution**: Added "Developed by Prince Sam" to CLI banner
+- **Exponential Backoff**: Implemented retry logic with exponential backoff for AI provider rate limits (429 errors)
+  - 3 retry attempts with 2-second base delay
+  - Exponential backoff: 2s, 4s, 8s
+  - Automatic fallback to safe actions if all retries fail
+- **Scan Type Validation**: Added validation for scan types (tcp, udp, fin, xmas, null, ack) before execution
+- **Path Traversal Protection**: Secured run-intel.js with resolveSafePath to prevent directory traversal attacks
+- **Payload Generator Module**: Added comprehensive payload_generator.py module
+  - Reverse shells: bash, netcat, python, powershell
+  - Bind shells: bash, netcat
+  - Web shells: PHP, ASP, JSP with obfuscation
+  - MSFvenom command generation for meterpreter payloads
+  - Multiple encoding options: base64, hex, URL, PowerShell base64
+- **Import Guards**: Added try/except guards for optional modules to prevent CLI crashes
+
+### Fixed 🐛
+- **ModuleNotFoundError**: Resolved python_scorpion.payload_generator import error on Parrot OS/Linux
+- **AI Provider Rate Limits**: Implemented automatic retry for GitHub Models 429 errors
+- **SyntaxError**: Fixed duplicate else block in cli.py provider auto-detection
+- **Exception Handling**: Improved specificity in scanner.py, ssl_analyzer.py
+  - Replaced bare `except:` and `except Exception:` with specific types
+  - Better error messages for debugging
+- **Path Security**: Fixed potential path traversal in run-intel.js
+
+### Changed 🔄
+- **Error Messages**: More informative AI provider error messages with repair guidance
+- **Fallback Behavior**: AI pentest gracefully falls back to reconnaissance on provider failure
+- **Documentation**: Updated INSTALL_PARROT_OS.md and INSTALL_LINUX.md:
+  - AI token setup and validation procedures
+  - Rate limit mitigation strategies
+  - Comprehensive diagnostics & repair for venv/editable installs
+  - Nested repo path troubleshooting
+
+### Security 🔒
+- **Path Sanitization**: All file operations use secure path resolution (resolveSafePath)
+- **Input Validation**: Enhanced scan type validation prevents parameter injection
+- **Exception Handling**: Specific exception types improve security posture
+
+---
+
 ## [2.0.0] - 2025-12-08
 
 ### 🎉 Major Release - CLI-Only Focus

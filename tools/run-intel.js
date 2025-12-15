@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { ThreatIntel } from '../cli/lib/threat-intel.js';
+import { resolveSafePath, ensureSafeDirectory } from '../cli/lib/path-guard.js';
 
 function parseArgs(argv){
   const args = { indicator: '', type: 'auto', out: 'reports' };
@@ -46,7 +47,9 @@ async function main(){
   let res; const ind=args.indicator; const type=args.type;
   if(type==='ip'||(type==='auto' && ind.match(/^\d+\.\d+\.\d+\.\d+$/))){ res=await ti.checkIP(ind); }
   else { res=await ti.checkDomain(ind); }
-  fs.mkdirSync(args.out,{recursive:true}); const base=path.join(args.out,`intel_${Date.now()}`);
+  // Secure path resolution to prevent traversal
+  const safeOut = ensureSafeDirectory(args.out);
+  const base = resolveSafePath(safeOut, `intel_${Date.now()}`);
   fs.writeFileSync(`${base}.json`, JSON.stringify(res,null,2),'utf8');
   fs.writeFileSync(`${base}.md`, toMarkdown(res),'utf8');
   console.log('✅ Threat intel done:', `${base}.json`);
