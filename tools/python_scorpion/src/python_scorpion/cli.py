@@ -121,6 +121,7 @@ def _banner_callback(
     console.print("[red]║[/red]   [yellow]╚══════╝ ╚═════╝ ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝[/yellow]   [red]║[/red]")
     console.print("[red]║[/red]                                                                      [red]║[/red]")
     console.print("[red]║[/red]         [yellow]Scorpion — Security Testing & Threat-Hunting CLI[/yellow]            [red]║[/red]")
+    console.print("[red]║[/red]                    [cyan]Developed by Prince Sam[/cyan]                         [red]║[/red]")
     console.print("[red]╚══════════════════════════════════════════════════════════════════════╝[/red]\n")
     if img_path:
         console.print(Panel.fit(f"Scorpion Banner Image: {img_path}", title="Scorpion", border_style="green"))
