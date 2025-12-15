@@ -186,7 +186,7 @@ scorpion ai-pentest -t example.com -r low --time-limit 5
 
 ---
 
-**Release Date:** December 15, 2025  
+**Release Date:** December 11, 2025  
 **Developer:** Prince Sam  
 **License:** MIT  
 **Repository:** https://github.com/Prince12sam/Scorpion

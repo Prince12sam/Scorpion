@@ -175,7 +175,7 @@ scorpion --help  # See developer attribution
 ---
 
 **Version:** 2.0.2  
-**Release Date:** December 15, 2025  
+**Release Date:** December 11, 2025  
 **Developer:** Prince Sam  
 **Status:** ✅ Production Ready  
 **Breaking Changes:** None  
