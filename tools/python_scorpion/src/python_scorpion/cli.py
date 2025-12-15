@@ -2684,9 +2684,35 @@ def ai_pentest_command(
         console.print("[yellow]Review the detailed findings and take appropriate remediation actions.[/yellow]\n")
         
     except Exception as e:
-        console.print(f"\n[red]Error during AI penetration test: {e}[/red]")
-        import traceback
-        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        error_msg = str(e)
+        
+        # Handle rate limit errors gracefully (no traceback needed)
+        if "Rate limit exceeded" in error_msg or "429" in error_msg:
+            console.print(f"\n[red bold]⚠️  Rate Limit Exceeded[/red bold]")
+            console.print("[yellow]The AI provider has temporarily rate-limited your requests.[/yellow]\n")
+            
+            console.print("[cyan]Quick Solutions:[/cyan]")
+            console.print("  1. [white]Wait 1-2 minutes and try again[/white]")
+            console.print("  2. [white]Reduce scan intensity: --time-limit 30[/white]")
+            console.print("  3. [white]GitHub Models: 15-60 requests/minute limit[/white]")
+            console.print("  4. [white]Consider OpenAI for higher limits[/white]\n")
+            
+            console.print("[dim]💡 Tip: GitHub Models is FREE but has rate limits.[/dim]")
+            console.print("[dim]   For intensive scans, use OpenAI with --ai-provider openai[/dim]\n")
+            raise typer.Exit(1)
+        
+        # For other errors, show more details
+        console.print(f"\n[red]❌ Error during AI penetration test:[/red]")
+        console.print(f"[yellow]{error_msg}[/yellow]\n")
+        
+        # Only show traceback for unexpected errors
+        if "--debug" in " ".join(sys.argv):
+            import traceback
+            console.print("[dim]Debug traceback:[/dim]")
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        else:
+            console.print("[dim]💡 Run with --debug flag for detailed traceback[/dim]\n")
+        
         raise typer.Exit(1)
 
 
