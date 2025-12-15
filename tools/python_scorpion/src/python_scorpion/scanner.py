@@ -165,19 +165,19 @@ def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str, e
     if evade_fw:
         src_port = _get_random_src_port()
         ttl = _randomize_ttl()
-        ip_layer = IP(dst=host, ttl=ttl, flags=\"MF\")  # More fragments flag for evasion
+        ip_layer = IP(dst=host, ttl=ttl, flags="MF")  # More fragments flag for evasion
     else:
         src_port = 12345  # Default source port
         ip_layer = IP(dst=host)
     
     # Craft packet based on scan type
-    if scan_type == \"fin\":
+    if scan_type == "fin":
         pkt = ip_layer/TCP(sport=src_port, dport=port, flags='F')
-    elif scan_type == \"xmas\":
+    elif scan_type == "xmas":
         pkt = ip_layer/TCP(sport=src_port, dport=port, flags='FPU')
-    elif scan_type == \"null\":
+    elif scan_type == "null":
         pkt = ip_layer/TCP(sport=src_port, dport=port, flags='')
-    elif scan_type == \"ack\":
+    elif scan_type == "ack":
         pkt = ip_layer/TCP(sport=src_port, dport=port, flags='A')
     else:
         return {"port": port, "state": "error", "reason": "invalid_scan_type"}
