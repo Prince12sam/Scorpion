@@ -17,11 +17,7 @@ python3 --version
 
 ### Don't have Python?
 
-**Windows:**
-- Install from [Microsoft Store](https://www.microsoft.com/store/productId/9NRWMJP3717K) (recommended)
-- Or download from [python.org](https://python.org) and check "Add Python to PATH"
-
-**Linux (Ubuntu/Debian):**
+**Linux (Ubuntu/Debian):
 ```bash
 sudo apt update
 sudo apt install -y python3 python3-pip git
@@ -116,11 +112,6 @@ scorpion suite -t example.com --profile web --mode passive --output-dir results
 scorpion suite -t example.com --profile web --mode passive --output-dir results
 
 # Find latest suite file
-# Windows PowerShell:
-$latest = Get-ChildItem "results\suite_example.com_*.json" | Sort-Object LastWriteTime -Descending | Select-Object -First 1
-scorpion report --suite $latest.FullName --summary
-
-# Linux/macOS bash:
 latest=$(ls -t results/suite_example.com_*.json | head -n1)
 scorpion report --suite "$latest" --summary
 ```
@@ -147,11 +138,6 @@ Open `report.html` in your browser to view the professional security report!
 
 ## Platform-Specific Tips
 
-### Windows
-- Use PowerShell or Command Prompt
-- Paths use backslashes: `results\scan.json`
-- For SYN scans: Run PowerShell as Administrator
-
 ### Linux/macOS
 - Use bash/zsh terminal
 - Paths use forward slashes: `results/scan.json`
@@ -170,11 +156,7 @@ python -m pip install -e tools/python_scorpion
 
 If using a virtual environment, make sure it's activated:
 ```bash
-# Linux/macOS
 source .venv/bin/activate
-
-# Windows PowerShell
-& .\.venv\Scripts\Activate.ps1
 ```
 
 ### "Permission denied" on Linux

@@ -48,6 +48,10 @@ from .crawler import crawl as web_crawl
 from .cloud import cloud_audit
 from .k8s import k8s_audit
 from .container_sec import container_audit
+from .api_security import APISecurityTester
+from .db_pentest import DatabasePentester
+from .post_exploit import PostExploitation
+from .ci_integration import CICDIntegration, run_ci_scan
 from .web_owasp import web_owasp_passive
 from .web_pentest import AdvancedWebTester
 from .os_fingerprint import OSFingerprinter
@@ -200,13 +204,27 @@ def scan(
         
         tgt = tgt.strip()
         
-        # Validate hostname/IP format
+        # Parse URL to extract hostname (handle http://, https://, port numbers)
         import socket
+        from urllib.parse import urlparse
+        
+        # Remove protocol prefix if present
+        target_to_validate = tgt
+        if "://" in tgt:
+            parsed = urlparse(tgt)
+            target_to_validate = parsed.hostname or parsed.netloc.split(':')[0]
+        # Remove port number if present (e.g., "192.168.1.1:8080" -> "192.168.1.1")
+        elif ":" in tgt and not tgt.count(":") > 1:  # Not IPv6
+            target_to_validate = tgt.split(":")[0]
+        
+        # Validate hostname/IP format
         try:
             # Try to resolve hostname
-            socket.getaddrinfo(tgt, None)
+            socket.getaddrinfo(target_to_validate, None)
+            # Use cleaned hostname for scanning
+            tgt = target_to_validate
         except socket.gaierror:
-            console.print(f"[red]Error: Cannot resolve hostname '{tgt}'[/red]")
+            console.print(f"[red]Error: Cannot resolve hostname '{target_to_validate}'[/red]")
             console.print("[yellow]Tip: Check spelling or try using IP address directly[/yellow]")
             raise typer.Exit(code=2)
         except Exception as e:
@@ -1964,6 +1982,224 @@ def payload(
         raise typer.Exit(1)
 
 
+@app.command()
+def api_security(
+    target: str = typer.Option(..., "--target", "-t", help="API base URL (e.g., https://api.example.com)"),
+    openapi_spec: Optional[str] = typer.Option(None, "--spec", help="OpenAPI/Swagger spec URL"),
+    jwt_token: Optional[str] = typer.Option(None, "--jwt", help="JWT token to test"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+):
+    """
+    🔐 Comprehensive API Security Testing
+    
+    Tests REST/GraphQL/gRPC APIs for vulnerabilities:
+    - Authentication bypass & default credentials
+    - JWT security (alg:none, weak keys, sensitive data)
+    - IDOR (Insecure Direct Object Reference)
+    - GraphQL introspection & DoS
+    - Rate limiting
+    - Mass assignment
+    """
+    
+    async def run():
+        async with APISecurityTester(target) as tester:
+            try:
+                results = await tester.run_full_assessment(openapi_spec, jwt_token)
+                
+                # Display summary
+                console.print(f"\n[cyan]{'=' * 60}[/cyan]")
+                console.print(f"[bold green]API Security Assessment Complete[/bold green]")
+                console.print(f"[cyan]{'=' * 60}[/cyan]\n")
+                
+                console.print(f"[yellow]Target:[/yellow] {results['target']}")
+                console.print(f"[yellow]Endpoints:[/yellow] {results['endpoints_discovered']}")
+                console.print(f"[yellow]Total Findings:[/yellow] {results['total_findings']}\n")
+                
+                # Severity breakdown
+                severity = results['severity_counts']
+                console.print(f"[red]  Critical:[/red] {severity['critical']}")
+                console.print(f"[red]  High:[/red] {severity['high']}")
+                console.print(f"[yellow]  Medium:[/yellow] {severity['medium']}")
+                console.print(f"[blue]  Low:[/blue] {severity['low']}")
+                console.print(f"[cyan]  Info:[/cyan] {severity['info']}\n")
+                
+                # Display findings
+                if results['findings']:
+                    console.print(f"[bold]Findings:[/bold]\n")
+                    for i, finding in enumerate(results['findings'][:10], 1):
+                        console.print(f"[{i}] [{finding['severity'].upper()}] {finding['description']}")
+                        console.print(f"    Endpoint: {finding['endpoint']}")
+                        console.print(f"    Evidence: {finding['evidence'][:100]}")
+                        console.print(f"    Fix: {finding['remediation'][:100]}\n")
+                
+                # Save to file
+                if output:
+                    with open(output, 'w') as f:
+                        json.dump(results, f, indent=2)
+                    console.print(f"[green]Results saved to: {output}[/green]")
+                
+            except Exception as e:
+                console.print(f"[red]Error: {e}[/red]")
+                raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def db_pentest(
+    target: str = typer.Option(..., "--target", "-t", help="Target URL with parameter (e.g., https://site.com/page?id=1)"),
+    param: str = typer.Option("id", "--param", "-p", help="Parameter name to test"),
+    method: str = typer.Option("GET", "--method", "-m", help="HTTP method (GET/POST)"),
+    db_type: Optional[str] = typer.Option(None, "--db-type", help="Database type (mysql, postgresql, mssql, oracle, mongodb)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+):
+    """
+    🗃️  Database Penetration Testing
+    
+    Tests for SQL/NoSQL injection vulnerabilities:
+    - Error-based SQL injection
+    - Boolean-based blind SQL injection  
+    - Time-based blind SQL injection
+    - UNION-based SQL injection
+    - NoSQL injection (MongoDB, etc.)
+    - Database fingerprinting
+    - Privilege escalation checks
+    """
+    
+    async def run():
+        tester = DatabasePentester(target)
+        
+        try:
+            results = await tester.run_full_assessment(param, method.upper())
+            
+            # Save to file
+            if output:
+                with open(output, 'w') as f:
+                    json.dump(results, f, indent=2)
+                console.print(f"\n[green]Results saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def post_exploit(
+    os_type: Optional[str] = typer.Option(None, "--os", help="Operating system (linux, darwin)"),
+    execute: bool = typer.Option(False, "--execute", "-e", help="Execute enumeration commands (USE WITH CAUTION!)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
+):
+    """
+    🔓 Post-Exploitation Enumeration
+    
+    ⚠️  WARNING: Only use on systems you own or have authorization to test!
+    
+    Provides enumeration commands for:
+    - Privilege escalation vectors (SUID, sudo, kernel exploits)
+    - Credential harvesting (files, history, SSH keys)
+    - Persistence mechanisms (cron, SSH keys)
+    - Lateral movement (network scanning, pivoting)
+    
+    Linux/macOS checks: SUID binaries, sudo, writable /etc/passwd, kernel exploits
+    """
+    
+    async def run():
+        post_ex = PostExploitation(os_type)
+        
+        try:
+            console.print("[red]⚠️  WARNING: Only use on authorized systems![/red]\n")
+            
+            results = await post_ex.run_full_enumeration(execute_commands=execute)
+            
+            # Display summary
+            console.print(f"\n[cyan]{'=' * 60}[/cyan]")
+            console.print(f"[bold green]Post-Exploitation Enumeration Complete[/bold green]")
+            console.print(f"[cyan]{'=' * 60}[/cyan]\n")
+            
+            console.print(f"[yellow]Privilege Escalation Checks:[/yellow] {len(results['privilege_escalation'])}")
+            console.print(f"[yellow]Persistence Techniques:[/yellow] {len(results['persistence'])}")
+            console.print(f"[yellow]Lateral Movement Techniques:[/yellow] {len(results['lateral_movement'])}\n")
+            
+            # Show sample commands
+            if results['privilege_escalation']:
+                console.print(f"[bold]Sample Privilege Escalation Commands:[/bold]")
+                for check in results['privilege_escalation'][:3]:
+                    console.print(f"\n[green]{check['description']}[/green]")
+                    for cmd in check['commands'][:2]:
+                        console.print(f"  $ {cmd}")
+            
+            # Save to file
+            if output:
+                with open(output, 'w') as f:
+                    json.dump(results, f, indent=2)
+                console.print(f"\n[green]Results saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def ci_scan(
+    input_file: str = typer.Option(..., "--input", "-i", help="Input JSON file from previous scan"),
+    fail_on_critical: bool = typer.Option(True, "--fail-on-critical", help="Fail build on critical findings"),
+    fail_on_high: bool = typer.Option(False, "--fail-on-high", help="Fail build on high severity findings"),
+    max_medium: int = typer.Option(10, "--max-medium", help="Maximum allowed medium severity findings"),
+    sarif_output: Optional[str] = typer.Option(None, "--sarif-output", help="Generate SARIF report for GitHub Security"),
+    junit_output: Optional[str] = typer.Option(None, "--junit-output", help="Generate JUnit XML for test reporting"),
+    generate_workflow: Optional[str] = typer.Option(None, "--generate-workflow", help="Generate CI config (github, gitlab, jenkins)"),
+):
+    """
+    🔄 CI/CD Integration & Security Gates
+    
+    Integrates Scorpion scans into CI/CD pipelines:
+    - SARIF output for GitHub Security tab
+    - JUnit XML for test reporting
+    - Configurable failure thresholds
+    - Workflow generation (GitHub Actions, GitLab CI, Jenkins)
+    
+    Examples:
+      # Check thresholds and fail build if needed
+      scorpion ci-scan --input api-results.json --fail-on-critical --fail-on-high
+      
+      # Generate SARIF for GitHub
+      scorpion ci-scan --input api-results.json --sarif-output scorpion.sarif
+      
+      # Generate GitHub Actions workflow
+      scorpion ci-scan --generate-workflow github > .github/workflows/security.yml
+    """
+    
+    if generate_workflow:
+        ci = CICDIntegration()
+        if generate_workflow == 'github':
+            print(ci.generate_github_actions_workflow())
+        elif generate_workflow == 'gitlab':
+            print(ci.generate_gitlab_ci_config())
+        elif generate_workflow == 'jenkins':
+            print(ci.generate_jenkins_pipeline())
+        else:
+            console.print(f"[red]Unknown CI platform: {generate_workflow}[/red]")
+            console.print("[yellow]Supported: github, gitlab, jenkins[/yellow]")
+            raise typer.Exit(1)
+        return
+    
+    # Run CI scan
+    exit_code = asyncio.run(run_ci_scan(
+        input_file,
+        fail_on_critical,
+        fail_on_high,
+        max_medium,
+        sarif_output,
+        junit_output
+    ))
+    
+    raise typer.Exit(exit_code)
+
+
 @app.command("ai-pentest")
 def ai_pentest_command(
     # Target Configuration
@@ -2024,6 +2260,11 @@ def ai_pentest_command(
     
     # Advanced Options
     learning_mode: bool = typer.Option(False, "--learning-mode", help="Enable AI learning mode (experimental)"),
+    custom_instructions: Optional[str] = typer.Option(
+        None,
+        "--instructions", "-i",
+        help="Custom instructions/prompt to guide AI behavior (e.g., 'Focus on API endpoints', 'Test for IDOR vulnerabilities')"
+    ),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file for detailed results"),
 ):
     """
@@ -2082,6 +2323,15 @@ def ai_pentest_command(
       # High-risk exploitation mode (requires written authorization!)
       scorpion ai-pentest -t example.com --api-key sk-... -r high -a fully_autonomous \\
         -g gain_shell_access --time-limit 60
+      
+      # Custom instructions to guide AI behavior
+      scorpion ai-pentest -t example.com -i "Focus on API endpoints and test for IDOR vulnerabilities"
+      
+      # Multiple custom guidance examples
+      scorpion ai-pentest -t example.com -i "Test GraphQL endpoints for injection attacks"
+      scorpion ai-pentest -t example.com -i "Prioritize authentication bypass and JWT vulnerabilities"
+      scorpion ai-pentest -t example.com -i "Look for SSRF in file upload features and image processing"
+      scorpion ai-pentest -t example.com -i "Focus on subdomain enumeration and takeover vulnerabilities"
     
     \b
     🔑 API Key Setup:
@@ -2124,9 +2374,12 @@ def ai_pentest_command(
     console.print("[red]═══════════════════════════════════════════════════════════════[/red]\n")
     
     # Get API key from env if not provided (auto-discover across common vars)
+    api_key_source = None
     if not api_key:
         # Preferred env var
         api_key = os.getenv("SCORPION_AI_API_KEY")
+        if api_key:
+            api_key_source = "SCORPION_AI_API_KEY"
         # Fallbacks: pick the first available
         if not api_key:
             env_candidates = [
@@ -2138,34 +2391,66 @@ def ai_pentest_command(
             for name, value in env_candidates:
                 if value:
                     api_key = value
+                    api_key_source = name
                     console.print(f"[cyan]✓ Found API key in {name}[/cyan]")
                     break
+    else:
+        api_key_source = "--api-key flag"
+    
+    # Show success message if API key was found from environment
+    if api_key and api_key_source and api_key_source != "--api-key flag":
+        console.print(f"[green]✓ API key loaded from {api_key_source}[/green]")
+        console.print(f"[dim]  Key preview: {api_key[:15]}...{api_key[-4:]} ({len(api_key)} chars)[/dim]\n")
         if not api_key:
             console.print("[red]ERROR: AI API key required.[/red]")
-            console.print("[yellow]Provide via --api-key flag or set SCORPION_AI_API_KEY environment variable.[/yellow]")
-            console.print("\n[cyan]Examples:[/cyan]")
-            console.print("  # Linux/Mac:")
-            console.print("  export SCORPION_AI_API_KEY='ghp_...'  # GitHub Models (FREE)")
-            console.print("\n  # Windows PowerShell:")
-            console.print("  $env:SCORPION_AI_API_KEY='ghp_...'")
-            console.print("\n  # Or use flag:")
-            console.print("  scorpion ai-pentest -t example.com --api-key ghp-...")
-            console.print("\n[green]Get FREE GitHub Models token:[/green] https://github.com/marketplace/models")
+            console.print("[yellow]✨ Setup your API key ONCE, then use AI commands anytime![/yellow]\n")
+            
+            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+            console.print("[green bold]📖 ONE-TIME SETUP (Recommended)[/green bold]")
+            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+            
+            console.print("[white]1. Get a REAL token from GitHub (starts with ghp_):[/white]")
+            console.print("   [cyan]https://github.com/settings/tokens[/cyan]")
+            
+            console.print("\n[white]2. Create .env file with YOUR REAL token:[/white]")
+            console.print('   [cyan]echo "SCORPION_AI_API_KEY=ghp_YOUR_ACTUAL_TOKEN_HERE" >> .env[/cyan]')
+            console.print("   [yellow]⚠️  Replace ghp_YOUR_ACTUAL_TOKEN_HERE with your real token![/yellow]")
+            
+            console.print("\n[white]3. Then use AI commands WITHOUT --api-key:[/white]")
+            console.print("   [cyan]scorpion ai-pentest -t example.com[/cyan]")
+            
+            console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+            console.print("[green bold]⚡ ALTERNATIVE: Set Environment Variable[/green bold]")
+            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+            
+            console.print("[white]Linux/Mac/Kali:[/white]")
+            console.print("  [cyan]export SCORPION_AI_API_KEY='ghp_YOUR_ACTUAL_TOKEN_HERE'[/cyan]")
+            console.print("  [yellow]⚠️  Use YOUR real token, not 'ghp_...'[/yellow]")
+            
+            console.print("\n[white]Windows PowerShell:[/white]")
+            console.print("  [cyan]$env:SCORPION_AI_API_KEY='ghp_YOUR_ACTUAL_TOKEN_HERE'[/cyan]")
+            console.print("  [yellow]⚠️  Use YOUR real token, not 'ghp_...'[/yellow]")
+            
+            console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
+            console.print("[green bold]🔑 Get FREE API Key[/green bold]")
+            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
+            
+            console.print("[white]GitHub Models (FREE & Recommended):[/white]")
+            console.print("  1. Visit: [cyan]https://github.com/marketplace/models[/cyan]")
+            console.print("  2. Generate token: [cyan]https://github.com/settings/tokens[/cyan]")
+            console.print("  3. Select scopes: [yellow]codespace, read:user, user:email[/yellow]")
+            
+            console.print("\n[dim]📚 Full guides: API_KEY_SETUP.md | GITHUB_MODELS_SETUP.md | AI_PENTEST_GUIDE.md[/dim]")
             raise typer.Exit(1)
     
-    # Validate API key format
+    # Validate API key format - just basic checks, let provider validate
     api_key = api_key.strip()
-    if len(api_key) < 10:
-        console.print(f"[red]ERROR: API key appears too short ({len(api_key)} characters)[/red]")
-        console.print("[yellow]Expected format:[/yellow]")
-        console.print("  GitHub Models: ghp_xxxxxxxxxxxxxxxxxxxx (40+ chars)")
-        console.print("  OpenAI: sk-proj-xxxxxxxxxxxxxxxx (50+ chars)")
-        console.print("  Anthropic: sk-ant-xxxxxxxxxxxxxxxx (40+ chars)")
-        raise typer.Exit(1)
     
     # Auto-detect AI provider from API key format if not specified
     if ai_provider == "openai":  # Default value; will be overridden by detection
-        if api_key.startswith("ghp_") or api_key.startswith("github_pat_"):
+        # GitHub tokens: ghp_ (classic), gho_ (OAuth), ghu_ (user-to-server), 
+        # ghs_ (server-to-server), ghr_ (refresh), github_pat_ (fine-grained)
+        if api_key.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_")):
             ai_provider = "github"
             if model == "gpt-4":  # Still default
                 model = "gpt-4o-mini"  # Better default for GitHub
@@ -2258,18 +2543,26 @@ def ai_pentest_command(
         api_endpoint=api_endpoint,
         model=model,
         learning_mode=learning_mode,
-        max_iterations=max_iterations
+        max_iterations=max_iterations,
+        custom_instructions=custom_instructions
     )
     
     # Display configuration
-    console.print(Panel.fit(
+    config_text = (
         f"[cyan]Target:[/cyan] {target}\n"
         f"[cyan]Primary Goal:[/cyan] {primary_goal}\n"
         f"[cyan]AI Provider:[/cyan] {ai_provider} ({model})\n"
         f"[cyan]Stealth Level:[/cyan] {stealth_level}\n"
         f"[cyan]Risk Tolerance:[/cyan] {risk_tolerance}\n"
         f"[cyan]Autonomy:[/cyan] {autonomy}\n"
-        f"[cyan]Time Limit:[/cyan] {time_limit} minutes",
+        f"[cyan]Time Limit:[/cyan] {time_limit} minutes"
+    )
+    
+    if custom_instructions:
+        config_text += f"\n[yellow]Custom Instructions:[/yellow] {custom_instructions[:100]}{'...' if len(custom_instructions) > 100 else ''}"
+    
+    console.print(Panel.fit(
+        config_text,
         title="🤖 AI Penetration Test Configuration",
         border_style="green"
     ))

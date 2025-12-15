@@ -18,7 +18,7 @@ Complete project overview, features, and architecture.
 
 | Platform | Guide | Description |
 |----------|-------|-------------|
-| **Windows** | [INSTALL.md](INSTALL.md) | PowerShell installation with pip/pipx |
+| **Linux/macOS** | [INSTALL.md](INSTALL.md) | Installation with pip in virtual environment |
 | **Linux** | [INSTALL_LINUX.md](INSTALL_LINUX.md) | Ubuntu, Debian, Fedora, Arch, Kali |
 | **Parrot OS** | [INSTALL_PARROT_OS.md](INSTALL_PARROT_OS.md) | Security-optimized distribution setup |
 
@@ -53,13 +53,20 @@ Complete project overview, features, and architecture.
 
 | Guide | Description |
 |-------|-------------|
+| **[AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)** ⭐ | Complete AI pentest guide with quick start |
+| **[GITHUB_MODELS_SETUP.md](GITHUB_MODELS_SETUP.md)** | Get FREE API key (2 minutes) |
+| **[API_KEY_SETUP.md](API_KEY_SETUP.md)** | Detailed API key configuration |
 | **[AI_AGENT_ENHANCED_GUIDE.md](AI_AGENT_ENHANCED_GUIDE.md)** | Complete AI agent usage - OCP professional level |
 | **[AI_OCP_IMPLEMENTATION.md](AI_OCP_IMPLEMENTATION.md)** | Implementation details and methodology |
-| **[AI_COMMAND_EXECUTION.md](AI_COMMAND_EXECUTION.md)** | Direct command execution (Windows/Linux/macOS) |
+| **[AI_COMMAND_EXECUTION.md](AI_COMMAND_EXECUTION.md)** | Direct command execution (Linux/macOS) |
 
 **Quick Start**:
 ```bash
-scorpion ai-pentest -t target.com --primary-goal web_exploitation --risk-tolerance high
+# 1. Setup once: Create .env file or set environment variable
+echo "SCORPION_AI_API_KEY=ghp_your_token" >> .env
+
+# 2. Use anytime (no --api-key flag needed!):
+scorpion ai-pentest -t target.com
 ```
 ---
 
@@ -80,12 +87,13 @@ scorpion ai-pentest -t target.com --primary-goal web_exploitation --risk-toleran
 
 **I want to...**
 - ⚡ **Get started fast** → [GETTING_STARTED.md](GETTING_STARTED.md)
+- 🤖 **Setup AI pentest** → [API_KEY_SETUP.md](API_KEY_SETUP.md) or [GITHUB_MODELS_SETUP.md](GITHUB_MODELS_SETUP.md)
 - 📖 **Learn all commands** → [COMMANDS.md](COMMANDS.md)
 - 🐧 **Install on Linux** → [INSTALL_LINUX.md](INSTALL_LINUX.md)
 - 🌐 **Test web apps** → [WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md)
 - 🕵️ **Stealth scanning** → [DECOY_SCANNING_GUIDE.md](DECOY_SCANNING_GUIDE.md)
 - 💣 **Generate payloads** → [PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)
-- 🤖 **Use AI agent** → [AI_AGENT_ENHANCED_GUIDE.md](AI_AGENT_ENHANCED_GUIDE.md)
+- 🤖 **Use AI agent** → [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)
 - 🔧 **Advanced features** → [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
 
 ---

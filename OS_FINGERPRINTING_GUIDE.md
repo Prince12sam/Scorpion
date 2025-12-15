@@ -8,7 +8,7 @@ Scorpion's OS fingerprinting module provides nmap-level operating system detecti
 
 - **TCP/IP Stack Analysis**: Real packet inspection (NO dummy data)
 - **Multiple Detection Techniques**: TCP SYN, ICMP echo, multi-port analysis
-- **OS Signatures**: Windows, Linux, macOS, BSD, network devices
+- **OS Signatures**: Linux, macOS, BSD, network devices
 - **Confidence Scoring**: 0-100% confidence with consensus algorithm
 - **Professional Output**: Family classification, hop estimation, detailed fingerprints
 

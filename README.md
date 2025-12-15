@@ -1,7 +1,7 @@
 # Scorpion CLI Security Tool 🦂
 
 [![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)](https://github.com/Prince12sam/Scorpion)
-[![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
+[![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20macOS-lightgrey.svg)](https://github.com/Prince12sam/Scorpion)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://python.org/)
 
@@ -36,23 +36,15 @@ cd Scorpion
 
 **Optional - Automated Setup:**
 ```bash
-# Linux/Mac - runs installation + API setup
+# Linux/macOS - runs installation + API setup
 ./setup-first-time.sh
-
-# Windows - runs installation + API setup
-.\setup-first-time.ps1
 ```
 
 Or manually:
 
 ### 2️⃣ Install Scorpion CLI
 
-**Windows/macOS:**
-```bash
-python -m pip install -e tools/python_scorpion
-```
-
-**Linux (with virtual environment - recommended):**
+**Linux/macOS (with virtual environment - recommended):**
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
@@ -71,11 +63,10 @@ scorpion --help
 
 ```bash
 # Copy example configuration
-cp .env.example .env  # Linux/Mac
-copy .env.example .env  # Windows
+cp .env.example .env
 
 # Edit and add your API keys
-nano .env  # or use any text editor
+nano .env  # or use any text editor (vim, vi, etc.)
 ```
 
 **Add your OpenAI API key** to `.env`:
@@ -157,16 +148,25 @@ scorpion ai-pentest -t target.com -g gain_shell_access -r high -a fully_autonomo
 
 ### 🎯 Core Security Testing
 - **Port Scanning:** Fast async TCP/UDP scanning with service detection + **OS fingerprinting**
-- **Decoy Scanning:** IDS/IPS evasion through IP spoofing (random, subnet, manual decoys) ⭐ **NEW!**
-- **Payload Generation:** Reverse shells, bind shells, web shells for exploitation ⭐ **NEW!**
+- **Decoy Scanning:** IDS/IPS evasion through IP spoofing (random, subnet, manual decoys)
+- **Payload Generation:** Reverse shells, bind shells, web shells for exploitation
 - **SSL/TLS Analysis:** Certificate validation, cipher suites, protocol versions
+- **Subdomain Enumeration:** DNS brute-forcing + Certificate Transparency logs (100+ common subdomains)
 - **Subdomain Takeover:** Detection across 15+ cloud providers
 - **API Security:** Swagger/GraphQL testing, IDOR detection, rate limit checks
 - **Web Crawling:** Same-host crawler with secrets detection
 - **Directory Discovery:** Built-in wordlists with wildcard filtering
 
+### 🔥 Advanced Pentesting (NEW!)
+- **API Security Testing:** REST/GraphQL/JWT comprehensive testing - authentication bypass, IDOR, mass assignment, GraphQL DoS ⭐
+- **Database Pentesting:** SQL/NoSQL injection (error-based, blind, time-based, UNION), database fingerprinting ⭐
+- **Post-Exploitation:** Linux/Windows privilege escalation checks, credential harvesting, persistence techniques ⭐
+- **CI/CD Integration:** SARIF output, JUnit XML, GitHub Actions/GitLab CI/Jenkins workflow generation ⭐
+- **Custom AI Instructions:** Guide AI pentesting with custom prompts (`-i` flag) for targeted testing ⭐
+
 ### 🔍 Reconnaissance
 - **DNS Enumeration:** A, AAAA, MX, TXT, NS records
+- **Subdomain Discovery:** Brute-force + CT logs with HTTP checks
 - **Technology Detection:** Framework, CDN, WAF identification
 - **WHOIS Lookup:** Domain registration details
 - **HTTP Analysis:** Headers, status codes, server fingerprinting
@@ -349,26 +349,30 @@ scorpion scan example.com --infra --os-detect
 ### Network Reconnaissance
 
 ```bash
-# DNS enumeration only
-scorpion recon -t example.com --dns
+# Basic reconnaissance (DNS, HTTP headers, WHOIS)
+scorpion recon-cmd -t example.com
 
-# WHOIS lookup
-scorpion recon -t example.com --whois
-
-# Subdomain discovery
-scorpion recon -t example.com --subdomain
-
-# Port scanning during recon
-scorpion recon -t example.com --ports
-
-# Full reconnaissance (all options)
-scorpion recon -t example.com --dns --whois --subdomain --ports
-
-# Network information gathering
-scorpion recon -t 192.168.1.1 --dns --ports
+# Save results to JSON
+scorpion recon-cmd -t example.com -o results/recon.json
 ```
 
-### Subdomain Takeover Detection ⭐ NEW
+### Subdomain Enumeration ⭐
+
+```bash
+# Enumerate subdomains (DNS brute-force + CT logs)
+scorpion subdomain example.com
+
+# Custom wordlist with HTTP checks
+scorpion subdomain example.com -w subdomains.txt --http
+
+# Fast scan (no CT logs, high concurrency)
+scorpion subdomain example.com --no-ct-logs -c 100
+
+# Save results
+scorpion subdomain example.com -o results/subdomains.json
+```
+
+### Subdomain Takeover Detection ⭐
 
 ```bash
 # Scan for subdomain takeover vulnerabilities

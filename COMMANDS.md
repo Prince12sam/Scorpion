@@ -11,6 +11,7 @@ Complete reference for all Scorpion CLI commands and options.
 | `scan` | TCP/UDP port scanning | `scorpion scan -t example.com --web` |
 | `ssl-analyze` | SSL/TLS analysis | `scorpion ssl-analyze -t example.com` |
 | `recon-cmd` | Reconnaissance | `scorpion recon-cmd -t example.com` |
+| `subdomain` | Subdomain enumeration | `scorpion subdomain example.com` |
 | `takeover` | Subdomain takeover check | `scorpion takeover example.com` |
 | `api-test` | API security testing | `scorpion api-test example.com` |
 | `dirbust` | Directory discovery | `scorpion dirbust example.com` |
@@ -21,6 +22,11 @@ Complete reference for all Scorpion CLI commands and options.
 | `container` | Container registry audit | `scorpion container registry.host` |
 | `suite` | Combined security suite | `scorpion suite -t example.com --profile web` |
 | `report` | Generate HTML report | `scorpion report --suite results.json` |
+| **`api-security`** ⭐ | **Advanced API testing** | `scorpion api-security -t https://api.example.com` |
+| **`db-pentest`** ⭐ | **Database penetration testing** | `scorpion db-pentest -t https://site.com/page?id=1` |
+| **`post-exploit`** ⭐ | **Post-exploitation enum** | `scorpion post-exploit --os linux` |
+| **`ci-scan`** ⭐ | **CI/CD integration** | `scorpion ci-scan --input results.json --sarif-output` |
+| **`ai-pentest`** 🤖 | **AI-powered pentesting** | `scorpion ai-pentest -t example.com -i "Focus on APIs"` |
 
 ---
 
@@ -125,6 +131,74 @@ scorpion recon-cmd -t <target> [options]
 ### Example
 ```bash
 scorpion recon-cmd -t example.com --output results/recon.json
+```
+
+---
+
+## 🔍 subdomain - Subdomain Enumeration
+
+```bash
+scorpion subdomain <domain> [options]
+```
+
+Enumerate subdomains using DNS brute-forcing and Certificate Transparency logs.
+
+### Options
+| Flag | Description | Default |
+|------|-------------|---------|
+| `-w, --wordlist` | Custom wordlist file | Built-in (100 common) |
+| `--ct-logs/--no-ct-logs` | Query CT logs | Enabled |
+| `--http` | Check HTTP accessibility | Disabled |
+| `-c, --concurrency` | Concurrent DNS queries | 50 |
+| `-t, --timeout` | DNS query timeout (seconds) | 2.0 |
+| `-o, --output` | Save JSON results | None |
+
+### Techniques
+- **DNS Brute-forcing**: Tests common subdomain names
+- **Certificate Transparency**: Queries crt.sh for subdomains
+- **HTTP Checks**: Verifies web accessibility (optional)
+- **CNAME Resolution**: Identifies redirect chains
+
+### Examples
+```bash
+# Basic enumeration (DNS + CT logs)
+scorpion subdomain example.com
+
+# Custom wordlist with HTTP checks
+scorpion subdomain example.com -w subdomains.txt --http
+
+# Fast scan (no CT logs, high concurrency)
+scorpion subdomain example.com --no-ct-logs -c 100
+
+# Save results to JSON
+scorpion subdomain example.com -o results/subdomains.json
+```
+
+### Output Format
+```json
+{
+  "domain": "example.com",
+  "subdomains": [
+    {
+      "subdomain": "www.example.com",
+      "ips": ["93.184.216.34"],
+      "cname": "example.edgekey.net",
+      "http": {
+        "https": {
+          "accessible": true,
+          "status_code": 200,
+          "title": "Example Domain"
+        }
+      }
+    }
+  ],
+  "statistics": {
+    "total_found": 5,
+    "from_bruteforce": 3,
+    "from_ct_logs": 2,
+    "wordlist_size": 100
+  }
+}
 ```
 
 ---
@@ -695,6 +769,236 @@ scorpion help-advanced
 # Version
 scorpion --version
 ```
+
+---
+
+## 🔐 api-security - Advanced API Security Testing
+
+```bash
+scorpion api-security -t <api_url> [options]
+```
+
+Comprehensive REST/GraphQL/gRPC API penetration testing.
+
+### Tests Performed
+- Authentication bypass & default credentials
+- JWT security (alg:none, weak keys, sensitive data exposure)
+- IDOR (Insecure Direct Object Reference)
+- GraphQL introspection & DoS attacks
+- Rate limiting checks
+- Mass assignment vulnerabilities
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `-t, --target` | API base URL (required) | `-t https://api.example.com` |
+| `--spec` | OpenAPI/Swagger spec URL | `--spec https://api.example.com/openapi.json` |
+| `--jwt` | JWT token to test | `--jwt eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `-o, --output` | Save results to JSON | `-o api-results.json` |
+
+### Examples
+```bash
+# Basic API security scan
+scorpion api-security -t https://api.example.com
+
+# With OpenAPI spec
+scorpion api-security -t https://api.example.com --spec https://api.example.com/swagger.json
+
+# Test JWT security
+scorpion api-security -t https://api.example.com --jwt YOUR_JWT_TOKEN --output api-test.json
+```
+
+---
+
+## 🗃️ db-pentest - Database Penetration Testing
+
+```bash
+scorpion db-pentest -t <url> [options]
+```
+
+SQL/NoSQL injection testing and database fingerprinting.
+
+### Tests Performed
+- Error-based SQL injection
+- Boolean-based blind SQL injection
+- Time-based blind SQL injection
+- UNION-based SQL injection
+- NoSQL injection (MongoDB, etc.)
+- Database fingerprinting (MySQL, PostgreSQL, MSSQL, Oracle)
+- Privilege escalation checks
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `-t, --target` | Target URL with parameter | `-t https://site.com/page?id=1` |
+| `-p, --param` | Parameter name to test | `-p id` |
+| `-m, --method` | HTTP method (GET/POST) | `-m POST` |
+| `--db-type` | Database type hint | `--db-type mysql` |
+| `-o, --output` | Save results to JSON | `-o db-results.json` |
+
+### Examples
+```bash
+# Test GET parameter for SQLi
+scorpion db-pentest -t "https://example.com/product?id=1" --param id
+
+# Test POST form for SQLi
+scorpion db-pentest -t "https://example.com/login" --method POST --output sqli-test.json
+
+# Test with known database type
+scorpion db-pentest -t "https://example.com/api/user?id=1" --db-type postgresql
+```
+
+---
+
+## 🔓 post-exploit - Post-Exploitation Enumeration
+
+```bash
+scorpion post-exploit [options]
+```
+
+⚠️ **WARNING:** Only use on authorized systems!
+
+Provides enumeration commands and techniques for:
+- Privilege escalation (SUID, sudo, kernel exploits, service permissions)
+- Credential harvesting (files, history, SSH keys, stored passwords)
+- Persistence mechanisms (cron jobs, registry keys, startup items)
+- Lateral movement (network scanning, pivoting, Pass-the-Hash)
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `--os` | Operating system | `--os linux` or `--os darwin` |
+| `-e, --execute` | Execute commands (CAUTION!) | `-e` |
+| `-o, --output` | Save results to JSON | `-o post-exploit.json` |
+
+### Examples
+````bash
+# Linux privilege escalation checks
+scorpion post-exploit --os linux
+
+# macOS privilege escalation checks with command execution
+scorpion post-exploit --os darwin --execute --output macos-privesc.json
+
+# Auto-detect OS and show techniques
+scorpion post-exploit
+```
+
+### What You Get
+**Linux/macOS:**
+- SUID/SGID binary checks
+- Sudo privileges enumeration
+- Writable /etc/passwd detection
+- Kernel exploit suggestions (DirtyCOW, PwnKit, Dirty Pipe)
+- Cron job analysis
+- Credential file searches
+- Docker escape techniques
+- SSH key harvesting
+- PATH hijacking vectors
+
+---
+
+## 🔄 ci-scan - CI/CD Integration
+
+```bash
+scorpion ci-scan --input <results.json> [options]
+```
+
+Integrate Scorpion into CI/CD pipelines with security gates.
+
+### Features
+- SARIF output for GitHub Security tab
+- JUnit XML for test reporting
+- Configurable failure thresholds
+- Workflow generation (GitHub Actions, GitLab CI, Jenkins)
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `-i, --input` | Input JSON from previous scan | `--input api-results.json` |
+| `--fail-on-critical` | Fail build on critical findings | `--fail-on-critical` |
+| `--fail-on-high` | Fail build on high severity | `--fail-on-high` |
+| `--max-medium` | Max allowed medium findings | `--max-medium 5` |
+| `--sarif-output` | Generate SARIF report | `--sarif-output scorpion.sarif` |
+| `--junit-output` | Generate JUnit XML | `--junit-output scorpion-junit.xml` |
+| `--generate-workflow` | Generate CI config | `--generate-workflow github` |
+
+### Examples
+```bash
+# Check thresholds and fail build if needed
+scorpion ci-scan --input api-results.json --fail-on-critical --fail-on-high
+
+# Generate SARIF for GitHub Security
+scorpion ci-scan --input api-results.json --sarif-output scorpion.sarif
+
+# Generate JUnit XML for CI test reporting
+scorpion ci-scan --input api-results.json --junit-output scorpion-junit.xml
+
+# Generate GitHub Actions workflow
+scorpion ci-scan --generate-workflow github > .github/workflows/security.yml
+
+# Generate GitLab CI config
+scorpion ci-scan --generate-workflow gitlab > .gitlab-ci.yml
+
+# Generate Jenkins pipeline
+scorpion ci-scan --generate-workflow jenkins > Jenkinsfile
+```
+
+### CI/CD Integration Example (GitHub Actions)
+```yaml
+- name: Run API Security Scan
+  run: scorpion api-security --target ${{ secrets.API_URL }} --output api-results.json
+
+- name: Check Security Thresholds
+  run: scorpion ci-scan --input api-results.json --fail-on-critical --fail-on-high
+
+- name: Upload SARIF to GitHub Security
+  uses: github/codeql-action/upload-sarif@v3
+  with:
+    sarif_file: scorpion.sarif
+```
+
+---
+
+## 🤖 ai-pentest - AI-Powered Pentesting (Enhanced)
+
+```bash
+scorpion ai-pentest -t <target> [options]
+```
+
+AI-driven autonomous penetration testing with custom instructions support.
+
+### Key Enhancement: Custom Instructions (-i flag)
+Guide the AI's testing strategy with custom prompts:
+
+```bash
+# Focus on specific vulnerability types
+scorpion ai-pentest -t example.com -i "Focus on API endpoints and test for IDOR vulnerabilities"
+
+# Test specific technologies
+scorpion ai-pentest -t example.com -i "Prioritize GraphQL testing, check for introspection"
+
+# Authentication-focused testing
+scorpion ai-pentest -t example.com -i "Prioritize authentication bypass and JWT vulnerabilities"
+
+# Test for specific attacks
+scorpion ai-pentest -t example.com -i "Look for SSRF in file upload features"
+
+# Stealth testing
+scorpion ai-pentest -t example.com -i "Use slow, stealthy techniques to avoid detection"
+```
+
+### All Options
+See [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md) for complete documentation.
+
+**Note:** The `-i` flag is new and requires reloading your Python environment after installation:
+```bash
+deactivate
+source .venv/bin/activate  # Linux/Mac
+# or
+.venv\Scripts\activate  # Windows
+```
+
+---
 
 ## ⚠️ Legal & Ethical Use
 

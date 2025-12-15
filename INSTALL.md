@@ -1,6 +1,6 @@
 # Scorpion CLI - Installation Guide 🦂
 
-Complete guide to install Scorpion CLI on Windows, Linux, and macOS.
+Complete guide to install Scorpion CLI on Linux and macOS.
 
 ---
 
@@ -19,7 +19,6 @@ git --version
 ```
 
 **Don't have Python?**
-- **Windows:** Install Python from [Microsoft Store](https://www.microsoft.com/store/productId/9NRWMJP3717K) or [python.org](https://python.org) (check "Add Python to PATH")
 - **Linux:** `sudo apt install python3 python3-pip` (Ubuntu/Debian) or `sudo dnf install python3 python3-pip` (Fedora/RHEL)
 - **macOS:** `brew install python@3.11` or download from [python.org](https://python.org)
 
@@ -35,22 +34,9 @@ cd Scorpion
 
 ### Step 2: Install Scorpion CLI
 
-**Option A: Direct Install (Windows/macOS)**
-```bash
-python -m pip install -e tools/python_scorpion
-```
-
-**Option B: Virtual Environment (Linux - Required for modern distros)**
+**Virtual Environment (Recommended for all platforms)**
 
 > **Note:** Modern Linux distributions (Ubuntu 23.04+, Kali, Parrot OS) implement PEP 668 and require virtual environments.
-
-**Windows PowerShell:**
-```powershell
-# From repo root
-python -m venv .venv
-& .\.venv\Scripts\Activate.ps1
-python -m pip install -e tools\python_scorpion
-```
 
 **Linux/macOS:**
 ```bash
@@ -87,11 +73,6 @@ scorpion recon-cmd -t example.com
 
 ## 🌐 Platform-Specific Notes
 
-### Windows
-- Use PowerShell or Command Prompt
-- Paths use backslashes: `results\scan.json`
-- For SYN scans: Run PowerShell as Administrator
-
 ### Linux/macOS
 - Use bash/zsh terminal
 - Paths use forward slashes: `results/scan.json`
@@ -101,15 +82,9 @@ scorpion recon-cmd -t example.com
 
 ## 🔧 Advanced: SYN Scanning (Optional)
 
-SYN scanning requires admin/root privileges and Scapy.
+SYN scanning requires root privileges and Scapy.
 
-**Windows (elevated PowerShell):**
-```powershell
-pip install scapy
-scorpion scan -t example.com --syn --web --rate-limit 50
-```
-
-**Linux (with venv - Recommended):**
+**Linux/macOS (with venv - Recommended):
 ```bash
 # Activate your venv first
 source .venv/bin/activate
@@ -170,10 +145,6 @@ scorpion --help
 ---
 
 ## 🌍 Platform-Specific Notes
-
-### Windows
-- Works in PowerShell or Command Prompt (CMD)
-- Some scans may require "Run as Administrator" for advanced features
 
 ### Linux (Ubuntu, Debian, CentOS, etc.)
 - Some scans require root privileges
