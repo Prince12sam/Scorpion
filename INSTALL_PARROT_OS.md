@@ -181,6 +181,58 @@ scorpion dirbust example.com --concurrency 10 --output results/dirb.json
 
 ---
 
+## 🤖 AI Features on Parrot OS (GitHub Models Recommended)
+
+AI-powered scans work great on Parrot OS when the API key is set in your shell or `.env`. GitHub Models works for free and is auto-detected.
+
+### Quick Setup (GitHub Models – FREE)
+```bash
+# In your terminal (temporary for this shell)
+export GITHUB_TOKEN="ghp_your_token_here"
+
+# Or use unified var Scorpion auto-detects
+export SCORPION_AI_API_KEY="ghp_your_token_here"
+
+# Verify provider auto-detection
+scorpion ai-pentest --help | sed -n '1,60p'
+```
+
+### Validate Your GitHub Token
+```bash
+echo "$GITHUB_TOKEN"                   # should print your token (masked here)
+curl -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/user
+curl -H "Authorization: Bearer $GITHUB_TOKEN" https://api.github.com/rate_limit
+```
+
+### Run a Safe AI Pentest
+```bash
+# Low risk (passive/harmless):
+scorpion ai-pentest -t example.com -r low
+
+# Medium risk (active scans, no exploitation):
+scorpion ai-pentest -t example.com -r medium
+
+# If auto-detect fails, set provider explicitly:
+scorpion ai-pentest -t example.com --ai-provider github --model gpt-4o-mini
+```
+
+### Handle Rate Limits (HTTP 429 on GitHub Models)
+- GitHub Models limits are typically 15–60 requests/min.
+- Mitigations:
+```bash
+# Slow the agent (fewer AI calls)
+scorpion ai-pentest -t example.com --time-limit 60
+
+# Wait and retry
+sleep 90 && scorpion ai-pentest -t example.com -r low
+
+# Reduce iterations (if supported in your version)
+scorpion ai-pentest -t example.com --max-iterations 5
+```
+If you still hit 429, wait 1–2 minutes and retry. You can also switch providers with `--ai-provider openai` if you have an OpenAI key set.
+
+---
+
 ## ⚙️ Configuration (Optional)
 
 ### Set Up Config
@@ -358,6 +410,63 @@ scorpion scan -t example.com --syn --web
 ```
 
 **Note:** Method 3 has security implications - it allows ANY Python script to use raw sockets.
+
+---
+
+## 🛠️ Diagnostics & Repair on Parrot OS
+
+These commands fix common venv/editable-install hiccups (e.g., `ModuleNotFoundError: python_scorpion.payload_generator`).
+
+### Quick Diagnostics
+```bash
+# From repo root
+source .venv/bin/activate
+python3 --version
+pip --version
+which python
+which scorpion
+
+# Show package location and modules present
+python - <<'PY'
+import sys, pkgutil, python_scorpion
+print("package file:", python_scorpion.__file__)
+mods = {m.name for m in pkgutil.iter_modules(python_scorpion.__path__)}
+print("has payload_generator?:", 'payload_generator' in mods)
+PY
+```
+
+### Repair Editable Install
+```bash
+source .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip uninstall -y python-scorpion
+python -m pip install -e tools/python_scorpion
+
+# Verify imports
+python - <<'PY'
+from python_scorpion.payload_generator import PayloadGenerator, PayloadType, PayloadFormat
+print("import OK")
+PY
+```
+
+### Ensure the Correct `scorpion` Script is Used
+```bash
+readlink -f $(which scorpion)
+python - <<'PY'
+import inspect, python_scorpion.cli as c
+print(inspect.getsourcefile(c))
+PY
+# Both paths should point inside your Scorpion/.venv/
+```
+
+### AI Scan Gotchas on Parrot
+- If you see `Rate limit exceeded for github`, wait 1–2 minutes or use `--time-limit` to slow down.
+- If fuzzing is blocked at low risk: use `-r medium` to enable it.
+- If an action reports `Invalid scan type: syn`, set a stealthier scan type (e.g., `fin`) or run without SYN:
+```bash
+# Example if advanced scan requires non-SYN
+scorpion ai-pentest -t example.com --scan-type fin -r low
+```
 
 ---
 
@@ -604,4 +713,4 @@ scorpion suite -t your-target.com --profile web --mode passive --output-dir resu
 
 **Version**: 2.0.1  
 **Platform**: Parrot OS / Debian / Ubuntu / Kali Linux  
-**Last Updated**: December 9, 2025
+**Last Updated**: December 15, 2025
