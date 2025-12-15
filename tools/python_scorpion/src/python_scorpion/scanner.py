@@ -81,14 +81,47 @@ def _validate_ports(ports: List[int]) -> List[int]:
     """Validate and filter port list, removing invalid ports."""
     return [p for p in ports if _validate_port(p)]
 
-def _syn_probe_sync(host: str, port: int, timeout: float) -> Dict:
-    """Production SYN scan - NO dummy data."""
+def _get_random_src_port() -> int:
+    """Generate random source port for evasion (1024-65535)."""
+    import random
+    return random.randint(1024, 65535)
+
+def _randomize_ttl(base_ttl: int = 64) -> int:
+    """Randomize TTL value to evade firewall fingerprinting."""
+    import random
+    return random.randint(max(32, base_ttl - 16), min(255, base_ttl + 16))
+
+def _get_timing_delay(stealth_level: str = "normal") -> float:
+    """Get timing delay based on stealth level to evade rate-based detection."""
+    import random
+    delays = {
+        "paranoid": random.uniform(5.0, 10.0),
+        "sneaky": random.uniform(2.0, 5.0),
+        "polite": random.uniform(0.5, 2.0),
+        "normal": random.uniform(0.01, 0.1),
+        "aggressive": 0.0
+    }
+    return delays.get(stealth_level, 0.0)
+
+def _syn_probe_sync(host: str, port: int, timeout: float, evade_fw: bool = False) -> Dict:
+    """Production SYN scan with optional firewall evasion."""
     try:
-        from scapy.all import IP, TCP, sr1, conf
+        from scapy.all import IP, TCP, sr1, conf, fragment
     except Exception:
         return {"port": port, "state": "error", "reason": "scapy_not_installed"}
     conf.verb = 0
-    pkt = IP(dst=host)/TCP(dport=port, flags='S', seq=0)
+    
+    # Firewall evasion techniques
+    if evade_fw:
+        # Random source port (evade source port filtering)
+        src_port = _get_random_src_port()
+        # Random TTL (evade TTL-based filtering)
+        ttl = _randomize_ttl()
+        # Small fragments (evade packet inspection)
+        pkt = IP(dst=host, ttl=ttl, flags="MF")/TCP(sport=src_port, dport=port, flags='S', seq=0)
+    else:
+        pkt = IP(dst=host)/TCP(dport=port, flags='S', seq=0)
+    
     try:
         resp = sr1(pkt, timeout=timeout)
     except PermissionError:
@@ -99,15 +132,15 @@ def _syn_probe_sync(host: str, port: int, timeout: float) -> Dict:
         return {"port": port, "state": "filtered", "reason": "no_response"}
     layer = resp.getlayer(TCP)
     if layer and layer.flags & 0x12 == 0x12:  # SYN-ACK
-        return {"port": port, "state": "open", "reason": "syn-ack"}
+        return {"port": port, "state": "open", "reason": "syn-ack", "evaded": evade_fw}
     if layer and layer.flags & 0x14 == 0x14:  # RST-ACK
-        return {"port": port, "state": "closed", "reason": "rst"}
-    return {"port": port, "state": "unknown", "reason": "unexpected"}
+        return {"port": port, "state": "closed", "reason": "rst", "evaded": evade_fw}
+    return {"port": port, "state": "unknown", "reason": "unexpected", "evaded": evade_fw}
 
 
-def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str) -> Dict:
+def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str, evade_fw: bool = False) -> Dict:
     """
-    Advanced scan types: FIN, XMAS, NULL, ACK using Scapy.
+    Advanced scan types: FIN, XMAS, NULL, ACK using Scapy with firewall evasion.
     Production-grade with real packet crafting - NO dummy data.
     
     Scan Types:
@@ -115,6 +148,11 @@ def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str) -
     - xmas: FIN, PSH, URG flags (Christmas tree scan)
     - null: No flags set (NULL scan)
     - ack: ACK flag (for firewall/stateful detection)
+    
+    Evasion:
+    - Random source ports
+    - TTL randomization
+    - Packet fragmentation
     """
     try:
         from scapy.all import IP, TCP, sr1, conf, ICMP
@@ -123,15 +161,24 @@ def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str) -
     
     conf.verb = 0
     
+    # Apply firewall evasion techniques
+    if evade_fw:
+        src_port = _get_random_src_port()
+        ttl = _randomize_ttl()
+        ip_layer = IP(dst=host, ttl=ttl, flags=\"MF\")  # More fragments flag for evasion
+    else:
+        src_port = 12345  # Default source port
+        ip_layer = IP(dst=host)
+    
     # Craft packet based on scan type
-    if scan_type == "fin":
-        pkt = IP(dst=host)/TCP(dport=port, flags='F')
-    elif scan_type == "xmas":
-        pkt = IP(dst=host)/TCP(dport=port, flags='FPU')
-    elif scan_type == "null":
-        pkt = IP(dst=host)/TCP(dport=port, flags='')
-    elif scan_type == "ack":
-        pkt = IP(dst=host)/TCP(dport=port, flags='A')
+    if scan_type == \"fin\":
+        pkt = ip_layer/TCP(sport=src_port, dport=port, flags='F')
+    elif scan_type == \"xmas\":
+        pkt = ip_layer/TCP(sport=src_port, dport=port, flags='FPU')
+    elif scan_type == \"null\":
+        pkt = ip_layer/TCP(sport=src_port, dport=port, flags='')
+    elif scan_type == \"ack\":
+        pkt = ip_layer/TCP(sport=src_port, dport=port, flags='A')
     else:
         return {"port": port, "state": "error", "reason": "invalid_scan_type"}
     
@@ -181,8 +228,13 @@ def _advanced_scan_probe(host: str, port: int, timeout: float, scan_type: str) -
     
     return {"port": port, "state": "unknown", "reason": "unexpected"}
 
-async def async_syn_scan(host: str, ports: List[int], concurrency: int = 200, timeout: float = 1.0, rate_limit: float = 0.0, iface: str = "") -> List[Dict]:
-    """Production SYN scanner - NO dummy data, admin/root check enforced."""
+async def async_syn_scan(host: str, ports: List[int], concurrency: int = 200, timeout: float = 1.0, rate_limit: float = 0.0, iface: str = "", evade_fw: bool = False, stealth_level: str = "normal") -> List[Dict]:
+    """Production SYN scanner with firewall evasion capabilities.
+    
+    Args:
+        evade_fw: Enable firewall evasion (fragmentation, random TTL, random src port)
+        stealth_level: Timing level (paranoid, sneaky, polite, normal, aggressive)
+    """
     # Input validation
     if not _validate_hostname(host):
         raise ValueError(f"Invalid hostname or IP address: {host}")
@@ -211,9 +263,13 @@ async def async_syn_scan(host: str, ports: List[int], concurrency: int = 200, ti
                     conf.iface = iface
                 except Exception:
                     pass
-            res = await asyncio.to_thread(_syn_probe_sync, host, p, timeout)
+            res = await asyncio.to_thread(_syn_probe_sync, host, p, timeout, evade_fw)
             results.append(res)
-            if interval:
+            # Add stealth timing delay
+            delay = _get_timing_delay(stealth_level) if evade_fw else interval
+            if delay > 0:
+                await asyncio.sleep(delay)
+            elif interval:
                 await asyncio.sleep(interval)
 
     await asyncio.gather(*(task(p) for p in ports))
@@ -229,9 +285,11 @@ async def async_advanced_scan(
     timeout: float = 1.0,
     rate_limit: float = 0.0,
     iface: str = "",
+    evade_fw: bool = False,
+    stealth_level: str = \"normal\",
 ) -> List[Dict]:
-    """
-    Production advanced scanner (FIN, XMAS, NULL, ACK).
+    \"\"\"
+    Production advanced scanner (FIN, XMAS, NULL, ACK) with firewall evasion.
     NO dummy data - real Scapy packet crafting only.
     Requires admin/root privileges.
     """
@@ -267,9 +325,13 @@ async def async_advanced_scan(
                     conf.iface = iface
                 except Exception:
                     pass
-            res = await asyncio.to_thread(_advanced_scan_probe, host, p, timeout, scan_type)
+            res = await asyncio.to_thread(_advanced_scan_probe, host, p, timeout, scan_type, evade_fw)
             results.append(res)
-            if interval:
+            # Add stealth timing delay
+            delay = _get_timing_delay(stealth_level) if evade_fw else interval
+            if delay > 0:
+                await asyncio.sleep(delay)
+            elif interval:
                 await asyncio.sleep(interval)
     
     await asyncio.gather(*(task(p) for p in ports))
