@@ -1,6 +1,6 @@
 # Scorpion CLI Documentation Index
 
-Complete navigation for all Scorpion documentation - **21 essential files** (cleaned up Dec 2025).
+Complete navigation for all Scorpion documentation - **13 essential files** (streamlined Dec 2025).
 
 ---
 
@@ -18,9 +18,7 @@ Complete project overview, features, and architecture.
 
 | Platform | Guide | Description |
 |----------|-------|-------------|
-| **Linux/macOS** | [INSTALL.md](INSTALL.md) | Installation with pip in virtual environment |
-| **Linux** | [INSTALL_LINUX.md](INSTALL_LINUX.md) | Ubuntu, Debian, Fedora, Arch, Kali |
-| **Parrot OS** | [INSTALL_PARROT_OS.md](INSTALL_PARROT_OS.md) | Security-optimized distribution setup |
+| **All Platforms** | [INSTALL.md](INSTALL.md) | Installation with pip in virtual environment |
 
 ---
 
@@ -36,16 +34,7 @@ Complete project overview, features, and architecture.
 
 ## 🎯 Feature Guides
 
-### Web Application Security
-- **[WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md)** - Complete web security testing (SQLi, XSS, SSRF, RCE)
-
-### Network & Infrastructure
-- **[OS_FINGERPRINTING_GUIDE.md](OS_FINGERPRINTING_GUIDE.md)** - OS detection and banner grabbing
-- **[DECOY_SCANNING_GUIDE.md](DECOY_SCANNING_GUIDE.md)** - Stealth scanning with decoys
 - **[PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)** - Reverse/bind shells, web shells
-
-### Advanced Features
-- **[ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)** - Rate limiting, threading, custom headers
 
 ---
 
@@ -56,9 +45,6 @@ Complete project overview, features, and architecture.
 | **[AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)** ⭐ | Complete AI pentest guide with quick start |
 | **[GITHUB_MODELS_SETUP.md](GITHUB_MODELS_SETUP.md)** | Get FREE API key (2 minutes) |
 | **[API_KEY_SETUP.md](API_KEY_SETUP.md)** | Detailed API key configuration |
-| **[AI_AGENT_ENHANCED_GUIDE.md](AI_AGENT_ENHANCED_GUIDE.md)** | Complete AI agent usage - OCP professional level |
-| **[AI_OCP_IMPLEMENTATION.md](AI_OCP_IMPLEMENTATION.md)** | Implementation details and methodology |
-| **[AI_COMMAND_EXECUTION.md](AI_COMMAND_EXECUTION.md)** | Direct command execution (Linux/macOS) |
 
 **Quick Start**:
 ```bash
@@ -89,12 +75,8 @@ scorpion ai-pentest -t target.com
 - ⚡ **Get started fast** → [GETTING_STARTED.md](GETTING_STARTED.md)
 - 🤖 **Setup AI pentest** → [API_KEY_SETUP.md](API_KEY_SETUP.md) or [GITHUB_MODELS_SETUP.md](GITHUB_MODELS_SETUP.md)
 - 📖 **Learn all commands** → [COMMANDS.md](COMMANDS.md)
-- 🐧 **Install on Linux** → [INSTALL_LINUX.md](INSTALL_LINUX.md)
-- 🌐 **Test web apps** → [WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md)
-- 🕵️ **Stealth scanning** → [DECOY_SCANNING_GUIDE.md](DECOY_SCANNING_GUIDE.md)
-- 💣 **Generate payloads** → [PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)
+- � **Generate payloads** → [PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)
 - 🤖 **Use AI agent** → [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)
-- 🔧 **Advanced features** → [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
 
 ---
 
@@ -108,7 +90,7 @@ scorpion ai-pentest -t target.com
 ---
 
 **Last Updated**: December 11, 2025  
-**Total Documentation**: 21 essential files (cleaned & organized)
+**Total Documentation**: 13 essential files (streamlined)
 scorpion recon-cmd -t example.com
 
 # Full suite + report
