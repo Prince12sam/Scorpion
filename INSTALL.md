@@ -71,6 +71,57 @@ scorpion recon-cmd -t example.com
 
 ---
 
+## 🏠 Scanning Local/Private Networks
+
+Scorpion works great for local network scanning, Docker containers, and localhost applications:
+
+### Localhost Scanning
+```bash
+# Scan localhost
+scorpion scan -t localhost --web
+scorpion scan -t 127.0.0.1 --ports 1-1024
+
+# Scan local application
+scorpion web-test -t http://localhost:8080
+scorpion ai-pentest -t localhost:3000 -r medium
+```
+
+### Private IP Scanning
+```bash
+# Scan private network IPs
+scorpion scan -t 192.168.1.100 --web
+scorpion scan -t 10.0.0.50 --ports 1-1000
+scorpion scan -t 172.17.0.2 --web
+
+# Web application on private network
+scorpion web-test -t http://192.168.1.50:8080
+scorpion suite -t 192.168.1.100 --profile web --mode active
+```
+
+### Docker Container Scanning
+```bash
+# Scan Docker containers (typically 172.17.0.x)
+scorpion scan -t 172.17.0.2 --web
+scorpion web-test -t http://172.17.0.2:5000
+
+# AI-powered scan of local container
+scorpion ai-pentest -t 172.17.0.2 -r high
+```
+
+### Local Network Range Scanning
+```bash
+# Scan multiple local hosts
+scorpion scan -t 192.168.1.1 --web
+scorpion scan -t 192.168.1.10 --ports 80,443,22,21,3389
+
+# Comprehensive local network assessment
+scorpion suite -t 10.0.0.5 --profile infra --mode active
+```
+
+**Note:** Local/private IP scanning automatically uses `http://` instead of `https://` for web tests, and disables SSL verification for faster scanning.
+
+---
+
 ## 🌐 Platform-Specific Notes
 
 ### Linux/macOS
