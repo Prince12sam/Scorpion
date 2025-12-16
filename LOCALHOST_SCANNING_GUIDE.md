@@ -498,15 +498,15 @@ echo "✅ Security check passed!"
 
 ## 🎓 Learning Examples
 
-### Example 1: Vulnerable by Design
+### Example 1: Testing Your Own Applications
 ```bash
-# Test intentionally vulnerable apps (DVWA, WebGoat, etc.)
-docker run -p 8080:80 vulnerables/web-dvwa
+# Test your local web application
+docker run -p 8080:80 your-app:latest
 scorpion ai-pentest -t localhost:8080 -r high -g web_exploitation
 
 # Learn:
-# ✅ How vulnerabilities work
-# ✅ Exploitation techniques
+# ✅ How vulnerabilities are detected
+# ✅ Security best practices
 # ✅ Remediation strategies
 # ✅ Secure coding practices
 ```

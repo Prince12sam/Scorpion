@@ -2,6 +2,30 @@
 
 This guide helps you install and run Scorpion on Linux (Ubuntu/Debian/Fedora/Arch/Kali/Parrot, etc.). Commands use bash. Adjust package manager commands for your distro.
 
+## 🚀 Quick Command Reference
+
+```bash
+# ⚠️ IMPORTANT: Always use a subcommand!
+scorpion COMMAND -t TARGET [OPTIONS]
+
+# Port Scanning
+scorpion scan -t example.com --web
+scorpion scan -t 127.0.0.1 --ports 1-1024
+
+# AI Penetration Testing
+scorpion ai-pentest -t example.com -r medium
+scorpion ai-pentest -t localhost:8080 -r high
+
+# Web Testing
+scorpion web-test -t http://example.com
+scorpion web-owasp -t http://yourtarget.com
+
+# Full Security Suite
+scorpion suite -t example.com --profile web
+```
+
+**📖 See sections below for detailed examples and localhost scanning.**
+
 ## Prerequisites
 - Python 3.10+ (`python3 --version`)
 - Python venv module: `sudo apt install -y python3-venv python3-full` (Ubuntu 23.04+) or `sudo apt install -y python3-venv` (older)
@@ -43,6 +67,8 @@ scorpion --help | grep -E "api-security|db-pentest|post-exploit|ci-scan"
 ```
 
 ## Common Commands
+
+### Remote Target Examples
 ```bash
 # Port scan (web preset)
 scorpion scan -t example.com --web
@@ -66,6 +92,33 @@ scorpion crawl example.com --start https://example.com --max-pages 10 --concurre
 scorpion suite -t example.com --profile web --mode passive --output-dir results
 latest=$(ls -t results/suite_example.com_*.json | head -n1)
 scorpion report --suite "$latest" --summary
+```
+
+### � Local/Private Network Scanning Examples
+```bash
+# Port scan local network
+scorpion scan -t 192.168.1.100 --web
+scorpion scan -t localhost --ports 1-1024
+
+# Scan local Docker containers
+scorpion scan -t 172.17.0.2 --web
+
+# AI-powered web application testing (requires API key)
+export SCORPION_AI_API_KEY='ghp_your_github_token'
+scorpion ai-pentest -t yourapp.local:5000 -g web_exploitation -r high --time-limit 15
+
+# Web testing any application
+scorpion web-test -t http://192.168.1.50:8080 -c 10
+scorpion web-owasp -t http://testapp.local:3000
+
+# Local API testing
+scorpion ai-pentest -t api.local:4000 -g api_security_testing -r medium
+
+# Quick security assessment
+scorpion suite -t 10.0.0.5 --profile web --mode active --output-dir results
+```
+
+**Note:** Works with any target including localhost, private IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x), domain names, or public IPs. See [LOCALHOST_SCANNING_GUIDE.md](LOCALHOST_SCANNING_GUIDE.md) for more examples.
 ```
 
 ## SYN Scan (raw packets)
@@ -121,9 +174,54 @@ To extend web testing with ProjectDiscovery Nuclei:
 - TLS verification is on by default; for K8s, use `--insecure` to skip cert checks (not recommended).
 
 ## Troubleshooting
-- "Command not found": ensure you ran `pip install -e tools/python_scorpion` inside the venv and that `source .venv/bin/activate` is active.
-- Permission errors for SYN: run as root and verify `pip install scapy` succeeded.
-- Network issues: check DNS/firewall; try `ping example.com` and `curl https://example.com`.
+
+### General Issues
+- **"Command not found"**: ensure you ran `pip install -e tools/python_scorpion` inside the venv and that `source .venv/bin/activate` is active.
+- **Permission errors for SYN**: run as root and verify `pip install scapy` succeeded.
+- **Network issues**: check DNS/firewall; try `ping example.com` and `curl https://example.com`.
+
+### Localhost Scanning Issues
+- **"No such command 'http://127.0.0.1'"**: You forgot the subcommand! Use:
+  ```bash
+  scorpion scan -t 127.0.0.1        # Correct ✅
+  scorpion http://127.0.0.1         # Wrong ❌
+  ```
+
+- **"No such option: -t"**: The `-t` option must come AFTER the subcommand:
+  ```bash
+  scorpion scan -t localhost        # Correct ✅
+  scorpion -t localhost scan        # Wrong ❌
+  ```
+
+- **Common Correct Patterns**:
+  ```bash
+  scorpion COMMAND -t TARGET [OPTIONS]
+  
+  # Examples:
+  scorpion scan -t 192.168.1.100 --web
+  scorpion ai-pentest -t yourapp.local:8080 -r high
+  scorpion web-test -t http://testapp.local/app
+  ```
+
+- **Local services not responding**: Ensure your local service is running:
+  ```bash
+  # Check if service is running
+  curl http://localhost:8080
+  netstat -tulpn | grep :8080
+  
+  # Check Docker containers
+  docker ps
+  ```
+
+- **Port scanning localhost shows no results**: Linux may block localhost scans. Try:
+  ```bash
+  # Use 127.0.0.1 instead of localhost
+  scorpion scan -t 127.0.0.1 --web
+  
+  # Or disable firewall temporarily
+  sudo ufw status
+  sudo ufw allow from 127.0.0.1
+  ```
 
 ### Diagnostics & Repair (venv + editable install)
 If the CLI crashes with `ModuleNotFoundError: python_scorpion.<module>` after pulling updates, refresh the editable install and verify paths.
