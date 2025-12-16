@@ -1,32 +1,19 @@
-# Scorpion Python CLI
+# Scorpion Python CLI Package
 
-Production-ready, high-concurrency security testing toolkit.
+This is the Python CLI package for Scorpion Security Testing Tool.
 
----
-
-## Features
-
-- **Async TCP/UDP port scanning** - Fast, concurrent network scanning
-- **SSL/TLS analyzer** - Certificate validation, cipher suites, protocol detection
-- **Subdomain takeover checks** - 15+ cloud provider detection
-- **API security testing** - Swagger/GraphQL/JWT/IDOR/rate-limit testing
-- **Reconnaissance** - DNS enumeration, HTTP headers, WHOIS
-- **Directory discovery** - Built-in wordlist with wildcard filtering
-- **Technology detection** - Server/framework/CDN/WAF identification
-- **Web crawler** - Same-host crawling with secrets detection
-- **Cloud/K8s/Container audits** - Infrastructure security checks
-- **Suite mode** - Combined testing with unified JSON/HTML reports
+For complete documentation, installation instructions, and feature details, see the **[main README](../../README.md)** in the repository root.
 
 ---
 
 ## Quick Install
 
-### From Repository Root
-
 ```bash
-# Clone repository (if not already done)
-git clone https://github.com/Prince12sam/Scorpion.git
+# From repository root
 cd Scorpion
+python3 -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+python -m pip install -e tools/python_scorpion
 
 # Install CLI
 python -m pip install -e tools/python_scorpion
