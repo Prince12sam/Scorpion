@@ -23,14 +23,22 @@ try:
     # Look for .env in current directory and parent directories
     env_path = Path.cwd() / '.env'
     if env_path.exists():
-        load_dotenv(env_path)
+        try:
+            load_dotenv(env_path, encoding='utf-8')
+        except UnicodeDecodeError:
+            # Skip invalid .env file
+            pass
     else:
         # Try parent directories (in case user is in subdirectory)
         for parent in Path.cwd().parents:
             env_path = parent / '.env'
             if env_path.exists():
-                load_dotenv(env_path)
-                break
+                try:
+                    load_dotenv(env_path, encoding='utf-8')
+                    break
+                except UnicodeDecodeError:
+                    # Skip invalid .env file
+                    continue
 except ImportError:
     # python-dotenv not installed, environment variables still work
     pass
