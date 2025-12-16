@@ -148,19 +148,19 @@ console = Console()
 def scan(
     host: Optional[str] = typer.Argument(None, help="Target host (positional)"),
     target: Optional[str] = typer.Option(None, "--target", "-t", help="Alias for host (supports -t)"),
-    ports: str = "1-1024",
-    concurrency: int = typer.Option(200, "--concurrency", "-C", help="Concurrent probes"),
+    ports: str = "1-10000",
+    concurrency: int = typer.Option(500, "--concurrency", "-C", help="Concurrent probes (default: 500 for aggressive scanning)"),
     timeout: float = typer.Option(1.0, "--timeout", help="Timeout seconds per probe"),
     retries: int = typer.Option(0, "--retries", "-R", help="Retries on timeouts (reserved)"),
     udp: bool = typer.Option(False, "--udp", "-U", help="Enable UDP scanning (best-effort)"),
     udp_ports: Optional[str] = typer.Option(None, "--udp-ports", "-u", help="UDP ports range/list; default top ports if omitted"),
-    only_open: bool = typer.Option(False, "--only-open", help="Show only open ports (hide closed/filtered; like nmap --open)"),
+    only_open: bool = typer.Option(True, "--only-open/--show-all", help="Show only open ports (default, like nmap --open). Use --show-all to see closed/filtered"),
     raw: bool = typer.Option(False, "--raw", help="Show raw banner only; do not infer service names"),
     no_write: bool = typer.Option(False, "--no-write", help="Do not send probe bytes; connect-and-read only"),
     version_detect: bool = typer.Option(False, "--version-detect", "-sV", help="Enable service version detection (like nmap -sV)"),
     os_detect: bool = typer.Option(False, "--os-detect", "-O", help="Enable OS fingerprinting (requires admin/root + scapy)"),
-    fast: bool = typer.Option(False, "--fast", help="Preset: --timeout 2.0 --retries 1 --concurrency 60 --only-open"),
-    web: bool = typer.Option(False, "--web", help="Preset: ports 80,443,8080 and only-open"),
+    fast: bool = typer.Option(False, "--fast", help="Preset: --timeout 0.8 --concurrency 1000 (ultra-fast aggressive scan)"),
+    web: bool = typer.Option(False, "--web", help="Preset: comprehensive web ports (80,443,8080,8443,8000-9000 range)"),
     infra: bool = typer.Option(False, "--infra", help="Preset: common infra ports and only-open"),
     full: bool = typer.Option(False, "--full", help="Preset: comprehensive scan of 50+ common ports (web, db, infra, apps)"),
     syn: bool = typer.Option(False, "--syn", "-sS", help="TCP SYN scan (stealth, requires admin/root + scapy)"),
@@ -294,16 +294,19 @@ def scan(
         
         # Apply presets (can override timing)
         if fast:
-            timeout_local = 2.0
-            retries_local = 1
-            concurrency_local = 60
-            # Don't auto-enable only_open - show all ports for transparency
+            timeout_local = 0.8
+            retries_local = 0
+            concurrency_local = 1000
+            only_open_local = True
+            console.print("[cyan]Fast mode: Ultra-aggressive scan (timeout=0.8s, concurrency=1000)[/cyan]")
         if web:
-            ports_local = "80,443,8080,8443,8000,8888,3000,5000,9000"
-            # Show all scanned ports for transparency (closed/filtered too)
+            ports_local = "80,443,8080,8443,8000,8001,8008,8080,8081,8082,8090,8180,8443,8888,9000,9001,9090,3000,4000,5000,7000,7001,7002"
+            only_open_local = True
+            console.print("[cyan]Web mode: Scanning comprehensive web service ports[/cyan]")
         if infra:
-            ports_local = "22,25,53,80,110,143,443,3389,5432,3306"
-            # Show all scanned ports for transparency (closed/filtered too)
+            ports_local = "22,25,53,80,110,143,443,3389,5432,3306,1433,1521,5900,6379,27017,9200,11211"
+            only_open_local = True
+            console.print("[cyan]Infra mode: Scanning infrastructure and database ports[/cyan]")
         if full:
             # Comprehensive port list: web, database, infra, remote access, apps
             ports_local = (
