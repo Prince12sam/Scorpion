@@ -101,7 +101,10 @@ async def _fetch(client: httpx.AsyncClient, url: str) -> Dict:
 
 async def crawl(host: str, start: Optional[str] = None, max_pages: int = 30, concurrency: int = 8) -> Dict:
     base_host = host
-    start_url = start or f"https://{host}"
+    # Use http:// for localhost/private IPs
+    is_local = any(term in host.lower() for term in ["localhost", "127.0.0.1", "::1", "0.0.0.0", "192.168.", "10."])
+    protocol = "http" if is_local else "https"
+    start_url = start or f"{protocol}://{host}"
     visited: Set[str] = set()
     queue: List[str] = [start_url]
     results: List[Dict] = []
