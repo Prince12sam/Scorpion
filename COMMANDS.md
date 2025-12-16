@@ -23,7 +23,7 @@ Complete reference for all Scorpion CLI commands and options.
 | `suite` | Combined security suite | `scorpion suite -t example.com --profile web` |
 | `report` | Generate HTML report | `scorpion report --suite results.json` |
 | **`api-security`** ⭐ | **Advanced API testing** | `scorpion api-security -t https://api.example.com` |
-| **`db-pentest`** ⭐ | **Database penetration testing** | `scorpion db-pentest -t https://site.com/page?id=1` |
+| **`db-pentest`** ⭐ | **Database penetration testing** | `scorpion db-pentest -t https://yourtarget.com/page?id=1` |
 | **`post-exploit`** ⭐ | **Post-exploitation enum** | `scorpion post-exploit --os linux` |
 | **`ci-scan`** ⭐ | **CI/CD integration** | `scorpion ci-scan --input results.json --sarif-output` |
 | **`ai-pentest`** 🤖 | **AI-powered pentesting** | `scorpion ai-pentest -t example.com -i "Focus on APIs"` |
@@ -830,7 +830,7 @@ SQL/NoSQL injection testing and database fingerprinting.
 ### Options
 | Flag | Description | Example |
 |------|-------------|---------|
-| `-t, --target` | Target URL with parameter | `-t https://site.com/page?id=1` |
+| `-t, --target` | Target URL with parameter | `-t https://yourtarget.com/page?id=1` |
 | `-p, --param` | Parameter name to test | `-p id` |
 | `-m, --method` | HTTP method (GET/POST) | `-m POST` |
 | `--db-type` | Database type hint | `--db-type mysql` |

@@ -215,7 +215,7 @@ ls -lh ai_pentest_example.com_*.json
 
 ```bash
 # Find exploitable vulnerabilities
-scorpion ai-pentest -t vulnerable-site.com \
+scorpion ai-pentest -t yourtarget.com \
   -g vulnerability_discovery \
   -r high \
   --time-limit 30

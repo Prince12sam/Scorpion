@@ -412,13 +412,13 @@ scorpion api-test -t https://api.example.com -o api-report.json
 
 ```bash
 # Full web vulnerability scan
-scorpion webscan https://example.com/page?id=1
+scorpion webscan https://yourtarget.com/page?id=1
 
 # Scan login page
-scorpion webscan "https://site.com/login?user=admin&pass=test"
+scorpion webscan "https://yourtarget.com/login?user=test&pass=test"
 
 # Scan API endpoint
-scorpion webscan "https://api.site.com/v1/user?id=123"
+scorpion webscan "https://api.yourtarget.com/v1/user?id=123"
 
 # Custom concurrency and timeout
 scorpion webscan https://example.com -c 20 -t 30
@@ -436,7 +436,7 @@ scorpion webscan https://example.com -o web-vulns.json
 scorpion webscan https://example.com --no-cmdi --no-ssrf --no-headers --no-cors
 
 # Skip SSRF scanning
-scorpion webscan https://internal.com --no-ssrf
+scorpion webscan https://yourtarget.com --no-ssrf
 
 # Scan testing environments (disable SSL verify)
 scorpion webscan https://localhost:8443 --no-ssl-verify

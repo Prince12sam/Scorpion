@@ -20,9 +20,9 @@ scorpion api-security -t https://api.example.com --spec /openapi.json -o results
 
 ### 2. Database Penetration
 ```bash
-scorpion db-pentest -t "https://site.com/page?id=1"
-scorpion db-pentest -t "https://site.com/login" --method POST
-scorpion db-pentest -t "https://site.com/api?id=1" --db-type mysql -o sqli.json
+scorpion db-pentest -t "https://yourtarget.com/page?id=1"
+scorpion db-pentest -t "https://yourtarget.com/login" --method POST
+scorpion db-pentest -t "https://yourtarget.com/api?id=1" --db-type mysql -o sqli.json
 ```
 **Tests:** SQL/NoSQL injection, blind SQLi, database fingerprinting
 
