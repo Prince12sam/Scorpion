@@ -156,7 +156,7 @@ console = Console()
 def scan(
     host: Optional[str] = typer.Argument(None, help="Target host (positional)"),
     target: Optional[str] = typer.Option(None, "--target", "-t", help="Alias for host (supports -t)"),
-    ports: str = "1-10000",
+    ports: str = "1-65535",
     concurrency: int = typer.Option(500, "--concurrency", "-C", help="Concurrent probes (default: 500 for aggressive scanning)"),
     timeout: float = typer.Option(1.0, "--timeout", help="Timeout seconds per probe"),
     retries: int = typer.Option(0, "--retries", "-R", help="Retries on timeouts (reserved)"),

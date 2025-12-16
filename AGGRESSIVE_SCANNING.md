@@ -10,7 +10,7 @@ Scorpion now features **aggressive scanning by default**, providing comprehensiv
 
 | Setting | Old Default | New Default | Impact |
 |---------|-------------|-------------|--------|
-| **Port Range** | 1-1024 | **1-10000** | 10x more ports scanned |
+| **Port Range** | 1-1024 | **1-65535 (ALL)** | 64x more ports scanned |
 | **Only Open** | False (show all) | **True** | Cleaner output, only actionable results |
 | **Concurrency** | 200 | **500** | 2.5x faster scanning |
 | **Output** | Cluttered with closed ports | **Clean, open ports only** | Nmap-like `--open` behavior |
@@ -21,7 +21,7 @@ Scorpion now features **aggressive scanning by default**, providing comprehensiv
 
 ### Basic Aggressive Scan (New Default)
 ```bash
-# Scans 1-10000, shows only open ports, 500 concurrency
+# Scans ALL 65535 ports, shows only open ports, 500 concurrency
 scorpion scan -t example.com
 ```
 

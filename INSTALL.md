@@ -59,7 +59,7 @@ scorpion --help
 ## 🎯 Quick Test
 
 ```bash
-# Aggressive port scan (default: 1-10000, only open ports shown)
+# Aggressive port scan (default: ALL 65535 ports, only open ports shown)
 scorpion scan -t example.com
 
 # Fast aggressive scan (ultra-fast with 1000 concurrency)
@@ -80,16 +80,16 @@ scorpion recon-cmd -t example.com
 
 ### 🔥 Aggressive Scanning (Default Behavior)
 
-Scorpion now scans aggressively by default, similar to nmap's aggressive mode:
+Scorpion now scans aggressively by default, similar to nmap's `nmap -p-` mode:
 
-- **Port Range:** Scans 1-10000 by default (not just 1-1024)
+- **Port Range:** Scans ALL 65535 ports by default (comprehensive coverage)
 - **Only Open Ports:** Shows only open ports by default (like `nmap --open`)
 - **High Concurrency:** 500 concurrent probes for faster scanning
 - **Smart Filtering:** Closed and filtered ports are hidden for cleaner output
 
 **Examples:**
 ```bash
-# Default aggressive scan (1-10000, only open ports)
+# Default aggressive scan (ALL 65535 ports, only open ports)
 scorpion scan -t example.com
 
 # Ultra-fast aggressive (1000 concurrency, 0.8s timeout)
@@ -98,7 +98,7 @@ scorpion scan -t example.com --fast
 # Show closed/filtered ports too (verbose output)
 scorpion scan -t example.com --show-all
 
-# Comprehensive 50+ port scan
+# Comprehensive 50+ port scan (faster than full range)
 scorpion scan -t example.com --full
 ```
 
