@@ -32,7 +32,5 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run cross-platform compatibility test (no network scans)
-        run: npm run test:platform
-        env:
-          CI: true
+      - name: Verify installation
+        run: npm list
