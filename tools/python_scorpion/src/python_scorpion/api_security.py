@@ -474,7 +474,7 @@ class APISecurityTester:
     async def run_full_assessment(self, openapi_spec: Optional[str] = None, jwt_token: Optional[str] = None) -> Dict[str, Any]:
         """Run comprehensive API security assessment"""
         
-        print(f"🔍 Discovering API endpoints...")
+        print(f"[API] Discovering API endpoints...")
         await self.discover_endpoints(openapi_spec)
         print(f"✅ Found {len(self.endpoints)} endpoints")
         
@@ -494,7 +494,7 @@ class APISecurityTester:
         self.findings.extend(idor_findings)
         print(f"✅ Found {len(idor_findings)} IDOR issues")
         
-        print(f"\n⚡ Testing GraphQL security...")
+        print(f"\n[GRAPHQL] Testing GraphQL security...")
         graphql_findings = await self.test_graphql()
         self.findings.extend(graphql_findings)
         print(f"✅ Found {len(graphql_findings)} GraphQL issues")
