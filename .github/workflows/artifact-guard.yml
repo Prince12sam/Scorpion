@@ -42,7 +42,7 @@ jobs:
 
       - name: Fail if legacy Node CLI reference exists
         run: |
-          if grep -R "scorpion-node" -n .; then
+          if grep -R "scorpion-node" --exclude-dir=.git --exclude="*.yml" --exclude="*.yaml" -n .; then
             echo "Found legacy Node CLI references (scorpion-node). Please remove.";
             exit 1;
           fi
