@@ -81,6 +81,8 @@ def _validate_ports(ports: List[int]) -> List[int]:
     """Validate and filter port list, removing invalid ports."""
     if ports is None:
         return None
+    if not ports:  # Empty list
+        return []
     return [p for p in ports if _validate_port(p)]
 
 def _get_random_src_port() -> int:
@@ -300,7 +302,7 @@ async def async_advanced_scan(
         raise ValueError(f"Invalid hostname or IP address: {host}")
     
     ports = _validate_ports(ports)
-    if not ports:
+    if ports is not None and len(ports) == 0:
         raise ValueError("No valid ports provided")
     
     if scan_type not in {"fin", "xmas", "null", "ack"}:
@@ -606,7 +608,7 @@ async def async_port_scan(host: str, ports: List[int], concurrency: int = 200, t
         raise ValueError(f"Invalid hostname or IP address: {host}")
     
     ports = _validate_ports(ports)
-    if not ports:
+    if ports is not None and len(ports) == 0:
         raise ValueError("No valid ports provided")
     
     if concurrency < 1 or concurrency > 10000:
@@ -710,7 +712,7 @@ async def async_udp_scan(host: str, ports: List[int], concurrency: int = 200, ti
         raise ValueError(f"Invalid hostname or IP address: {host}")
     
     ports = _validate_ports(ports)
-    if not ports:
+    if ports is not None and len(ports) == 0:
         raise ValueError("No valid ports provided")
     
     if concurrency < 1 or concurrency > 10000:
