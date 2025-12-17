@@ -2703,5 +2703,327 @@ def ai_pentest_command(
         raise typer.Exit(1)
 
 
+@app.command()
+def threat_intel(
+    indicator: str = typer.Argument(..., help="IP, domain, URL, or hash to check"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Check threat intelligence for an indicator (IP, domain, URL, or hash).
+    Queries multiple sources: VirusTotal, AlienVault OTX, Shodan, AbuseIPDB, ThreatFox, URLhaus.
+    """
+    async def run():
+        from .threat_intel import check_threat_intel
+        
+        console.print(f"\n[cyan]🔍 Checking threat intelligence for: {indicator}[/cyan]\n")
+        
+        try:
+            result = await check_threat_intel(indicator)
+            
+            # Display results
+            verdict_color = {"malicious": "red bold", "suspicious": "yellow", "clean": "green"}.get(result["verdict"], "white")
+            console.print(f"[bold]Indicator:[/bold] {result['indicator']}")
+            console.print(f"[bold]Type:[/bold] {result['indicator_type']}")
+            console.print(f"[bold]Verdict:[/bold] [{verdict_color}]{result['verdict'].upper()}[/{verdict_color}]")
+            console.print(f"[bold]Threat Score:[/bold] {result['overall_threat_score']}/100")
+            console.print(f"[bold]Confidence:[/bold] {result['confidence']}")
+            console.print(f"[bold]Sources Queried:[/bold] {result['sources_queried']}\n")
+            
+            if result.get("is_c2_server"):
+                console.print("[red bold]⚠️  WARNING: Identified as C2 (Command & Control) server[/red bold]\n")
+            
+            if result.get("in_blocklist"):
+                console.print("[red]⚠️  Found in threat blocklists[/red]\n")
+            
+            if result.get("malware_families"):
+                console.print(f"[yellow]Malware Families:[/yellow] {', '.join(result['malware_families'])}\n")
+            
+            if result.get("categories"):
+                console.print(f"[yellow]Categories:[/yellow] {', '.join(result['categories'])}\n")
+            
+            if result.get("associated_cves"):
+                console.print(f"[red]Associated CVEs:[/red] {', '.join(result['associated_cves'][:5])}\n")
+            
+            # Save results
+            if output:
+                with open(output, "w") as f:
+                    json.dump(result, f, indent=2)
+                console.print(f"[green]✅ Report saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error querying threat intelligence: {e}[/red]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def threat_hunt(
+    data_file: str = typer.Argument(..., help="Path to data file (logs, processes, network traffic)"),
+    data_type: str = typer.Option("logs", "--type", "-t", help="Data type: logs, network_traffic, process_list, file_system"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Hunt for threats using behavioral analysis and IOC detection.
+    Detects LOLBins, malware signatures, behavioral anomalies, and attack patterns.
+    """
+    async def run():
+        from .threat_hunter import ThreatHunter
+        
+        console.print(f"\n[cyan]🔍 Threat Hunting: {data_file}[/cyan]\n")
+        
+        try:
+            # Read data file
+            with open(data_file, 'r') as f:
+                if data_type == "logs":
+                    data = f.readlines()
+                else:
+                    data = json.load(f)
+            
+            hunter = ThreatHunter()
+            
+            # Hunt for IOCs
+            console.print("[yellow]Scanning for Indicators of Compromise (IOCs)...[/yellow]")
+            iocs = await hunter.hunt_iocs({"type": data_type, "data": data})
+            
+            console.print(f"[green]✅ Found {len(iocs)} IOCs[/green]\n")
+            
+            # Display IOCs by severity
+            critical_iocs = [ioc for ioc in iocs if ioc.severity == "critical"]
+            high_iocs = [ioc for ioc in iocs if ioc.severity == "high"]
+            
+            if critical_iocs:
+                console.print("[red bold]🚨 CRITICAL IOCs:[/red bold]")
+                for ioc in critical_iocs[:5]:
+                    console.print(f"  • {ioc.description}")
+                    console.print(f"    [dim]Value: {ioc.value[:80]}[/dim]")
+                    console.print(f"    [dim]Tags: {', '.join(ioc.tags)}[/dim]\n")
+            
+            if high_iocs:
+                console.print("[red]⚠️  HIGH SEVERITY IOCs:[/red]")
+                for ioc in high_iocs[:5]:
+                    console.print(f"  • {ioc.description}")
+                    console.print(f"    [dim]Value: {ioc.value[:80]}[/dim]\n")
+            
+            # Generate report
+            report = await hunter.generate_threat_report(iocs, [], [])
+            
+            if output:
+                with open(output, "w") as f:
+                    json.dump(report, f, indent=2)
+                console.print(f"[green]✅ Threat hunting report saved to: {output}[/green]")
+            else:
+                console.print(json.dumps(report, indent=2))
+            
+        except Exception as e:
+            console.print(f"[red]Error during threat hunting: {e}[/red]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def attack_chain(
+    findings_file: str = typer.Argument(..., help="JSON file with security findings"),
+    mode: str = typer.Option("red_team", "--mode", "-m", help="Mode: red_team or blue_team"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Discover exploit chains from findings using AI decision engine.
+    Automatically chains vulnerabilities for maximum impact (red team) or prioritizes fixes (blue team).
+    """
+    async def run():
+        from .ai_decision_engine import AIDecisionEngine, Finding
+        
+        console.print(f"\n[cyan]🧠 AI Decision Engine: {mode.upper()}[/cyan]\n")
+        
+        try:
+            # Load findings
+            with open(findings_file, 'r') as f:
+                findings_data = json.load(f)
+            
+            engine = AIDecisionEngine(mode=mode)
+            
+            # Ingest findings
+            console.print("[yellow]Ingesting findings...[/yellow]")
+            for finding_data in findings_data:
+                finding = Finding(
+                    finding_id=finding_data.get("id", "unknown"),
+                    finding_type=finding_data.get("type", "unknown"),
+                    severity=finding_data.get("severity", "medium"),
+                    confidence=finding_data.get("confidence", 80),
+                    target=finding_data.get("target", "unknown"),
+                    details=finding_data.get("details", {}),
+                    mitre_techniques=finding_data.get("mitre_techniques", [])
+                )
+                engine.ingest_finding(finding)
+            
+            console.print(f"[green]✅ Ingested {len(findings_data)} findings[/green]\n")
+            
+            # Analyze
+            console.print("[yellow]Analyzing attack chains and generating recommendations...[/yellow]")
+            analysis = engine.analyze_findings()
+            
+            # Display results
+            console.print(f"\n[bold]Overall Risk Score:[/bold] {analysis['overall_risk_score']}/100\n")
+            
+            if analysis.get("exploit_chains"):
+                console.print("[red bold]🔗 DISCOVERED EXPLOIT CHAINS:[/red bold]\n")
+                for chain in analysis["exploit_chains"]:
+                    console.print(f"[bold]{chain['name']}[/bold]")
+                    console.print(f"  [dim]{chain['description']}[/dim]")
+                    console.print(f"  [yellow]Impact:[/yellow] {chain['total_impact']}/100")
+                    console.print(f"  [yellow]Success Probability:[/yellow] {chain['success_probability']}%")
+                    console.print(f"  [dim]MITRE: {', '.join(chain['mitre_techniques'])}[/dim]\n")
+                    
+                    for step in chain['steps']:
+                        console.print(f"    {step['step']}. {step['action']}")
+                    console.print()
+            
+            if analysis.get("recommended_next_actions"):
+                console.print("[green bold]📋 RECOMMENDED ACTIONS:[/green bold]\n")
+                for action in analysis["recommended_next_actions"][:5]:
+                    priority_color = "red" if action["priority"] >= 8 else "yellow" if action["priority"] >= 5 else "blue"
+                    console.print(f"[{priority_color}]Priority {action['priority']}:[/{priority_color}] {action['description']}")
+                    console.print(f"  [dim]{action['rationale']}[/dim]\n")
+            
+            # Save results
+            if output:
+                with open(output, "w") as f:
+                    json.dump(analysis, f, indent=2, default=str)
+                console.print(f"[green]✅ Analysis saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error analyzing attack chains: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def purple_team(
+    target: str = typer.Argument(..., help="Target host or URL"),
+    profile: str = typer.Option("web", "--profile", "-p", help="Attack profile: web, network, or full"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Run purple team simulation: Red team attacks + Blue team detection.
+    Identifies detection gaps and provides defensive recommendations.
+    """
+    async def run():
+        from .purple_team import PurpleTeamSimulator
+        
+        try:
+            simulator = PurpleTeamSimulator(target)
+            report = await simulator.run_full_simulation(attack_profile=profile)
+            
+            # Save results
+            if output:
+                output_file = output
+            else:
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                output_file = f"purple_team_{target.replace('.', '_').replace(':', '_')}_{timestamp}.json"
+            
+            with open(output_file, "w") as f:
+                json.dump(report, f, indent=2, default=str)
+            
+            console.print(f"\n[green]✅ Purple team report saved to: {output_file}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error during purple team simulation: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def mitre_map(
+    findings_file: str = typer.Argument(..., help="JSON file with security findings"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Map security findings to MITRE ATT&CK framework.
+    Generates attack matrix with tactics, techniques, and mitigation recommendations.
+    """
+    from .mitre_attack import MITREAttackMapper
+    
+    console.print(f"\n[cyan]🎯 MITRE ATT&CK Mapping[/cyan]\n")
+    
+    try:
+        # Load findings
+        with open(findings_file, 'r') as f:
+            findings = json.load(f)
+        
+        mapper = MITREAttackMapper()
+        
+        # Generate matrix
+        console.print("[yellow]Mapping findings to MITRE ATT&CK framework...[/yellow]")
+        matrix = mapper.generate_attack_matrix(findings)
+        
+        console.print(f"[green]✅ Mapped {matrix['total_findings']} findings to {matrix['total_techniques']} techniques[/green]\n")
+        
+        # Display tactics covered
+        console.print("[bold]Tactics Covered:[/bold]")
+        for tactic, count in matrix["tactic_breakdown"].items():
+            console.print(f"  • {tactic}: {count} findings")
+        console.print()
+        
+        # Display top techniques
+        if matrix.get("top_techniques"):
+            console.print("[bold]Top Techniques Detected:[/bold]")
+            for tech in matrix["top_techniques"][:10]:
+                console.print(f"  • {tech['technique_id']} - {tech['technique_name']}")
+                console.print(f"    [dim]Tactic: {tech['tactic']} | Count: {tech['count']}[/dim]")
+                console.print(f"    [dim]Findings: {', '.join(tech['findings'][:3])}[/dim]\n")
+        
+        # Display kill chain
+        if matrix.get("kill_chain_phases"):
+            console.print("[bold cyan]Kill Chain Progression:[/bold cyan]")
+            for phase in matrix["kill_chain_phases"]:
+                console.print(f"  → {phase['phase']}: {phase['count']} findings")
+        console.print()
+        
+        # Generate defense recommendations
+        console.print("[yellow]Generating defense recommendations...[/yellow]")
+        defenses = mapper.suggest_defenses(findings)
+        
+        if defenses.get("immediate_actions"):
+            console.print("\n[red bold]🚨 IMMEDIATE ACTIONS:[/red bold]")
+            for action in defenses["immediate_actions"]:
+                console.print(f"  • {action}")
+        
+        if defenses.get("short_term_improvements"):
+            console.print("\n[yellow bold]⏰ SHORT-TERM IMPROVEMENTS:[/yellow bold]")
+            for action in defenses["short_term_improvements"]:
+                console.print(f"  • {action}")
+        
+        if defenses.get("long_term_strategic"):
+            console.print("\n[blue bold]📅 LONG-TERM STRATEGIC:[/blue bold]")
+            for action in defenses["long_term_strategic"]:
+                console.print(f"  • {action}")
+        
+        console.print()
+        
+        # Save results
+        result = {
+            "matrix": matrix,
+            "defenses": defenses,
+            "timestamp": datetime.datetime.now().isoformat()
+        }
+        
+        if output:
+            with open(output, "w") as f:
+                json.dump(result, f, indent=2, default=str)
+            console.print(f"[green]✅ MITRE ATT&CK mapping saved to: {output}[/green]")
+        
+    except Exception as e:
+        console.print(f"[red]Error mapping to MITRE ATT&CK: {e}[/red]")
+        raise typer.Exit(1)
+
+
 if __name__ == "__main__":
     app()
