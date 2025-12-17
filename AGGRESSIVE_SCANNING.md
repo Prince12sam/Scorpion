@@ -81,7 +81,7 @@ scorpion scan -t example.com --full
 | Nmap Command | Scorpion Equivalent | Notes |
 |--------------|---------------------|-------|
 | `nmap -p- --open target` | `scorpion scan -t target` | Aggressive, only open ports |
-| `nmap -p1-10000 target` | `scorpion scan -t target --show-all` | Show all ports |
+| `nmap -p- target` | `scorpion scan -t target --show-all` | Show all ports |
 | `nmap -T4 --open target` | `scorpion scan -t target --fast` | Ultra-fast aggressive |
 | `nmap -sV --open target` | `scorpion scan -t target --version-detect` | Service version detection |
 | `nmap -sS --open target` | `sudo scorpion scan -t target --syn` | SYN stealth scan |
@@ -90,7 +90,7 @@ scorpion scan -t example.com --full
 
 ## 📊 Performance
 
-### Scan Times (1-10000 ports)
+### Scan Times (1-65535 ports)
 
 | Mode | Concurrency | Avg Time | Use Case |
 |------|-------------|----------|----------|
@@ -219,9 +219,8 @@ scorpion scan -t example.com --timeout 3.0 --retries 1
 
 ## 📚 Related Documentation
 
-- [INSTALL.md](INSTALL.md) - Installation guide
-- [WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md) - Web testing features
-- [AI_AGENT_ENHANCED_GUIDE.md](AI_AGENT_ENHANCED_GUIDE.md) - AI-powered testing
+- [INSTALLATION.md](INSTALLATION.md) - Installation guide
+- [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md) - AI-powered testing
 - [COMMANDS.md](COMMANDS.md) - Complete command reference
 
 ---

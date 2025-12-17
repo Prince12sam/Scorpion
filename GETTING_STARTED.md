@@ -179,7 +179,7 @@ pip install -r requirements.txt
 ## Next Steps
 
 📖 **Detailed Guides:**
-- [Installation Guide](INSTALL.md) - Complete install instructions
+- [Installation Guide](INSTALLATION.md) - Complete install instructions
 - [Quick Start](QUICKSTART.md) - More examples and use cases
 - [Command Reference](COMMANDS.md) - All commands and options
 - [Linux Guide](INSTALL_LINUX.md) - Linux-specific details

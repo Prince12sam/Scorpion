@@ -533,7 +533,7 @@ diff before_fix.json after_fix.json
 - **Main Guide:** [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)
 - **Payload Testing:** [AI_PAYLOAD_TESTING_GUIDE.md](AI_PAYLOAD_TESTING_GUIDE.md)
 - **Exploitation:** [EXPLOITATION_IMPLEMENTATION.md](EXPLOITATION_IMPLEMENTATION.md)
-- **Setup Guide:** [GITHUB_MODELS_SETUP.md](GITHUB_MODELS_SETUP.md)
+- **Setup Guide:** [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md)
 
 ---
 

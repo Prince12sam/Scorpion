@@ -61,7 +61,7 @@ scorpion report --suite "$latest" --summary
 
 See the main repository documentation:
 - [Getting Started](../../GETTING_STARTED.md)
-- [Installation Guide](../../INSTALL.md)
+- [Installation Guide](../../INSTALLATION.md)
 - [Command Reference](../../COMMANDS.md)
 
 ---

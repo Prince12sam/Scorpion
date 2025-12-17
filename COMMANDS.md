@@ -52,7 +52,7 @@ scorpion scan -t <target> [options]
 | `-R, --retries` | Retry count | `-R 1` |
 | `-U, --udp` | Enable UDP scan | `-U` |
 | `-u, --udp-ports` | UDP ports | `-u 53,123,161` |
-| `-O, --only-open` | Show only open ports | `-O` |
+| `--only-open / --show-all` | Show only open ports (default) or all ports | `--only-open` or `--show-all` |
 | `--raw` | Raw banner only | `--raw` |
 | `--no-write` | Connect-only mode | `--no-write` |
 | `--syn` | SYN scan (requires admin) | `--syn` |

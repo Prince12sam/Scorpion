@@ -144,7 +144,7 @@ scorpion webscan https://target.com -s critical
 scorpion webscan https://target.com -o web-vulns.json
 ```
 
-📖 **Full guide:** [WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md)
+📖 **Full guide:** [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
 
 ---
 
