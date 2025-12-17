@@ -209,7 +209,7 @@ scorpion fuzz-api https://api.target.com /login --method POST --iterations 500
 # Random decoys (requires root)
 sudo scorpion scan target.com --syn --decoy RND:10
 ```
-📖 [DECOY_SCANNING_GUIDE.md](DECOY_SCANNING_GUIDE.md)
+
 
 **Payload Generation:**
 ```bash
@@ -219,13 +219,13 @@ scorpion payload --lhost 10.0.0.1 --lport 4444 --shell bash
 # Web shells
 scorpion payload --lhost 10.0.0.1 --type web_shell --shell php
 ```
-📖 [PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)
+
 
 **OS Fingerprinting:**
 ```bash
 scorpion scan example.com --os-detect --web
 ```
-📖 [OS_FINGERPRINTING_GUIDE.md](OS_FINGERPRINTING_GUIDE.md)
+
 
 ---
 
