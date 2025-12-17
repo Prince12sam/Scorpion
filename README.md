@@ -176,6 +176,36 @@ scorpion api-test -t https://api.example.com
 
 ### 🎭 **Advanced Features**
 
+**📡 WiFi Penetration Testing:**
+```bash
+# Scan WiFi networks
+scorpion wifi-scan --interface wlan0 --duration 30
+
+# WPA handshake capture
+scorpion wifi-attack <ESSID> <BSSID> --type handshake
+
+# Deauth attack
+scorpion wifi-attack <ESSID> <BSSID> --type deauth --count 10
+```
+
+**📱 Mobile App Security:**
+```bash
+# Analyze Android APK (OWASP Mobile Top 10)
+scorpion mobile-analyze app.apk --owasp --output report.json
+
+# Bypass SSL pinning with Frida
+scorpion mobile-intercept com.example.app --proxy 127.0.0.1:8080
+```
+
+**🎯 Fuzzing Framework:**
+```bash
+# Fuzz network protocol
+scorpion fuzz-protocol 192.168.1.100 80 --protocol http --iterations 1000
+
+# Fuzz REST API
+scorpion fuzz-api https://api.target.com /login --method POST --iterations 500
+```
+
 **Decoy Scanning (IDS/IPS Evasion):**
 ```bash
 # Random decoys (requires root)

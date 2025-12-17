@@ -27,6 +27,12 @@ Complete reference for all Scorpion CLI commands and options.
 | **`post-exploit`** ⭐ | **Post-exploitation enum** | `scorpion post-exploit --os linux` |
 | **`ci-scan`** ⭐ | **CI/CD integration** | `scorpion ci-scan --input results.json --sarif-output` |
 | **`ai-pentest`** 🤖 | **AI-powered pentesting** | `scorpion ai-pentest -t example.com -i "Focus on APIs"` |
+| **`wifi-scan`** 📡 | **WiFi network scanning** | `scorpion wifi-scan --interface wlan0 --duration 30` |
+| **`wifi-attack`** ⚔️ | **WiFi attacks (deauth, handshake, evil twin)** | `scorpion wifi-attack <ESSID> <BSSID> --type handshake` |
+| **`mobile-analyze`** 📱 | **Mobile app security (OWASP Top 10)** | `scorpion mobile-analyze app.apk --owasp` |
+| **`mobile-intercept`** 🔓 | **SSL pinning bypass (Frida)** | `scorpion mobile-intercept com.app --proxy 127.0.0.1:8080` |
+| **`fuzz-protocol`** 🎯 | **Network protocol fuzzing** | `scorpion fuzz-protocol 192.168.1.100 80 --protocol tcp` |
+| **`fuzz-api`** 🌐 | **REST API fuzzing** | `scorpion fuzz-api https://api.target.com /login --method POST` |
 
 ---
 
@@ -1000,6 +1006,242 @@ source .venv/bin/activate  # Linux/Mac
 
 ---
 
+## 📡 wifi-scan - WiFi Network Scanning
+
+```bash
+scorpion wifi-scan [options]
+```
+
+Scan for WiFi networks using aircrack-ng suite (requires monitor mode).
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `-i, --interface` | Wireless interface | `--interface wlan0` |
+| `-d, --duration` | Scan duration (seconds) | `--duration 30` |
+| `-c, --channel` | Specific channel to scan | `--channel 6` |
+| `-o, --output` | Output JSON file | `--output networks.json` |
+
+### Requirements
+- **Linux only** (monitor mode required)
+- **Root/sudo access** required
+- **Tools:** airmon-ng, airodump-ng (aircrack-ng suite)
+
+### Examples
+```bash
+# Basic scan (30 seconds)
+sudo scorpion wifi-scan --interface wlan0 --duration 30
+
+# Scan specific channel
+sudo scorpion wifi-scan --interface wlan0 --channel 6 --duration 60
+
+# Save results to JSON
+sudo scorpion wifi-scan --interface wlan0 --duration 30 --output networks.json
+```
+
+---
+
+## ⚔️ wifi-attack - WiFi Attacks
+
+```bash
+scorpion wifi-attack <ESSID> <BSSID> [options]
+```
+
+Launch WiFi attacks: deauth, handshake capture, evil twin AP (requires root).
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `<ESSID>` | Target network name (required) | `"HomeNetwork"` |
+| `<BSSID>` | Target MAC address (required) | `AA:BB:CC:DD:EE:FF` |
+| `-t, --type` | Attack type | `--type deauth` or `handshake` or `evil-twin` |
+| `-i, --interface` | Monitor mode interface | `--interface wlan0mon` |
+| `-c, --count` | Deauth packet count | `--count 10` |
+| `-o, --output` | Handshake output file | `--output handshake.cap` |
+
+### Attack Types
+- **deauth** - Deauthentication attack (disconnect clients)
+- **handshake** - Capture WPA/WPA2 handshake for cracking
+- **evil-twin** - Create fake AP for credential phishing
+
+### Requirements
+- **Linux only**
+- **Root/sudo access** required
+- **Tools:** aireplay-ng, airodump-ng, hostapd (for evil twin)
+
+### Examples
+```bash
+# Deauth attack (disconnect clients)
+sudo scorpion wifi-attack "HomeNetwork" AA:BB:CC:DD:EE:FF --type deauth --count 10
+
+# Capture WPA handshake
+sudo scorpion wifi-attack "HomeNetwork" AA:BB:CC:DD:EE:FF --type handshake --output handshake.cap
+
+# Evil twin AP (credential phishing)
+sudo scorpion wifi-attack "HomeNetwork" AA:BB:CC:DD:EE:FF --type evil-twin
+```
+
+**⚠️ Legal Warning:** Only test networks you own or have explicit written permission to test.
+
+---
+
+## 📱 mobile-analyze - Mobile App Security Analysis
+
+```bash
+scorpion mobile-analyze <app_file> [options]
+```
+
+Analyze Android APK for OWASP Mobile Top 10 vulnerabilities.
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `<app_file>` | APK file path (required) | `app.apk` |
+| `-p, --platform` | Platform (android/ios) | `--platform android` |
+| `--owasp/--no-owasp` | Run OWASP Top 10 checks | `--owasp` |
+| `-o, --output` | Output JSON report | `--output report.json` |
+
+### OWASP Mobile Top 10 Coverage
+- **M1:** Improper Credential Usage (hardcoded API keys, passwords, AWS keys)
+- **M3:** Insecure Authentication/Authorization
+- **M5:** Insecure Communication (cleartext traffic)
+- **M6:** Inadequate Privacy Controls (dangerous permissions)
+- **M8:** Security Misconfiguration (debuggable flag, backup enabled)
+- **M9:** Insecure Data Storage (world-readable SharedPreferences)
+- **M10:** Insufficient Cryptography
+
+### Requirements
+- **Tools:** apktool, jadx, aapt (Android Asset Packaging Tool)
+
+### Examples
+```bash
+# Basic APK analysis
+scorpion mobile-analyze app.apk --owasp
+
+# Full analysis with JSON report
+scorpion mobile-analyze app.apk --owasp --output full_report.json
+
+# Quick scan (no OWASP checks)
+scorpion mobile-analyze app.apk --no-owasp
+```
+
+---
+
+## 🔓 mobile-intercept - SSL Pinning Bypass
+
+```bash
+scorpion mobile-intercept <package> [options]
+```
+
+Intercept mobile app traffic with SSL pinning bypass using Frida.
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `<package>` | App package name (required) | `com.example.app` |
+| `-p, --proxy` | Proxy address (Burp/ZAP) | `--proxy 127.0.0.1:8080` |
+| `-d, --device` | Device connection | `--device usb` or `emulator` |
+
+### Requirements
+- **Tools:** frida, frida-tools, frida-server (on device)
+- **USB debugging** enabled on Android device
+- **Proxy:** Burp Suite or OWASP ZAP configured
+
+### Setup
+1. Install Frida server on Android device
+2. Start Burp Suite/ZAP proxy (127.0.0.1:8080)
+3. Install proxy CA certificate on device
+4. Enable USB debugging
+
+### Examples
+```bash
+# Bypass SSL pinning (USB device)
+scorpion mobile-intercept com.example.app --proxy 127.0.0.1:8080 --device usb
+
+# Emulator target
+scorpion mobile-intercept com.example.app --proxy 127.0.0.1:8080 --device emulator
+```
+
+---
+
+## 🎯 fuzz-protocol - Network Protocol Fuzzing
+
+```bash
+scorpion fuzz-protocol <host> <port> [options]
+```
+
+Fuzz network protocols (TCP/UDP/HTTP) to discover crashes and vulnerabilities.
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `<host>` | Target host (required) | `192.168.1.100` |
+| `<port>` | Target port (required) | `80` |
+| `-p, --protocol` | Protocol (tcp/udp/http) | `--protocol http` |
+| `-n, --iterations` | Test case count | `--iterations 1000` |
+| `-o, --output` | Output crash report | `--output crashes.json` |
+
+### Mutation Strategies
+- Bit flip (single/multiple bits)
+- Byte flip (XOR 0xFF)
+- Insert/delete bytes
+- Interesting values (0x00, 0xFF, INT_MAX, INT_MIN)
+- Splice (combine inputs)
+
+### Examples
+```bash
+# Fuzz HTTP server
+scorpion fuzz-protocol 192.168.1.100 80 --protocol http --iterations 1000
+
+# Fuzz TCP service
+scorpion fuzz-protocol 192.168.1.100 9000 --protocol tcp --iterations 5000
+
+# Save crash report
+scorpion fuzz-protocol 192.168.1.100 80 --protocol http --iterations 1000 --output crashes.json
+```
+
+---
+
+## 🌐 fuzz-api - REST API Fuzzing
+
+```bash
+scorpion fuzz-api <base_url> <endpoint> [options]
+```
+
+Fuzz REST API endpoints with injection payloads (SQL, XSS, SSRF, etc.).
+
+### Options
+| Flag | Description | Example |
+|------|-------------|---------|
+| `<base_url>` | API base URL (required) | `https://api.example.com` |
+| `<endpoint>` | API endpoint (required) | `/api/v1/login` |
+| `-m, --method` | HTTP method | `--method POST` |
+| `-n, --iterations` | Test case count | `--iterations 500` |
+| `-o, --output` | Output findings | `--output findings.json` |
+
+### Attack Payloads (20+)
+- **SQL Injection:** `' OR '1'='1`, `1' UNION SELECT NULL--`
+- **XSS:** `<script>alert(1)</script>`, `<img src=x onerror=alert(1)>`
+- **Command Injection:** `; whoami`, `| id`, `` `ls` ``
+- **Path Traversal:** `../../../etc/passwd`
+- **XXE:** XML External Entity injection
+- **SSRF:** `http://localhost:22`, `http://169.254.169.254/`
+- **Buffer Overflow:** `A * 1000`, `A * 10000`
+
+### Examples
+```bash
+# Fuzz login endpoint
+scorpion fuzz-api https://api.example.com /api/v1/login --method POST --iterations 500
+
+# Fuzz GET endpoint
+scorpion fuzz-api https://api.example.com /api/v1/users --method GET --iterations 300
+
+# Save findings
+scorpion fuzz-api https://api.example.com /login --method POST --iterations 500 --output api_findings.json
+```
+
+---
+
 ## ⚠️ Legal & Ethical Use
 
 **IMPORTANT**: This tool is for authorized security testing only.
@@ -1012,6 +1254,6 @@ source .venv/bin/activate  # Linux/Mac
 
 ---
 
-**Quick Reference Version**: 2.0.1 (Enhanced)  
-**Last Updated**: December 8, 2025  
+**Quick Reference Version**: 2.0.2 (Enhanced)  
+**Last Updated**: December 17, 2025  
 **Documentation**: See README.md for full details

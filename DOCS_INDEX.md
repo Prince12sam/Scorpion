@@ -35,6 +35,10 @@ Complete project overview, features, and architecture.
 ## 🎯 Feature Guides
 
 - **[PAYLOAD_GENERATION_GUIDE.md](PAYLOAD_GENERATION_GUIDE.md)** - Reverse/bind shells, web shells
+- **[WIFI_PENTESTING_GUIDE.md](WIFI_PENTESTING_GUIDE.md)** 📡 - WiFi security testing, WPA cracking, Evil Twin
+- **[MOBILE_SECURITY_GUIDE.md](MOBILE_SECURITY_GUIDE.md)** 📱 - Android APK analysis, OWASP Mobile Top 10, Frida
+- **[FUZZING_GUIDE.md](FUZZING_GUIDE.md)** 🎯 - Protocol/API/Binary fuzzing, AFL++, crash analysis
+- **[LOCALHOST_SCANNING_GUIDE.md](LOCALHOST_SCANNING_GUIDE.md)** 🏠 - Local development environment testing
 
 ---
 
