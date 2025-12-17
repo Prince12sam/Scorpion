@@ -79,6 +79,8 @@ def _validate_port(port: int) -> bool:
 
 def _validate_ports(ports: List[int]) -> List[int]:
     """Validate and filter port list, removing invalid ports."""
+    if ports is None:
+        return None
     return [p for p in ports if _validate_port(p)]
 
 def _get_random_src_port() -> int:
