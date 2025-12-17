@@ -101,24 +101,33 @@ Autonomous vulnerability discovery using OpenAI, Anthropic, or GitHub Models (FR
 - **API Security** (REST, GraphQL, JWT)
 - **Intelligent exploitation** with context-aware payloads
 - **Autonomous testing** with minimal human intervention
+- **⚡ FAST MODE** - 6x faster exploitation (5-10 minutes)
+- **🔥 AGGRESSIVE MODE** - Maximum aggression for shell access
 
 ```bash
 # Set API key (auto-detects provider)
 export SCORPION_AI_API_KEY='your-api-key'
 
-# AI-powered pentest
+# Standard AI pentest
 scorpion ai-pentest -t example.com
 
-# OWASP Top 10 focus
-scorpion ai-pentest -t target.com -g web_exploitation -r medium
+# 🔥 AGGRESSIVE MODE (gain shell access)
+scorpion ai-pentest -t target.com -r high -g gain_shell_access \
+  -a fully_autonomous --max-iterations 50
+
+# ⚡ TURBO MODE (6x faster - 5-10 minutes!)
+scorpion ai-pentest -t target.com -r high -g gain_shell_access \
+  -a fully_autonomous --max-iterations 40 --time-limit 10
 
 # FREE with GitHub Models (no credit card!)
 export SCORPION_AI_API_KEY='ghp_your_github_token'
 scorpion ai-pentest -t target.com
 ```
 
-📖 **Setup guide:**
-- [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md) - All providers including FREE GitHub Models!
+📖 **Guides:**
+- [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md) - Complete AI testing guide
+- [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md) - 🔥 Gain shell access
+- [FAST_MODE.md](FAST_MODE.md) - ⚡ 6x faster exploitation
 
 ---
 
@@ -236,9 +245,10 @@ scorpion scan example.com --os-detect --web
 | [GETTING_STARTED.md](GETTING_STARTED.md) | 5-minute quick start guide |
 | [INSTALLATION.md](INSTALLATION.md) | Installation for all platforms |
 | [COMMANDS.md](COMMANDS.md) | Complete command reference (35+ commands) |
-| [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md) | AI pentesting setup (FREE option!) |
+| [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md) | Complete AI penetration testing guide |
+| [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md) | 🔥 Maximum aggression for shell access |
+| [FAST_MODE.md](FAST_MODE.md) | ⚡ Speed optimizations (6x faster) |
 | [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) | WiFi, Mobile, Fuzzing guides |
-| [LOCALHOST_SCANNING_GUIDE.md](LOCALHOST_SCANNING_GUIDE.md) | Local testing guide |
 
 📑 **All documentation:** [DOCS_INDEX.md](DOCS_INDEX.md)
 

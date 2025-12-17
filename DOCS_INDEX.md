@@ -17,9 +17,10 @@
 | Document | Purpose |
 |----------|---------|
 | [COMMANDS.md](COMMANDS.md) | Complete CLI reference (35+ commands) |
-| [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md) | AI pentesting setup (FREE option!) |
+| [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md) | Complete AI penetration testing guide |
+| [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md) | 🔥 Maximum aggression for shell access |
+| [FAST_MODE.md](FAST_MODE.md) | ⚡ Speed optimizations (6x faster) |
 | [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) | WiFi, Mobile, Fuzzing guides |
-| [LOCALHOST_SCANNING_GUIDE.md](LOCALHOST_SCANNING_GUIDE.md) | Local testing guide |
 
 ---
 
@@ -38,7 +39,9 @@
 **I want to...**
 - ⚡ **Get started** → [GETTING_STARTED.md](GETTING_STARTED.md)
 - 💻 **Install** → [INSTALLATION.md](INSTALLATION.md)
-- 🤖 **Setup AI** → [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md)
+- 🤖 **AI pentest** → [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)
+- 🔥 **Gain shell access** → [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md)
+- ⚡ **Fast scanning (6x faster)** → [FAST_MODE.md](FAST_MODE.md)
 - 📖 **Learn commands** → [COMMANDS.md](COMMANDS.md)
 - 📡 **WiFi testing** → [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
 - 📱 **Mobile security** → [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
