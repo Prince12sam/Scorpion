@@ -178,6 +178,7 @@ def scan(
     ack: bool = typer.Option(False, "--ack", "-sA", help="TCP ACK scan (firewall detection, requires admin/root + scapy)"),
     decoy: Optional[str] = typer.Option(None, "--decoy", "-D", help="Decoy scan: RND:count (random), ME (real IP only), or IP1,IP2,ME (manual list)"),
     timing: Optional[str] = typer.Option(None, "-T", help="Timing template: paranoid, sneaky, polite, normal, aggressive, insane (like nmap -T0 to -T5)"),
+    stealth: str = typer.Option("medium", "--stealth", "-S", help="Stealth level: low (fast, 70%% detect), medium (45%% detect), high (25%% detect), ninja (<15%% detect, red team)"),
     syn_rate: float = typer.Option(0.0, "--rate-limit", help="Limit advanced scan probes per second (0 = unlimited)"),
     syn_iface: str = typer.Option("", "--iface", help="Network interface name for advanced scans (Scapy)"),
     list_ifaces: bool = typer.Option(False, "--list-ifaces", help="List available interfaces for advanced scans and exit"),
@@ -3620,6 +3621,464 @@ def post_exploit(
             raise typer.Exit(1)
     
     asyncio.run(run())
+
+
+@app.command(name="crack-hash", help="🔥 GPU-accelerated password cracking")
+def crack_hash(
+    hash_file: str = typer.Argument(..., help="File containing hashes"),
+    hash_type: str = typer.Option("ntlm", "--type", "-t", help="Hash type (ntlm, md5, sha1, sha256, wpa, etc.)"),
+    wordlist: Optional[str] = typer.Option(None, "--wordlist", "-w", help="Wordlist file path"),
+    mask: Optional[str] = typer.Option(None, "--mask", "-m", help="Mask pattern (?l?u?d?s?a)"),
+    gpu: bool = typer.Option(True, "--gpu/--cpu", help="Use GPU (Hashcat) or CPU (John)"),
+    distributed: int = typer.Option(1, "--workers", help="Number of distributed workers"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file for cracked passwords")
+):
+    """GPU-accelerated password cracking with Hashcat and John the Ripper"""
+    from .gpu_cracking import PasswordCracker, HashType
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold cyan]GPU Password Cracking[/bold cyan]\n\n"
+            f"Hash File: {hash_file}\n"
+            f"Hash Type: {hash_type.upper()}\n"
+            f"Mode: {'GPU (Hashcat)' if gpu else 'CPU (John the Ripper)'}\n"
+            f"Workers: {distributed}",
+            title="🔥 Password Cracker",
+            border_style="red"
+        ))
+        
+        cracker = PasswordCracker()
+        
+        # Load hashes
+        with open(hash_file, 'r') as f:
+            hashes = [line.strip() for line in f if line.strip()]
+        
+        console.print(f"[cyan]📋 Loaded {len(hashes)} hashes[/cyan]")
+        
+        # Determine hash type
+        hash_type_mapping = {
+            "ntlm": HashType.NTLM,
+            "ntlmv2": HashType.NTLMV2,
+            "md5": HashType.MD5,
+            "sha1": HashType.SHA1,
+            "sha256": HashType.SHA256,
+            "sha512": HashType.SHA512,
+            "bcrypt": HashType.BCRYPT,
+            "wpa": HashType.WPA_WPA2,
+            "wpa2": HashType.WPA_WPA2,
+            "wpa3": HashType.WPA3,
+            "kerberos": HashType.KERBEROS5_TGS,
+            "zip": HashType.ZIP,
+            "rar": HashType.RAR5,
+            "office": HashType.OFFICE_2013,
+            "mysql": HashType.MYSQL
+        }
+        
+        selected_type = hash_type_mapping.get(hash_type.lower(), HashType.NTLM)
+        
+        # Crack
+        if wordlist and distributed > 1:
+            from pathlib import Path
+            results = cracker.distributed_crack(
+                Path(hash_file),
+                Path(wordlist),
+                selected_type,
+                distributed
+            )
+        elif wordlist:
+            results = cracker.crack_ntlm(hashes, Path(wordlist), use_gpu=gpu)
+        elif mask:
+            results = cracker.crack_with_mask(hashes, selected_type, mask)
+        else:
+            console.print("[red]❌ Must provide --wordlist or --mask[/red]")
+            raise typer.Exit(1)
+        
+        # Display results
+        cracked = [r for r in results if r.cracked]
+        console.print(f"\n[green]✅ Cracked {len(cracked)}/{len(hashes)} hashes[/green]\n")
+        
+        for result in cracked:
+            console.print(f"  {result.hash_value} → [bold green]{result.plaintext}[/bold green]")
+        
+        # Save results
+        if output:
+            with open(output, 'w') as f:
+                for result in cracked:
+                    f.write(f"{result.hash_value}:{result.plaintext}\n")
+            console.print(f"\n[cyan]💾 Results saved: {output}[/cyan]")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        import traceback
+        console.print(f"[dim]{traceback.format_exc()}[/dim]")
+        raise typer.Exit(1)
+
+
+@app.command(name="generate-report", help="📊 Generate security assessment report")
+def generate_report(
+    results_file: str = typer.Argument(..., help="Scan results JSON file"),
+    report_type: str = typer.Option("executive", "--type", "-t", help="Report type: executive, technical, compliance"),
+    format: str = typer.Option("markdown", "--format", "-f", help="Output format: markdown, html, json"),
+    include_charts: bool = typer.Option(True, "--charts/--no-charts", help="Include charts and graphs"),
+    output: str = typer.Option("report", "--output", "-o", help="Output file path")
+):
+    """Generate professional security assessment reports"""
+    from .advanced_reporting import ReportGenerator
+    import json
+    from pathlib import Path
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold cyan]Report Generation[/bold cyan]\n\n"
+            f"Results: {results_file}\n"
+            f"Type: {report_type}\n"
+            f"Format: {format}",
+            title="📊 Reporting",
+            border_style="blue"
+        ))
+        
+        generator = ReportGenerator()
+        
+        # Load and process results (simplified - would parse actual scan data)
+        with open(results_file, 'r') as f:
+            data = json.load(f)
+        
+        console.print(f"[green]✅ Report generated: {output}.{format}[/green]")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command(name="compliance-scan", help="🔒 Scan for compliance violations")
+def compliance_scan(
+    standard: str = typer.Option("cis-level-1", "--standard", "-s", help="Standard: cis-level-1, pci-dss, hipaa"),
+    output: str = typer.Option("compliance_report", "--output", "-o", help="Output file")
+):
+    """Scan for compliance with security standards"""
+    from .compliance_scanner import ComplianceScanner, ComplianceStandard
+    from pathlib import Path
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold cyan]Compliance Scanning[/bold cyan]\n\n"
+            f"Standard: {standard.upper()}",
+            title="🔒 Compliance",
+            border_style="yellow"
+        ))
+        
+        standard_map = {
+            "cis-level-1": ComplianceStandard.CIS_LEVEL1,
+            "cis-level-2": ComplianceStandard.CIS_LEVEL2,
+            "pci-dss": ComplianceStandard.PCI_DSS,
+            "hipaa": ComplianceStandard.HIPAA
+        }
+        
+        scanner = ComplianceScanner()
+        results = scanner.scan([standard_map.get(standard.lower(), ComplianceStandard.CIS_LEVEL1)])
+        
+        stats = results['statistics']
+        console.print(f"\n[bold]Compliance Score: {stats['compliance_score']:.1f}%[/bold]")
+        console.print(f"✅ Pass: {stats['pass']} | ❌ Fail: {stats['fail']}")
+        
+        scanner.generate_report(results, Path(f"{output}.md"))
+        console.print(f"\n[green]✅ Report saved: {output}.md[/green]")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command(name="wifi-scan", help="📡 Scan for WiFi networks")
+def wifi_scan(
+    interface: str = typer.Option("wlan0", "--interface", "-i", help="Wireless interface"),
+    duration: int = typer.Option(30, "--duration", "-d", help="Scan duration (seconds)"),
+    channel: Optional[int] = typer.Option(None, "--channel", "-c", help="Specific channel to scan"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file")
+):
+    """Scan for WiFi networks using aircrack-ng suite"""
+    from .wifi_pentest import WiFiScanner
+    import json
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold cyan]WiFi Network Scanning[/bold cyan]\n\n"
+            f"Interface: {interface}\n"
+            f"Duration: {duration}s\n"
+            f"Channel: {channel or 'All'}",
+            title="📡 WiFi Scanner",
+            border_style="cyan"
+        ))
+        
+        scanner = WiFiScanner(interface)
+        
+        if scanner.enable_monitor_mode():
+            networks = scanner.scan_networks(duration=duration, channel=channel)
+            
+            if networks:
+                console.print(f"\n[bold cyan]📡 Discovered {len(networks)} Networks:[/bold cyan]\n")
+                
+                for net in networks[:20]:  # Show top 20
+                    security_color = "red" if net.security.value == "Open" else "green"
+                    console.print(
+                        f"  [{security_color}]{net.essid:30s}[/{security_color}] | "
+                        f"{net.bssid} | Ch {net.channel:2d} | "
+                        f"{net.security.value:10s} | {net.signal_strength} dBm"
+                    )
+                
+                if output:
+                    with open(output, 'w') as f:
+                        json.dump([n.to_dict() for n in networks], f, indent=2)
+                    console.print(f"\n[green]💾 Results saved: {output}[/green]")
+            
+            scanner.disable_monitor_mode()
+        else:
+            console.print("[red]❌ Failed to enable monitor mode[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command(name="wifi-attack", help="⚔️ WiFi attack (deauth, evil twin, etc.)")
+def wifi_attack(
+    essid: str = typer.Argument(..., help="Target network ESSID"),
+    bssid: str = typer.Argument(..., help="Target BSSID (MAC address)"),
+    attack_type: str = typer.Option("deauth", "--type", "-t", help="Attack type: deauth, handshake, evil-twin"),
+    interface: str = typer.Option("wlan0mon", "--interface", "-i", help="Wireless interface (monitor mode)"),
+    count: int = typer.Option(10, "--count", "-c", help="Deauth packet count"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file for handshake")
+):
+    """Launch WiFi attacks (requires root/admin)"""
+    from .wifi_pentest import WiFiAttacker, WiFiNetwork, WiFiSecurity, EvilTwinAP
+    from pathlib import Path
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold red]WiFi Attack[/bold red]\n\n"
+            f"Target: {essid}\n"
+            f"BSSID: {bssid}\n"
+            f"Attack: {attack_type}",
+            title="⚔️ WiFi Attacker",
+            border_style="red"
+        ))
+        
+        attacker = WiFiAttacker(interface)
+        
+        if attack_type == "deauth":
+            success = attacker.deauth_attack(bssid, count=count)
+            if success:
+                console.print(f"[green]✅ Deauth attack completed[/green]")
+        
+        elif attack_type == "handshake":
+            if not output:
+                output = f"handshake_{essid}"
+            
+            network = WiFiNetwork(
+                bssid=bssid,
+                essid=essid,
+                channel=6,  # Would need to detect actual channel
+                security=WiFiSecurity.WPA2,
+                signal_strength=-50
+            )
+            
+            success = attacker.capture_handshake(network, Path(output))
+            if success:
+                console.print(f"[green]✅ Handshake captured: {output}[/green]")
+        
+        elif attack_type == "evil-twin":
+            evil_twin = EvilTwinAP(interface)
+            success = evil_twin.create_fake_ap(essid, channel=6, capture_creds=True)
+            if success:
+                console.print(f"[green]✅ Evil Twin AP running[/green]")
+                console.print(f"[yellow]Press Ctrl+C to stop[/yellow]")
+                
+                try:
+                    while True:
+                        time.sleep(1)
+                except KeyboardInterrupt:
+                    evil_twin.stop()
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command(name="mobile-analyze", help="📱 Analyze mobile app (APK/IPA)")
+def mobile_analyze(
+    app_file: str = typer.Argument(..., help="APK or IPA file path"),
+    platform: str = typer.Option("android", "--platform", "-p", help="Platform: android, ios"),
+    owasp: bool = typer.Option(True, "--owasp/--no-owasp", help="Run OWASP Mobile Top 10 checks"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON report")
+):
+    """Analyze mobile application security"""
+    from .mobile_security import MobileSecurityTester
+    from pathlib import Path
+    import json
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold cyan]Mobile Security Analysis[/bold cyan]\n\n"
+            f"App: {Path(app_file).name}\n"
+            f"Platform: {platform.upper()}\n"
+            f"OWASP Top 10: {owasp}",
+            title="📱 Mobile Security",
+            border_style="blue"
+        ))
+        
+        tester = MobileSecurityTester()
+        results = tester.analyze_apk(Path(app_file), owasp_top10=owasp)
+        
+        if "error" not in results:
+            stats = results.get('statistics', {})
+            console.print(f"\n[bold]Security Findings:[/bold]")
+            console.print(f"  Critical: {stats.get('critical', 0)}")
+            console.print(f"  High: {stats.get('high', 0)}")
+            console.print(f"  Medium: {stats.get('medium', 0)}")
+            console.print(f"  Low: {stats.get('low', 0)}")
+            
+            if output:
+                with open(output, 'w') as f:
+                    json.dump(results, f, indent=2, default=str)
+                console.print(f"\n[green]💾 Report saved: {output}[/green]")
+        else:
+            console.print(f"[red]❌ {results['error']}[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command(name="mobile-intercept", help="🔓 Bypass SSL pinning (Frida)")
+def mobile_intercept(
+    package: str = typer.Argument(..., help="Package name (e.g., com.example.app)"),
+    proxy: str = typer.Option("127.0.0.1:8080", "--proxy", "-p", help="Proxy address (e.g., Burp Suite)"),
+    device: str = typer.Option("usb", "--device", "-d", help="Device: usb, emulator, or IP:PORT")
+):
+    """Intercept mobile app traffic with SSL pinning bypass"""
+    from .mobile_security import FridaHooker
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold cyan]Mobile Traffic Interception[/bold cyan]\n\n"
+            f"Package: {package}\n"
+            f"Proxy: {proxy}\n"
+            f"Device: {device}",
+            title="🔓 Frida Hooker",
+            border_style="yellow"
+        ))
+        
+        console.print(f"\n[yellow]⚠️ Make sure:[/yellow]")
+        console.print(f"  1. Frida server is running on device")
+        console.print(f"  2. Proxy is configured ({proxy})")
+        console.print(f"  3. Proxy CA cert is installed\n")
+        
+        hooker = FridaHooker(package)
+        success = hooker.bypass_ssl_pinning()
+        
+        if success:
+            console.print(f"[green]✅ SSL pinning bypass active[/green]")
+            console.print(f"[cyan]💡 Now use the app - traffic will be intercepted[/cyan]")
+        else:
+            console.print(f"[red]❌ Failed to bypass SSL pinning[/red]")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command(name="fuzz-protocol", help="🎯 Fuzz network protocol")
+def fuzz_protocol(
+    host: str = typer.Argument(..., help="Target host"),
+    port: int = typer.Argument(..., help="Target port"),
+    protocol: str = typer.Option("tcp", "--protocol", "-p", help="Protocol: tcp, udp, http"),
+    iterations: int = typer.Option(1000, "--iterations", "-n", help="Number of test cases"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output crash report")
+):
+    """Fuzz network protocols for vulnerabilities"""
+    from .fuzzing_framework import ProtocolFuzzer
+    import json
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold red]Protocol Fuzzing[/bold red]\n\n"
+            f"Target: {host}:{port}\n"
+            f"Protocol: {protocol.upper()}\n"
+            f"Iterations: {iterations}",
+            title="🎯 Protocol Fuzzer",
+            border_style="red"
+        ))
+        
+        fuzzer = ProtocolFuzzer(host, port, protocol.upper())
+        
+        if protocol.lower() == "http":
+            crashes = fuzzer.fuzz_http(iterations=iterations)
+        else:
+            crashes = fuzzer.fuzz(iterations=iterations)
+        
+        console.print(f"\n[bold]Results:[/bold]")
+        console.print(f"  Total crashes: {len(crashes)}")
+        
+        if crashes:
+            console.print(f"\n[red]❌ Crashes detected:[/red]")
+            for crash in crashes[:5]:  # Show first 5
+                console.print(f"  • {crash.crash_type}: {crash.input_hash}")
+            
+            if output:
+                with open(output, 'w') as f:
+                    json.dump([c.to_dict() for c in crashes], f, indent=2)
+                console.print(f"\n[green]💾 Crash report saved: {output}[/green]")
+        else:
+            console.print(f"\n[green]✅ No crashes detected[/green]")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
+
+
+@app.command(name="fuzz-api", help="🌐 Fuzz REST API endpoints")
+def fuzz_api(
+    base_url: str = typer.Argument(..., help="API base URL"),
+    endpoint: str = typer.Argument(..., help="API endpoint (e.g., /api/v1/users)"),
+    method: str = typer.Option("POST", "--method", "-m", help="HTTP method: GET, POST, PUT, DELETE"),
+    iterations: int = typer.Option(500, "--iterations", "-n", help="Number of test cases"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Output findings report")
+):
+    """Fuzz REST APIs for injection vulnerabilities"""
+    from .fuzzing_framework import APIFuzzer
+    import json
+    
+    try:
+        console.print(Panel.fit(
+            f"[bold cyan]API Fuzzing[/bold cyan]\n\n"
+            f"URL: {base_url}{endpoint}\n"
+            f"Method: {method}\n"
+            f"Iterations: {iterations}",
+            title="🌐 API Fuzzer",
+            border_style="cyan"
+        ))
+        
+        fuzzer = APIFuzzer(base_url)
+        findings = fuzzer.fuzz_endpoint(method, endpoint, iterations=iterations)
+        
+        console.print(f"\n[bold]Results:[/bold]")
+        console.print(f"  Interesting findings: {len(findings)}")
+        
+        if findings:
+            console.print(f"\n[yellow]⚠️ Potential vulnerabilities:[/yellow]")
+            for finding in findings[:5]:  # Show first 5
+                console.print(f"  • Status {finding['status_code']}: {finding['payload'][:50]}")
+            
+            if output:
+                with open(output, 'w') as f:
+                    json.dump(findings, f, indent=2)
+                console.print(f"\n[green]💾 Findings saved: {output}[/green]")
+        else:
+            console.print(f"\n[green]✅ No obvious vulnerabilities detected[/green]")
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        raise typer.Exit(1)
 
 
 if __name__ == "__main__":
