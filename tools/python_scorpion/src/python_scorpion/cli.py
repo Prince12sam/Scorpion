@@ -2253,7 +2253,7 @@ def ai_pentest_command(
         help="Comma-separated secondary goals (e.g., 'data_access,network_mapping')"
     ),
     time_limit: int = typer.Option(120, "--time-limit", help="Maximum test duration in minutes"),
-    max_iterations: int = typer.Option(10, "--max-iterations", help="Maximum AI decision-action iterations"),
+    max_iterations: int = typer.Option(20, "--max-iterations", help="Maximum testing iterations (default: 20 for thorough exploitation)"),
     
     # AI Configuration
     ai_provider: str = typer.Option(
