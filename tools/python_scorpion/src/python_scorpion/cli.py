@@ -2672,7 +2672,9 @@ def ai_pentest_command(
         else:
             # Save to default location
             timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-            default_output = f"ai_pentest_{target.replace(':', '_')}_{timestamp}.json"
+            # Sanitize target for filename - replace invalid characters
+            safe_target = target.replace('://', '_').replace('/', '_').replace(':', '_').replace('?', '_').replace('&', '_')
+            default_output = f"ai_pentest_{safe_target}_{timestamp}.json"
             with open(default_output, "w") as f:
                 json.dump(report, f, indent=2)
             console.print(f"[green]✅ Full report saved to: {default_output}[/green]\n")
