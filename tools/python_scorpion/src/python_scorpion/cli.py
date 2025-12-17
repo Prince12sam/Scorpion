@@ -156,7 +156,7 @@ console = Console()
 def scan(
     host: Optional[str] = typer.Argument(None, help="Target host (positional)"),
     target: Optional[str] = typer.Option(None, "--target", "-t", help="Alias for host (supports -t)"),
-    ports: str = "1-65535",
+    ports: str = typer.Option("1-65535", "--ports", "-p", help="Ports to scan (default: 1-65535, e.g., 80,443,8080 or 1-1000)"),
     concurrency: int = typer.Option(500, "--concurrency", "-C", help="Concurrent probes (default: 500 for aggressive scanning)"),
     timeout: float = typer.Option(1.0, "--timeout", help="Timeout seconds per probe"),
     retries: int = typer.Option(0, "--retries", "-R", help="Retries on timeouts (reserved)"),
@@ -1367,8 +1367,9 @@ def fuzz(
 
 @app.command()
 def nuclei(
-    target: str = typer.Argument(..., help="Target URL or file with URLs"),
-    templates: Optional[str] = typer.Option(None, "--templates", "-t", help="Template paths (comma-separated)"),
+    target: Optional[str] = typer.Argument(None, help="Target URL or file with URLs"),
+    target_opt: Optional[str] = typer.Option(None, "--target", "-t", help="Target URL (alternative to positional)"),
+    templates: Optional[str] = typer.Option(None, "--templates", "-T", help="Template paths (comma-separated)"),
     tags: Optional[str] = typer.Option(None, "--tags", help="Template tags (comma-separated, e.g., cve,xss,sqli)"),
     severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Severity filter (comma-separated: critical,high,medium,low,info)"),
     exclude_severity: Optional[str] = typer.Option(None, "--exclude-severity", "-es", help="Exclude severity levels"),
@@ -1400,6 +1401,12 @@ def nuclei(
         raise typer.Exit(code=1)
     
     console.print(f"Nuclei version: {version}", style="cyan")
+    
+    # Use -t option if provided, otherwise positional argument
+    final_target = target_opt or target
+    if not final_target:
+        console.print("ERROR: Target required (provide as argument or use -t/--target)", style="red")
+        raise typer.Exit(code=1)
     
     try:
         scanner = NucleiScanner()
@@ -1433,7 +1440,7 @@ def nuclei(
         raise typer.Exit()
     
     # Run scan
-    console.print(f"\n[cyan]Starting Nuclei scan on {target}[/cyan]")
+    console.print(f"\n[cyan]Starting Nuclei scan on {final_target}[/cyan]")
     console.print(f"Rate limit: {rate_limit}/s | Concurrency: {concurrency} | Timeout: {timeout}s\n")
     
     try:
@@ -1445,7 +1452,7 @@ def nuclei(
         exclude_tags_list = exclude_tags.split(",") if exclude_tags else None
         
         results = scanner.scan(
-            target=target,
+            target=final_target,
             templates=templates_list,
             tags=tags_list,
             severity=severity_list,
