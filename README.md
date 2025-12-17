@@ -47,8 +47,7 @@ scorpion --version
 ```
 
 📖 **Detailed guides:**
-- **Linux:** [INSTALL_LINUX.md](INSTALL_LINUX.md)
-- **Windows:** [INSTALL.md](INSTALL.md)
+- **Installation:** [INSTALLATION.md](INSTALLATION.md) - All platforms
 - **Getting Started:** [GETTING_STARTED.md](GETTING_STARTED.md)
 
 ---
@@ -118,9 +117,8 @@ export SCORPION_AI_API_KEY='ghp_your_github_token'
 scorpion ai-pentest -t target.com
 ```
 
-📖 **Setup guides:**
-- [API_KEY_SETUP.md](API_KEY_SETUP.md) - All providers
-- [GITHUB_MODELS_SETUP.md](GITHUB_MODELS_SETUP.md) - FREE AI in 2 minutes!
+📖 **Setup guide:**
+- [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md) - All providers including FREE GitHub Models!
 
 ---
 
@@ -236,13 +234,11 @@ scorpion scan example.com --os-detect --web
 | Guide | Description |
 |-------|-------------|
 | [GETTING_STARTED.md](GETTING_STARTED.md) | 5-minute quick start guide |
-| [COMMANDS.md](COMMANDS.md) | Complete command reference |
-| [AGGRESSIVE_SCANNING.md](AGGRESSIVE_SCANNING.md) | Port scanning best practices |
-| [WEB_PENTESTING_GUIDE.md](WEB_PENTESTING_GUIDE.md) | Web security testing |
-| [AI_AGENT_ENHANCED_GUIDE.md](AI_AGENT_ENHANCED_GUIDE.md) | AI-powered testing |
-| [API_KEY_SETUP.md](API_KEY_SETUP.md) | Configure AI providers |
-| [INSTALL_LINUX.md](INSTALL_LINUX.md) | Linux installation |
-| [INSTALL.md](INSTALL.md) | Windows installation |
+| [INSTALLATION.md](INSTALLATION.md) | Installation for all platforms |
+| [COMMANDS.md](COMMANDS.md) | Complete command reference (35+ commands) |
+| [AI_SETUP_GUIDE.md](AI_SETUP_GUIDE.md) | AI pentesting setup (FREE option!) |
+| [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) | WiFi, Mobile, Fuzzing guides |
+| [LOCALHOST_SCANNING_GUIDE.md](LOCALHOST_SCANNING_GUIDE.md) | Local testing guide |
 
 📑 **All documentation:** [DOCS_INDEX.md](DOCS_INDEX.md)
 
