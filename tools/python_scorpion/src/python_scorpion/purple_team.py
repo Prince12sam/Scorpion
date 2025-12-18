@@ -18,7 +18,7 @@ from .web_pentest import AdvancedWebTester
 from .threat_hunter import ThreatHunter, IOC, Anomaly
 from .mitre_attack import MITREAttackMapper
 from .threat_intel import check_threat_intel
-from .ai_decision_engine import AIDecisionEngine, Finding
+# Note: ai_decision_engine removed in Phase 1 optimization
 
 
 @dataclass
@@ -65,7 +65,7 @@ class PurpleTeamSimulator:
         
         # Red team components
         self.attack_simulations = []
-        self.ai_engine = AIDecisionEngine(mode="red_team")
+        # AI decision engine functionality integrated into attacks
         
         # Blue team components
         self.threat_hunter = ThreatHunter()
