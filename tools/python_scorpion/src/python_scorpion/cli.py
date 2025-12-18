@@ -56,7 +56,7 @@ from .crawler import crawl as web_crawl
 from .cloud import cloud_audit
 from .k8s import k8s_audit
 from .container_sec import container_audit
-from .api_security import APISecurityTester
+# Note: APISecurityTester removed in Phase 1 optimization (use api.py functions instead)
 from .db_pentest import DatabasePentester
 from .post_exploit import PostExploitation
 from .ci_integration import CICDIntegration, run_ci_scan
@@ -2018,7 +2018,7 @@ def payload(
         raise typer.Exit(1)
 
 
-@app.command()
+# @app.command()  # Disabled - api_security module removed in Phase 1 optimization
 def api_security(
     target: str = typer.Option(..., "--target", "-t", help="API base URL (e.g., https://api.example.com)"),
     openapi_spec: Optional[str] = typer.Option(None, "--spec", help="OpenAPI/Swagger spec URL"),
@@ -2028,6 +2028,9 @@ def api_security(
     """
     🔐 Comprehensive API Security Testing
     
+    NOTE: This command is disabled - api_security module removed in Phase 1 optimization.
+    Use 'scorpion ai-pentest' with -g api_security_testing goal instead.
+    
     Tests REST/GraphQL/gRPC APIs for vulnerabilities:
     - Authentication bypass & default credentials
     - JWT security (alg:none, weak keys, sensitive data)
@@ -2036,9 +2039,13 @@ def api_security(
     - Rate limiting
     - Mass assignment
     """
+    console.print("[red]Error: This command is currently disabled.[/red]")
+    console.print("[yellow]API security testing integrated into AI pentesting.[/yellow]")
+    console.print("[cyan]Use: scorpion ai-pentest -t <api-url> -g api_security_testing -r high[/cyan]")
+    return
     
     async def run():
-        async with APISecurityTester(target) as tester:
+        # async with APISecurityTester(target) as tester:  # Removed in Phase 1
             try:
                 results = await tester.run_full_assessment(openapi_spec, jwt_token)
                 
@@ -2841,9 +2848,16 @@ def attack_chain(
     """
     Discover exploit chains from findings using AI decision engine.
     Automatically chains vulnerabilities for maximum impact (red team) or prioritizes fixes (blue team).
+    
+    NOTE: This command is disabled - ai_decision_engine module removed in Phase 1 optimization.
+    Functionality now integrated into ai_pentest.py
     """
     async def run():
-        from .ai_decision_engine import AIDecisionEngine, Finding
+        # from .ai_decision_engine import AIDecisionEngine, Finding  # Removed in Phase 1 optimization
+        console.print("[red]Error: This command is currently disabled.[/red]")
+        console.print("[yellow]AI decision logic is now integrated into 'scorpion ai-pentest' command.[/yellow]")
+        console.print("[cyan]Use: scorpion ai-pentest -t <target> -r high -g gain_shell_access[/cyan]")
+        return
         
         console.print(f"\n[cyan]🧠 AI Decision Engine: {mode.upper()}[/cyan]\n")
         
@@ -3553,9 +3567,16 @@ def post_exploit(
     """
     Generate post-exploitation commands.
     System enumeration, network pivoting, data exfiltration, screenshots, keyloggers.
+    
+    NOTE: This command is disabled - post_exploitation module removed in Phase 1 optimization.
+    Use post_exploit.py's PostExploitation class instead.
     """
     async def run():
-        from .post_exploitation import PostExploitationGenerator, PostExploitTechnique
+        # from .post_exploitation import PostExploitationGenerator, PostExploitTechnique  # Removed in Phase 1
+        console.print("[red]Error: This command is currently disabled.[/red]")
+        console.print("[yellow]Post-exploitation functionality integrated into AI pentesting.[/yellow]")
+        console.print("[cyan]Use: scorpion ai-pentest -t <target> -r high -g gain_shell_access[/cyan]")
+        return
         
         try:
             console.print(f"\n[cyan]🎯 Post-Exploitation Generator[/cyan]\n")
@@ -4004,8 +4025,17 @@ def fuzz_protocol(
     iterations: int = typer.Option(1000, "--iterations", "-n", help="Number of test cases"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output crash report")
 ):
-    """Fuzz network protocols for vulnerabilities"""
-    from .fuzzing_framework import ProtocolFuzzer
+    """
+    Fuzz network protocols for vulnerabilities
+    
+    NOTE: This command is disabled - fuzzing_framework module removed in Phase 1 optimization.
+    Use fuzzer.py's AdvancedFuzzer class instead.
+    """
+    # from .fuzzing_framework import ProtocolFuzzer  # Removed in Phase 1 optimization
+    console.print("[red]Error: This command is currently disabled.[/red]")
+    console.print("[yellow]Protocol fuzzing functionality available in fuzzer.py[/yellow]")
+    console.print("[cyan]Use AdvancedFuzzer class directly or AI pentest for vulnerability discovery.[/cyan]")
+    return
     import json
     
     try:
@@ -4053,8 +4083,17 @@ def fuzz_api(
     iterations: int = typer.Option(500, "--iterations", "-n", help="Number of test cases"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output findings report")
 ):
-    """Fuzz REST APIs for injection vulnerabilities"""
-    from .fuzzing_framework import APIFuzzer
+    """
+    Fuzz REST APIs for injection vulnerabilities
+    
+    NOTE: This command is disabled - fuzzing_framework module removed in Phase 1 optimization.
+    Use fuzzer.py's AdvancedFuzzer class instead.
+    """
+    # from .fuzzing_framework import APIFuzzer  # Removed in Phase 1 optimization
+    console.print("[red]Error: This command is currently disabled.[/red]")
+    console.print("[yellow]API fuzzing functionality available in fuzzer.py[/yellow]")
+    console.print("[cyan]Use AdvancedFuzzer class directly or AI pentest for API testing.[/cyan]")
+    return
     import json
     
     try:
