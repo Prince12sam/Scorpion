@@ -82,6 +82,7 @@ from .ai_pentest import (
 # Blue Team imports
 from .threat_hunter import ThreatHunter, IOC, Anomaly
 from .purple_team import PurpleTeamSimulator
+from .remote_access import SSHRemoteAccess, is_ssh_url, fetch_remote_log, fetch_multiple_servers
 
 # Remove subtitle under banner by not setting a global help description
 app = typer.Typer()
@@ -4138,8 +4139,10 @@ def fuzz_api(
 
 @app.command(name="threat-hunt", help="🔍 AI-powered threat hunting & IOC detection")
 def threat_hunt_command(
-    logs: Optional[str] = typer.Option(None, "--logs", "-l", help="Path to log file or directory"),
+    logs: Optional[str] = typer.Option(None, "--logs", "-l", help="Path to log file, directory, or SSH URL (ssh://user@host:/path)"),
     target: Optional[str] = typer.Option(None, "--target", "-t", help="Live target for process/network scanning"),
+    remote_servers: Optional[str] = typer.Option(None, "--remote-servers", help="File with list of servers (user@host:/path per line)"),
+    ssh_key: Optional[str] = typer.Option(None, "--ssh-key", help="SSH private key path (default: ~/.ssh/id_rsa)"),
     time_limit: int = typer.Option(5, "--time-limit", help="Time limit in minutes (default: 5)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON report"),
     severity: Optional[str] = typer.Option(None, "--severity", "-s", help="Min severity: low, medium, high, critical")
@@ -4170,7 +4173,9 @@ def threat_hunt_command(
             f"[bold cyan]🔍 Threat Hunting[/bold cyan]\n\n"
             f"Time Limit: {time_limit} minutes\n"
             f"Logs: {logs or 'N/A'}\n"
+            f"Remote Servers: {remote_servers or 'N/A'}\n"
             f"Target: {target or 'N/A'}\n"
+            f"SSH Key: {ssh_key or '~/.ssh/id_rsa'}\n"
             f"Min Severity: {severity or 'all'}",
             title="🛡️ Blue Team: Threat Hunter",
             border_style="cyan"
@@ -4180,19 +4185,55 @@ def threat_hunt_command(
         all_iocs = []
         all_anomalies = []
         
-        # Scan log files
-        if logs:
-            console.print(f"\n[cyan]📋 Scanning logs: {logs}[/cyan]")
-            log_path = Path(logs)
-            log_lines = []
+        # Handle remote servers file
+        if remote_servers:
+            console.print(f"\n[cyan]🌐 Fetching logs from multiple servers...[/cyan]")
+            temp_dir = Path("./remote_logs_temp")
+            temp_dir.mkdir(exist_ok=True)
             
-            if log_path.is_file():
-                with open(log_path, 'r', errors='ignore') as f:
-                    log_lines = f.readlines()[:10000]  # First 10k lines
-            elif log_path.is_dir():
-                for log_file in log_path.glob('*.log'):
-                    with open(log_file, 'r', errors='ignore') as f:
-                        log_lines.extend(f.readlines()[:5000])
+            results = asyncio.run(fetch_multiple_servers(remote_servers, str(temp_dir), ssh_key))
+            
+            success_count = sum(1 for v in results.values() if v)
+            console.print(f"  [green]✓[/green] Fetched logs from {success_count}/{len(results)} servers")
+            
+            # Analyze fetched logs
+            for server_host, success in results.items():
+                if success:
+                    server_log_dir = temp_dir / f"{server_host}_logs"
+                    if server_log_dir.exists():
+                        console.print(f"\n[cyan]📋 Analyzing {server_host}...[/cyan]")
+                        for log_file in server_log_dir.rglob('*.log'):
+                            with open(log_file, 'r', errors='ignore') as f:
+                                log_lines = f.readlines()[:10000]
+                                if log_lines:
+                                    data_source = {'type': 'logs', 'data': log_lines}
+                                    iocs = asyncio.run(hunter.hunt_iocs(data_source))
+                                    all_iocs.extend(iocs)
+                                    console.print(f"  [green]✓[/green] {log_file.name}: Found {len(iocs)} IOCs")
+        
+        # Scan log files (local or SSH URL)
+        elif logs:
+            # Check if SSH URL
+            if is_ssh_url(logs):
+                console.print(f"\n[cyan]🌐 Fetching remote logs via SSH: {logs}[/cyan]")
+                log_lines = asyncio.run(fetch_remote_log(logs, ssh_key))
+                if log_lines:
+                    console.print(f"  [green]✓[/green] Fetched {len(log_lines)} lines from remote server")
+                else:
+                    console.print(f"  [red]✗[/red] Failed to fetch remote logs")
+            else:
+                # Local file or directory
+                console.print(f"\n[cyan]📋 Scanning local logs: {logs}[/cyan]")
+                log_path = Path(logs)
+                log_lines = []
+                
+                if log_path.is_file():
+                    with open(log_path, 'r', errors='ignore') as f:
+                        log_lines = f.readlines()[:10000]  # First 10k lines
+                elif log_path.is_dir():
+                    for log_file in log_path.glob('*.log'):
+                        with open(log_file, 'r', errors='ignore') as f:
+                            log_lines.extend(f.readlines()[:5000])
             
             if log_lines:
                 data_source = {'type': 'logs', 'data': log_lines}
@@ -4275,8 +4316,9 @@ def threat_hunt_command(
 
 @app.command(name="incident-response", help="🚨 AI-powered incident response")
 def incident_response_command(
-    target: str = typer.Argument(..., help="Compromised system or incident ID"),
+    target: str = typer.Argument(..., help="Compromised system, incident ID, or SSH URL (ssh://user@host:/path)"),
     action: str = typer.Option("investigate", "--action", "-a", help="Action: investigate, contain, eradicate, recover"),
+    ssh_key: Optional[str] = typer.Option(None, "--ssh-key", help="SSH private key path (for remote systems)"),
     ai_provider: Optional[str] = typer.Option(None, "--ai-provider", help="AI provider: openai, anthropic, github"),
     api_key: Optional[str] = typer.Option(None, "--api-key", help="AI API key"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output incident report")
@@ -4302,6 +4344,7 @@ def incident_response_command(
             f"[bold red]🚨 Incident Response[/bold red]\n\n"
             f"Target: {target}\n"
             f"Action: {action.upper()}\n"
+            f"SSH Key: {ssh_key or 'N/A'}\n"
             f"Status: ACTIVE",
             title="🛡️ Blue Team: Incident Response",
             border_style="red"
@@ -4311,13 +4354,31 @@ def incident_response_command(
         
         if action == "investigate":
             console.print(f"\n[cyan]📋 Phase 1: INVESTIGATION[/cyan]")
-            console.print(f"  [yellow]→[/yellow] Running threat hunt on {target}...")
             
-            hunter = ThreatHunter()
-            # Simulate forensic data collection
-            console.print(f"  [green]✓[/green] Collected system logs")
-            console.print(f"  [green]✓[/green] Captured memory dump")
-            console.print(f"  [green]✓[/green] Network traffic snapshot")
+            # Check if SSH URL for remote investigation
+            if is_ssh_url(target):
+                console.print(f"  [yellow]→[/yellow] Connecting to remote system via SSH...")
+                console.print(f"  [yellow]→[/yellow] Collecting forensic data from {target}...")
+                
+                # Fetch remote logs
+                log_lines = asyncio.run(fetch_remote_log(target, ssh_key))
+                console.print(f"  [green]✓[/green] Collected {len(log_lines):,} log entries")
+                
+                # Perform threat hunt on remote logs
+                hunter = ThreatHunter()
+                data_source = {'type': 'logs', 'data': log_lines}
+                iocs = asyncio.run(hunter.hunt_iocs(data_source))
+                
+                console.print(f"  [green]✓[/green] Analyzed remote system logs")
+                console.print(f"  [green]✓[/green] Detected {len(iocs)} IOCs")
+            else:
+                console.print(f"  [yellow]→[/yellow] Running threat hunt on {target}...")
+                
+                hunter = ThreatHunter()
+                # Simulate forensic data collection
+                console.print(f"  [green]✓[/green] Collected system logs")
+                console.print(f"  [green]✓[/green] Captured memory dump")
+                console.print(f"  [green]✓[/green] Network traffic snapshot")
             
             console.print(f"\n[cyan]🔍 Analyzing evidence with AI...[/cyan]")
             
@@ -4396,8 +4457,9 @@ def incident_response_command(
 
 @app.command(name="log-analyze", help="📊 AI-powered log analysis & threat detection")
 def log_analyze_command(
-    file: str = typer.Argument(..., help="Log file to analyze"),
+    file: str = typer.Argument(..., help="Log file to analyze (local path or SSH URL: ssh://user@host:/path)"),
     detect_threats: bool = typer.Option(True, "--detect-threats/--no-detect-threats", help="Enable threat detection"),
+    ssh_key: Optional[str] = typer.Option(None, "--ssh-key", help="SSH private key path (for remote files)"),
     time_limit: int = typer.Option(3, "--time-limit", help="Time limit in minutes (default: 3)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output analysis report")
 ):
@@ -4422,28 +4484,46 @@ def log_analyze_command(
     
     try:
         start_time = datetime.now()
-        log_path = Path(file)
         
-        if not log_path.exists():
-            console.print(f"[red]Error: Log file not found: {file}[/red]")
-            raise typer.Exit(1)
-        
-        console.print(Panel.fit(
-            f"[bold cyan]📊 Log Analysis[/bold cyan]\n\n"
-            f"File: {file}\n"
-            f"Size: {log_path.stat().st_size / 1024:.1f} KB\n"
-            f"Threat Detection: {'Enabled' if detect_threats else 'Disabled'}\n"
-            f"Time Limit: {time_limit} minutes",
-            title="🛡️ Blue Team: Log Analyzer",
-            border_style="cyan"
-        ))
-        
-        console.print(f"\n[cyan]📋 Reading log file...[/cyan]")
-        with open(log_path, 'r', errors='ignore') as f:
-            log_lines = f.readlines()
-        
-        total_lines = len(log_lines)
-        console.print(f"  [green]✓[/green] Loaded {total_lines:,} log entries")
+        # Check if SSH URL
+        if is_ssh_url(file):
+            console.print(Panel.fit(
+                f"[bold cyan]📊 Remote Log Analysis[/bold cyan]\n\n"
+                f"Remote File: {file}\n"
+                f"SSH Key: {ssh_key or '~/.ssh/id_rsa'}\n"
+                f"Threat Detection: {'Enabled' if detect_threats else 'Disabled'}\n"
+                f"Time Limit: {time_limit} minutes",
+                title="🛡️ Blue Team: Log Analyzer",
+                border_style="cyan"
+            ))
+            
+            console.print(f"\n[cyan]🌐 Fetching remote log file via SSH...[/cyan]")
+            log_lines = asyncio.run(fetch_remote_log(file, ssh_key))
+            total_lines = len(log_lines)
+            console.print(f"  [green]✓[/green] Fetched {total_lines:,} log entries from remote server")
+        else:
+            log_path = Path(file)
+            
+            if not log_path.exists():
+                console.print(f"[red]Error: Log file not found: {file}[/red]")
+                raise typer.Exit(1)
+            
+            console.print(Panel.fit(
+                f"[bold cyan]📊 Log Analysis[/bold cyan]\n\n"
+                f"File: {file}\n"
+                f"Size: {log_path.stat().st_size / 1024:.1f} KB\n"
+                f"Threat Detection: {'Enabled' if detect_threats else 'Disabled'}\n"
+                f"Time Limit: {time_limit} minutes",
+                title="🛡️ Blue Team: Log Analyzer",
+                border_style="cyan"
+            ))
+            
+            console.print(f"\n[cyan]📋 Reading log file...[/cyan]")
+            with open(log_path, 'r', errors='ignore') as f:
+                log_lines = f.readlines()
+            
+            total_lines = len(log_lines)
+            console.print(f"  [green]✓[/green] Loaded {total_lines:,} log entries")
         
         if detect_threats:
             console.print(f"\n[cyan]🔍 Analyzing for threats...[/cyan]")

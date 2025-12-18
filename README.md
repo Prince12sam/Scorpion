@@ -179,10 +179,17 @@ AI-powered IOC detection and pattern recognition:
 - MITRE ATT&CK technique mapping
 - Living-off-the-Land binary detection
 - Behavioral anomaly detection
+- **🌐 SSH Remote Access** - Hunt logs on production servers without manual copying!
 
 ```bash
-# 3-minute lightning-fast threat hunt
+# 3-minute lightning-fast threat hunt (local)
 scorpion threat-hunt --logs /var/log/auth.log --time-limit 3
+
+# Hunt on REMOTE server via SSH (no manual copying!)
+scorpion threat-hunt --logs ssh://admin@prod-web.com:/var/log/apache2/access.log
+
+# Hunt MULTIPLE servers in parallel
+scorpion threat-hunt --remote-servers servers.txt --ssh-key ~/.ssh/prod_key
 
 # Filter critical threats
 scorpion threat-hunt --logs /var/log/ --severity critical

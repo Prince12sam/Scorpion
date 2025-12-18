@@ -1,0 +1,33 @@
+# Server List for Multi-Server Threat Hunting
+# Format: user@hostname:/path/to/logs
+# One server per line
+
+# Web Servers
+admin@web-01.company.com:/var/log/apache2/
+admin@web-02.company.com:/var/log/nginx/
+admin@web-lb.company.com:/var/log/haproxy/
+
+# Database Servers
+dba@db-master.company.com:/var/log/mysql/
+dba@db-replica.company.com:/var/log/postgresql/
+
+# Application Servers
+app@app-01.company.com:/var/log/app/
+app@app-02.company.com:/var/log/app/
+app@app-03.company.com:/var/log/app/
+
+# API Servers
+api@api-gateway.company.com:/var/log/api/
+api@api-backend.company.com:/var/log/api/
+
+# Infrastructure
+sysadmin@jump-host.company.com:/var/log/auth.log
+sysadmin@vpn-gateway.company.com:/var/log/openvpn/
+sysadmin@firewall.company.com:/var/log/firewall/
+
+# Cloud Instances (AWS EC2 example)
+ubuntu@ec2-12-34-56-78.compute.amazonaws.com:/var/log/syslog
+ubuntu@ec2-98-76-54-32.compute.amazonaws.com:/var/log/syslog
+
+# Usage Example:
+# scorpion threat-hunt --remote-servers servers.txt --ssh-key ~/.ssh/production_key --time-limit 10

@@ -151,7 +151,7 @@ scorpion threat-hunt --logs file_activity.log --severity critical
 
 ### Advanced Threat Hunting
 
-#### Hunt Across Entire Network
+#### Method 1: Hunt Across Entire Network (Local)
 ```bash
 # Collect logs from all servers first
 scp server1:/var/log/auth.log logs/server1_auth.log
@@ -163,10 +163,97 @@ scorpion threat-hunt --logs logs/ --time-limit 10 --output network_threats.json
 # AI correlates events across all systems!
 ```
 
-#### Hunt with MITRE ATT&CK Focus
+#### Method 2: SSH Remote Access (RECOMMENDED)
+**No need to manually copy logs! Scorpion fetches them automatically:**
+
 ```bash
-# Focus on specific MITRE techniques
-scorpion threat-hunt --logs /var/log/ --mitre T1003,T1071,T1059
+# Hunt logs on a SINGLE remote server via SSH
+scorpion threat-hunt \
+  --logs ssh://admin@webserver.com:/var/log/apache2/access.log \
+  --ssh-key ~/.ssh/id_rsa \
+  --time-limit 5
+
+# Hunt logs on MULTIPLE servers in parallel
+# 1. Create servers.txt file:
+cat > servers.txt <<EOF
+admin@web-01.company.com:/var/log/apache2/
+admin@web-02.company.com:/var/log/apache2/
+admin@db-01.company.com:/var/log/mysql/
+admin@app-01.company.com:/var/log/app/
+EOF
+
+# 2. Run multi-server threat hunt (parallel fetching!)
+scorpion threat-hunt \
+  --remote-servers servers.txt \
+  --ssh-key ~/.ssh/production_key \
+  --time-limit 10 \
+  --output multi_server_threats.json
+
+# Output:
+# 🌐 Fetching logs from 4 servers in parallel...
+# ✓ Fetched logs from 4/4 servers (10s)
+# 🔍 Analyzing web-01... 3 IOCs detected
+# 🔍 Analyzing web-02... 1 IOC detected
+# 🔍 Analyzing db-01... 0 IOCs detected
+# 🔍 Analyzing app-01... 7 IOCs detected
+```
+
+**SSH URL Formats:**
+```bash
+# Full syntax with port
+ssh://user@hostname:port:/path/to/logs
+
+# Short syntax (uses default SSH port 22)
+user@hostname:/path/to/logs
+
+# Examples
+ssh://soc@prod-web.com:/var/log/nginx/access.log
+admin@192.168.1.100:/var/log/auth.log
+ubuntu@ec2-instance.amazonaws.com:/var/log/syslog
+```
+
+**SSH Authentication:**
+```bash
+# Use custom SSH key
+--ssh-key ~/.ssh/production_key
+
+# Use default SSH key (no flag needed)
+# Default: ~/.ssh/id_rsa
+
+# SSH agent authentication (if configured)
+# Works automatically if ssh-agent is running
+```
+
+#### Method 3: Remote Log Analysis
+```bash
+# Analyze logs on remote servers without copying
+scorpion log-analyze ssh://user@webserver:/var/log/apache2/access.log \
+  --ssh-key ~/.ssh/id_rsa \
+  --detect-threats
+
+# Analyze remote logs for specific time period
+scorpion log-analyze ssh://admin@prod-db:/var/log/mysql/error.log \
+  --time-limit 3 \
+  --output db_analysis.json
+```
+
+#### Method 4: Remote Incident Response
+```bash
+# Investigate compromised system remotely
+scorpion incident-response ssh://admin@compromised-server:/var/log/ \
+  --action investigate \
+  --ssh-key ~/.ssh/emergency_key \
+  --output incident_report.json
+
+# Output:
+# 🌐 Connecting to remote system via SSH...
+# 📋 Phase 1: INVESTIGATION
+# ✓ Collected 15,432 log entries
+# ✓ Analyzed remote system logs
+# ✓ Detected 12 IOCs
+# 🚨 FINDINGS:
+#   • Reverse Shell (CRITICAL, 95% confidence)
+#   • Lateral Movement (HIGH, 85% confidence)
 ```
 
 ---
