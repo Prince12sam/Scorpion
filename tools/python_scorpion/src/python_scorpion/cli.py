@@ -148,9 +148,9 @@ def _banner_callback(
         "Quick Start:\n"
         "- Scan ports: scorpion scan <host> --ports 1-1024 --output results/scan_<host>.json\n"
         "- SSL analyze: scorpion ssl-analyze <host> --output results/ssl_<host>.json\n"
-        "- Takeover: scorpion takeover <host> --output results/takeover_<host>.json\n"
-        "- API test: scorpion api-test <url> --output results/api_<host>.json\n"
-        "- Recon: scorpion recon-cmd <host> --output results/recon_<host>.json\n"
+        "- Subdomain scan: scorpion subdomain <host> --output results/subdomain_<host>.json\n"
+        "- AI pentest: scorpion ai-pentest -t <host> --time-limit 5 --output results/ai_<host>.json\n"
+        "- Threat hunt: scorpion threat-hunt --logs /var/log/auth.log --output results/hunt.json\n"
         "- Tip: suppress banner in scripts with --no-banner"
     )
     console.print(Panel.fit(quickstart, title="Getting Started", border_style="cyan", box=box.ROUNDED))
