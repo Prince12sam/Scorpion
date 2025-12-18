@@ -2399,10 +2399,11 @@ def ai_pentest_command(
             raise typer.Exit(1)
     
     # Validate API key format - just basic checks, let provider validate
-    api_key = api_key.strip()
+    if api_key:
+        api_key = api_key.strip()
     
     # Auto-detect AI provider from API key format if not specified
-    if ai_provider == "openai":  # Default value; will be overridden by detection
+    if api_key and ai_provider == "openai":  # Default value; will be overridden by detection
         # GitHub tokens: ghp_ (classic), gho_ (OAuth), ghu_ (user-to-server), 
         # ghs_ (server-to-server), ghr_ (refresh), github_pat_ (fine-grained)
         if api_key.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_")):
