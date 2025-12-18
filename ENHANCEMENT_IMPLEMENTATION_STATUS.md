@@ -1,6 +1,19 @@
 # Scorpion Security Platform - Enhancement Implementation Status
 
+> ⚠️ **Note:** This document tracks experimental/advanced features. Some features listed here have been removed from the CLI in favor of a streamlined, production-ready command set. See [COMMANDS.md](COMMANDS.md) for the current command reference.
+
 ## ✅ COMPLETED MODULES (6/10)
+
+### ❌ REMOVED FROM CLI (Specialized/Incomplete Features)
+The following features were removed during CLI cleanup (December 2025) as they were incomplete, too specialized, or better integrated into other commands:
+- `crack-hash` - GPU password cracking (requires external tools)
+- `wifi-scan`, `wifi-attack` - WiFi testing (hardware-specific)
+- `mobile-analyze`, `mobile-intercept` - Mobile app testing (incomplete)
+- `fuzz-protocol`, `fuzz-api` - Protocol fuzzing (redundant with main `fuzz` command)
+- `compliance-scan` - Compliance testing (incomplete implementation)
+- Advanced post-exploitation commands (moved to modular `post-exploit` system)
+
+---
 
 ### 1. GPU-Accelerated Password Cracking (`gpu_cracking.py`) - 850 lines
 **Status:** ✅ COMPLETE

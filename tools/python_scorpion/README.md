@@ -47,7 +47,13 @@ scorpion scan -t example.com --web
 scorpion ssl-analyze -t example.com -p 443
 
 # Reconnaissance
-scorpion recon-cmd -t example.com
+scorpion recon -t example.com
+
+# AI-powered pentest (Red Team)
+scorpion ai-pentest -t example.com --time-limit 5
+
+# Threat hunting (Blue Team)
+scorpion threat-hunt --logs /var/log/auth.log --time-limit 3
 
 # Web suite + report
 scorpion suite -t example.com --profile web --mode passive --output-dir results

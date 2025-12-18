@@ -16,11 +16,11 @@
 
 | Document | Purpose |
 |----------|---------|
-| [COMMANDS.md](COMMANDS.md) | Complete CLI reference (35+ commands) |
+| [COMMANDS.md](COMMANDS.md) | Complete CLI reference (27 core commands) |
 | [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md) | Complete AI penetration testing guide |
+| [BLUE_TEAM_GUIDE.md](BLUE_TEAM_GUIDE.md) | 🔵 Defensive security & threat hunting |
 | [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md) | 🔥 Maximum aggression for shell access |
 | [FAST_MODE.md](FAST_MODE.md) | ⚡ Speed optimizations (6x faster) |
-| [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) | WiFi, Mobile, Fuzzing guides |
 
 ---
 
@@ -39,13 +39,11 @@
 **I want to...**
 - ⚡ **Get started** → [GETTING_STARTED.md](GETTING_STARTED.md)
 - 💻 **Install** → [INSTALLATION.md](INSTALLATION.md)
-- 🤖 **AI pentest** → [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)
+- 🤖 **AI pentest (Red Team)** → [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)
+- 🔵 **Threat hunting (Blue Team)** → [BLUE_TEAM_GUIDE.md](BLUE_TEAM_GUIDE.md)
 - 🔥 **Gain shell access** → [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md)
 - ⚡ **Fast scanning (6x faster)** → [FAST_MODE.md](FAST_MODE.md)
 - 📖 **Learn commands** → [COMMANDS.md](COMMANDS.md)
-- 📡 **WiFi testing** → [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
-- 📱 **Mobile security** → [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
-- 🎯 **Fuzzing** → [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md)
 
 ---
 
@@ -58,15 +56,5 @@
 
 **Last Updated**: December 17, 2025  
 **Total Files**: 10 essential documentation files
-scorpion recon-cmd -t example.com
-
-# Full suite + report
-scorpion suite -t example.com --profile web --mode passive --output-dir results
-latest=$(ls -t results/suite_*.json | head -n1)
-scorpion report --suite "$latest" --summary
-```
-
----
-
-**Last Updated:** December 2025  
-**Repository:** https://github.com/Prince12sam/Scorpion
+scorpion recon-cmd -t exampl8, 2025  
+**Total Files**: 10 essential documentation files

@@ -10,7 +10,7 @@ Complete reference for all Scorpion CLI commands and options.
 |---------|-------------|---------------|
 | `scan` | TCP/UDP port scanning | `scorpion scan -t example.com --web` |
 | `ssl-analyze` | SSL/TLS analysis | `scorpion ssl-analyze -t example.com` |
-| `recon-cmd` | Reconnaissance | `scorpion recon-cmd -t example.com` |
+| `recon` | Reconnaissance | `scorpion recon -t example.com` |
 | `subdomain` | Subdomain enumeration | `scorpion subdomain example.com` |
 | `takeover` | Subdomain takeover check | `scorpion takeover example.com` |
 | `api-test` | API security testing | `scorpion api-test example.com` |
@@ -22,17 +22,19 @@ Complete reference for all Scorpion CLI commands and options.
 | `container` | Container registry audit | `scorpion container registry.host` |
 | `suite` | Combined security suite | `scorpion suite -t example.com --profile web` |
 | `report` | Generate HTML report | `scorpion report --suite results.json` |
-| **`api-security`** ⭐ | **Advanced API testing** | `scorpion api-security -t https://api.example.com` |
+| **`fuzz`** | **Web application fuzzing** | `scorpion fuzz -t https://example.com` |
+| **`nuclei`** | **Nuclei vulnerability scanner** | `scorpion nuclei -t example.com` |
+| **`bruteforce`** | **Authentication brute-forcer** | `scorpion bruteforce -t example.com` |
+| **`webscan`** | **Advanced web vulnerability scanning** | `scorpion webscan -t example.com` |
+| **`payload`** | **Payload generation** | `scorpion payload --lhost 10.0.0.1 --lport 4444` |
 | **`db-pentest`** ⭐ | **Database penetration testing** | `scorpion db-pentest -t https://yourtarget.com/page?id=1` |
-| **`post-exploit`** ⭐ | **Post-exploitation enum** | `scorpion post-exploit --os linux` |
 | **`ci-scan`** ⭐ | **CI/CD integration** | `scorpion ci-scan --input results.json --sarif-output` |
 | **`ai-pentest`** 🤖 | **AI-powered pentesting** | `scorpion ai-pentest -t example.com -i "Focus on APIs"` |
-| **`wifi-scan`** 📡 | **WiFi network scanning** | `scorpion wifi-scan --interface wlan0 --duration 30` |
-| **`wifi-attack`** ⚔️ | **WiFi attacks (deauth, handshake, evil twin)** | `scorpion wifi-attack <ESSID> <BSSID> --type handshake` |
-| **`mobile-analyze`** 📱 | **Mobile app security (OWASP Top 10)** | `scorpion mobile-analyze app.apk --owasp` |
-| **`mobile-intercept`** 🔓 | **SSL pinning bypass (Frida)** | `scorpion mobile-intercept com.app --proxy 127.0.0.1:8080` |
-| **`fuzz-protocol`** 🎯 | **Network protocol fuzzing** | `scorpion fuzz-protocol 192.168.1.100 80 --protocol tcp` |
-| **`fuzz-api`** 🌐 | **REST API fuzzing** | `scorpion fuzz-api https://api.target.com /login --method POST` |
+| **`threat-hunt`** 🔍 | **AI-powered threat hunting** | `scorpion threat-hunt --logs /var/log/auth.log` |
+| **`incident-response`** 🚨 | **AI-powered incident response** | `scorpion incident-response compromised-server.com` |
+| **`log-analyze`** 📊 | **AI-powered log analysis** | `scorpion log-analyze --logs access.log` |
+| **`purple-team`** 🟣 | **Purple team exercises** | `scorpion purple-team testlab.com --profile web` |
+| **`monitor`** 👁️ | **Real-time security monitoring** | `scorpion monitor prod-server.com` |
 
 ---
 

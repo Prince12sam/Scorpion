@@ -87,7 +87,7 @@ You just completed your first security scan with Scorpion.
 scorpion ssl-analyze -t example.com -p 443
 
 # Reconnaissance
-scorpion recon-cmd -t example.com
+scorpion recon -t example.com
 
 # Web crawler
 scorpion crawl example.com --max-pages 10
@@ -126,7 +126,7 @@ Open `report.html` in your browser to view the professional security report!
 |------|---------|
 | Port scan | `scorpion scan -t <host> --web` |
 | SSL check | `scorpion ssl-analyze -t <host>` |
-| Recon | `scorpion recon-cmd -t <host>` |
+| Recon | `scorpion recon -t <host>` |
 | API test | `scorpion api-test <host>` |
 | OS fingerprint | `sudo scorpion scan -t <host> --syn --os-detect` |
 | Payload gen | `scorpion payload --lhost <ip> --lport 4444 --shell bash` |

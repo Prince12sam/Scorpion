@@ -5,6 +5,35 @@ All notable changes to the Scorpion CLI Security Tool will be documented in this
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2025-12-18
+
+### Removed 🗑️
+- **CLI Streamlining**: Removed 23 obsolete/specialized/incomplete commands for better UX
+  - Deprecated: `threat-intel`, `enterprise-scan`
+  - Broken: `attack-chain`, `mitre-map`, old versions (`threat_hunt`, `purple_team`, `post_exploit`)
+  - Redundant: `recon-cmd` (use `recon`), `fuzz-api` (use `fuzz`), `generate-report` (use `report`)
+  - Specialized: `advanced-shell`, `privesc`, `persist`, `evade`, `harvest-creds`, `lateral-move`, `crack-hash`
+  - Incomplete: `compliance-scan`, `wifi-scan`, `wifi-attack`, `mobile-analyze`, `mobile-intercept`, `fuzz-protocol`
+  - **Result**: CLI reduced from 50+ commands to 27 focused, production-ready commands
+  - **File Impact**: cli.py reduced from 4,782 to 3,293 lines (1,489 lines removed)
+
+### Changed 🔄
+- **Documentation Updates**: Updated all markdown files to reflect streamlined command set
+  - [README.md](README.md) - Updated feature examples
+  - [COMMANDS.md](COMMANDS.md) - Current 27-command reference
+  - [GETTING_STARTED.md](GETTING_STARTED.md) - Updated quick start examples
+  - [DOCS_INDEX.md](DOCS_INDEX.md) - Refreshed navigation
+  - [ENHANCEMENT_IMPLEMENTATION_STATUS.md](ENHANCEMENT_IMPLEMENTATION_STATUS.md) - Marked removed features
+
+### Improved ✨
+- **User Experience**: Cleaner, more focused CLI with only working features
+- **Cognitive Load**: Reduced from 50+ to 27 commands for easier navigation
+- **Maintainability**: Removed incomplete/broken code for better stability
+
+**Commit**: 45712ca
+
+---
+
 ## [2.0.2] - 2025-12-11
 
 ### Added ✨
