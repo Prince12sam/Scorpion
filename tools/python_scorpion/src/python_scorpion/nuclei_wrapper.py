@@ -359,8 +359,9 @@ def get_nuclei_version() -> Optional[str]:
         )
         
         if result.returncode == 0:
-            # Parse version from output
-            for line in result.stdout.splitlines():
+            # Parse version from output (nuclei writes to stderr)
+            output = result.stderr + result.stdout
+            for line in output.splitlines():
                 if "nuclei" in line.lower():
                     return line.strip()
         
