@@ -92,6 +92,20 @@ scorpion purple-team testlab.com --profile web
 
 ### 🔴 **Red Team (Offensive Security)**
 
+#### 🗣️ AI Simple Prompts - NEW! Just Tell It What to Do
+Talk to the AI in plain English - no complex commands needed:
+
+```bash
+# Just tell the AI what you want!
+scorpion ai-pentest -t target.com -i "exploit this"
+scorpion ai-pentest -t target.com -i "get shell"
+scorpion ai-pentest -t target.com -i "find SQLi"
+scorpion ai-pentest -t target.com -i "bypass login"
+scorpion ai-pentest -t target.com -i "hack it"
+```
+
+📖 **Guide:** [AI_SIMPLE_PROMPTS.md](AI_SIMPLE_PROMPTS.md) - 20+ simple commands
+
 #### 🎯 Port Scanning - 6x Faster than Nmap
 - **ALL 65535 ports** scanned by default
 - Shows only **open ports** (like `nmap --open`)
@@ -115,6 +129,7 @@ Autonomous vulnerability discovery using GPT-4, Claude, or GitHub Models (FREE!)
 - **Autonomous testing** with minimal human intervention
 - **⚡ FAST MODE** - 6x faster exploitation (5-10 minutes)
 - **🔥 AGGRESSIVE MODE** - Maximum aggression for shell access
+- **🛠️ EXTERNAL TOOLS** - Integrates nmap, sqlmap, nuclei, hydra, commix, msfvenom, etc.
 
 ```bash
 # Set API key (auto-detects provider)
@@ -356,8 +371,10 @@ scorpion scan example.com --os-detect --web
 | Guide | Description |
 |-------|-------------|
 | [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md) | **Complete AI penetration testing guide** |
+| [AI_SIMPLE_PROMPTS.md](AI_SIMPLE_PROMPTS.md) | 🗣️ **NEW!** Simple commands: "exploit this", "get shell", "find SQLi" |
 | [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md) | 🔥 Maximum aggression for shell access |
 | [FAST_MODE.md](FAST_MODE.md) | ⚡ Speed optimizations (6x faster) |
+| [EXTERNAL_TOOLS_QUICK_REFERENCE.md](EXTERNAL_TOOLS_QUICK_REFERENCE.md) | 🛠️ External tools: nmap, sqlmap, nuclei, hydra, etc. |
 | [ADVANCED_FEATURES.md](ADVANCED_FEATURES.md) | WiFi, Mobile, Fuzzing guides |
 
 ### 🔵 Blue Team (Defensive Security) - NEW! 🆕

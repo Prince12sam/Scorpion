@@ -83,6 +83,67 @@ from .ai_pentest import (
 from .threat_hunter import ThreatHunter, IOC, Anomaly
 from .purple_team import PurpleTeamSimulator
 from .remote_access import SSHRemoteAccess, is_ssh_url, fetch_remote_log, fetch_multiple_servers
+import re
+
+# Helper function for target validation in CLI
+def _validate_cli_target(target: str) -> bool:
+    """Validate target format before passing to AI agent
+    
+    Args:
+        target: Target host/domain to validate
+        
+    Returns:
+        bool: True if valid
+        
+    Raises:
+        ValueError: If target is invalid or contains dangerous characters
+    """
+    if not target or not target.strip():
+        raise ValueError("Target cannot be empty")
+    
+    target = target.strip()
+    clean_target = re.sub(r'^https?://', '', target)
+    host_part = clean_target.split(':')[0].split('/')[0]
+    
+    # Check for command injection
+    dangerous_chars = [';', '&', '|', '`', '$', '(', ')', '{', '}', '[', ']', '<', '>', '\n', '\r']
+    for char in dangerous_chars:
+        if char in host_part:
+            raise ValueError(f"Contains dangerous character '{char}' - possible injection attempt")
+    
+    # Check for SQL/XSS patterns
+    bad_patterns = ["'--", "';--", '";--', "' OR '", '" OR "', 'UNION SELECT', '<script', 'javascript:', 'onerror=']
+    for pattern in bad_patterns:
+        if pattern.lower() in host_part.lower():
+            raise ValueError(f"Contains suspicious pattern '{pattern}'")
+    
+    # Validate format
+    domain_pattern = r'^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
+    ipv4_pattern = r'^(\d{1,3}\.){3}\d{1,3}$'
+    is_valid = (re.match(domain_pattern, host_part) or 
+                re.match(ipv4_pattern, host_part) or 
+                host_part.lower() in ['localhost', '127.0.0.1', '::1'])
+    
+    if not is_valid:
+        raise ValueError(f"Invalid format: '{host_part}' - Expected domain, IPv4, or localhost")
+    
+    # Validate IPv4 range
+    if re.match(ipv4_pattern, host_part):
+        for octet in host_part.split('.'):
+            if int(octet) > 255:
+                raise ValueError(f"Invalid IPv4: octet {octet} out of range")
+    
+    # Validate port if present
+    if ':' in clean_target:
+        port_str = clean_target.split(':')[-1].split('/')[0]
+        try:
+            port = int(port_str)
+            if port < 1 or port > 65535:
+                raise ValueError(f"Invalid port: {port} (must be 1-65535)")
+        except ValueError:
+            raise ValueError(f"Invalid port: '{port_str}' is not a number")
+    
+    return True
 
 # Remove subtitle under banner by not setting a global help description
 app = typer.Typer()
@@ -880,7 +941,18 @@ def recon_alias(
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output file path"),
 ):
     """Alias for recon (compat with legacy Node CLI)."""
-    recon_cmd(host=host, target=target, output=output)
+    # Use target if provided, otherwise use host
+    target_host = target or host
+    if not target_host:
+        console.print("[red]Error: Please provide a target host[/red]")
+        raise typer.Exit(1)
+    
+    report = asyncio.run(recon(target_host))
+    console.print_json(data=report)
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+        console.print(f"[green]Saved: {output}[/green]")
 
 @app.command()
 def dirbust(host: str, wordlist: Optional[str] = None, concurrency: int = 50, https: bool = True, output: Optional[str] = None):
@@ -2218,7 +2290,7 @@ def ai_pentest_command(
     custom_instructions: Optional[str] = typer.Option(
         None,
         "--instructions", "-i",
-        help="Custom instructions/prompt to guide AI behavior (e.g., 'Focus on API endpoints', 'Test for IDOR vulnerabilities')"
+        help="Natural language prompt to guide AI (e.g., 'exploit this', 'find SQLi', 'hack login page', 'get shell access')"
     ),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file for detailed results"),
 ):
@@ -2279,14 +2351,20 @@ def ai_pentest_command(
       scorpion ai-pentest -t example.com --api-key sk-... -r high -a fully_autonomous \\
         -g gain_shell_access --time-limit 60
       
-      # Custom instructions to guide AI behavior
-      scorpion ai-pentest -t example.com -i "Focus on API endpoints and test for IDOR vulnerabilities"
+      # 🚀 SIMPLE PROMPTS - Just tell AI what to do!
+      scorpion ai-pentest -t example.com -i "exploit this"
+      scorpion ai-pentest -t example.com -i "hack it"
+      scorpion ai-pentest -t example.com -i "find SQLi"
+      scorpion ai-pentest -t example.com -i "get shell access"
+      scorpion ai-pentest -t example.com -i "bypass login"
+      scorpion ai-pentest -t example.com -i "find RCE"
+      scorpion ai-pentest -t example.com -i "test XSS"
       
-      # Multiple custom guidance examples
+      # Detailed custom instructions
+      scorpion ai-pentest -t example.com -i "Focus on API endpoints and test for IDOR vulnerabilities"
       scorpion ai-pentest -t example.com -i "Test GraphQL endpoints for injection attacks"
-      scorpion ai-pentest -t example.com -i "Prioritize authentication bypass and JWT vulnerabilities"
-      scorpion ai-pentest -t example.com -i "Look for SSRF in file upload features and image processing"
-      scorpion ai-pentest -t example.com -i "Focus on subdomain enumeration and takeover vulnerabilities"
+      scorpion ai-pentest -t example.com -i "Look for SSRF in file upload features"
+      scorpion ai-pentest -t example.com -i "Focus on subdomain enumeration and takeover"
     
     \b
     🔑 API Key Setup:
@@ -2484,6 +2562,19 @@ def ai_pentest_command(
     
     # Parse secondary goals
     secondary_goals_list = [g.strip() for g in secondary_goals.split(",") if g.strip()]
+    
+    # Validate target early (before creating agent)
+    try:
+        _validate_cli_target(target)
+    except ValueError as e:
+        console.print(f"[red]Invalid target: {e}[/red]")
+        console.print("[yellow]Examples of valid targets:[/yellow]")
+        console.print("  [cyan]example.com[/cyan]")
+        console.print("  [cyan]subdomain.example.com[/cyan]")
+        console.print("  [cyan]192.168.1.100[/cyan]")
+        console.print("  [cyan]localhost[/cyan]")
+        console.print("  [cyan]example.com:8080[/cyan]")
+        raise typer.Exit(1)
     
     # Create configuration
     config = AIPentestConfig(
