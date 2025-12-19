@@ -305,32 +305,6 @@ class NucleiScanner:
         return results
 
 
-def get_nuclei_version() -> Optional[str]:
-    """Get installed nuclei version. Returns None if not installed."""
-    # Use the same enhanced detection as NucleiScanner
-    nuclei_path = _find_nuclei_binary()
-    if not nuclei_path:
-        return None
-    
-    try:
-        result = subprocess.run(
-            [nuclei_path, "-version"],
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-        
-        if result.returncode == 0:
-            # Parse version from output
-            for line in result.stdout.splitlines():
-                if "nuclei" in line.lower():
-                    return line.strip()
-        
-        return None
-    except Exception:
-        return None
-
-
 def _find_nuclei_binary() -> Optional[str]:
     """Find nuclei binary using multiple methods (standalone function)"""
     # Method 1: Standard PATH search
@@ -368,3 +342,28 @@ def _find_nuclei_binary() -> Optional[str]:
         pass
     
     return None
+
+def get_nuclei_version() -> Optional[str]:
+    """Get installed nuclei version. Returns None if not installed."""
+    # Use the same enhanced detection as NucleiScanner
+    nuclei_path = _find_nuclei_binary()
+    if not nuclei_path:
+        return None
+    
+    try:
+        result = subprocess.run(
+            [nuclei_path, "-version"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        
+        if result.returncode == 0:
+            # Parse version from output
+            for line in result.stdout.splitlines():
+                if "nuclei" in line.lower():
+                    return line.strip()
+        
+        return None
+    except Exception:
+        return None
