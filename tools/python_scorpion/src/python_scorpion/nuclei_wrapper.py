@@ -45,42 +45,7 @@ class NucleiScanner:
     
     def _find_nuclei(self) -> Optional[str]:
         """Find nuclei binary using multiple methods"""
-        # Method 1: Standard PATH search
-        nuclei_path = shutil.which("nuclei")
-        if nuclei_path:
-            return nuclei_path
-        
-        # Method 2: Common installation locations
-        common_paths = [
-            "/usr/bin/nuclei",              # Debian/Ubuntu apt
-            "/usr/local/bin/nuclei",        # Manual install
-            "/opt/nuclei/nuclei",           # Alternative install
-            os.path.expanduser("~/go/bin/nuclei"),  # Go install
-            os.path.expanduser("~/.local/bin/nuclei"),  # User install
-            "/snap/bin/nuclei",             # Snap install
-        ]
-        
-        for path in common_paths:
-            if os.path.isfile(path) and os.access(path, os.X_OK):
-                return path
-        
-        # Method 3: Try to find in full system PATH (bypass venv)
-        import subprocess
-        try:
-            result = subprocess.run(
-                ["which", "nuclei"],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                found_path = result.stdout.strip()
-                if found_path and os.path.isfile(found_path):
-                    return found_path
-        except Exception:
-            pass
-        
-        return None
+        return _find_nuclei_binary()
     
     def check_updates(self) -> bool:
         """Check for nuclei template updates"""
@@ -342,7 +307,8 @@ class NucleiScanner:
 
 def get_nuclei_version() -> Optional[str]:
     """Get installed nuclei version. Returns None if not installed."""
-    nuclei_path = shutil.which("nuclei")
+    # Use the same enhanced detection as NucleiScanner
+    nuclei_path = _find_nuclei_binary()
     if not nuclei_path:
         return None
     
@@ -363,3 +329,42 @@ def get_nuclei_version() -> Optional[str]:
         return None
     except Exception:
         return None
+
+
+def _find_nuclei_binary() -> Optional[str]:
+    """Find nuclei binary using multiple methods (standalone function)"""
+    # Method 1: Standard PATH search
+    nuclei_path = shutil.which("nuclei")
+    if nuclei_path:
+        return nuclei_path
+    
+    # Method 2: Common installation locations
+    common_paths = [
+        "/usr/bin/nuclei",              # Debian/Ubuntu apt
+        "/usr/local/bin/nuclei",        # Manual install
+        "/opt/nuclei/nuclei",           # Alternative install
+        os.path.expanduser("~/go/bin/nuclei"),  # Go install
+        os.path.expanduser("~/.local/bin/nuclei"),  # User install
+        "/snap/bin/nuclei",             # Snap install
+    ]
+    
+    for path in common_paths:
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    
+    # Method 3: Try to find in full system PATH (bypass venv)
+    try:
+        result = subprocess.run(
+            ["which", "nuclei"],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            found_path = result.stdout.strip()
+            if found_path and os.path.isfile(found_path):
+                return found_path
+    except Exception:
+        pass
+    
+    return None
