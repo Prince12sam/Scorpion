@@ -18,6 +18,9 @@
 |----------|---------|
 | [COMMANDS.md](COMMANDS.md) | Complete CLI reference (27 core commands) |
 | [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md) | Complete AI penetration testing guide |
+| [NUCLEI_TEMPLATES_GUIDE.md](NUCLEI_TEMPLATES_GUIDE.md) | 🎯 Nuclei vulnerability templates (8900+ templates) |
+| [EXTERNAL_TOOLS_QUICK_REFERENCE.md](EXTERNAL_TOOLS_QUICK_REFERENCE.md) | 🛠️ External tool wrappers (nmap, sqlmap, hydra, etc.) |
+| [AI_SIMPLE_PROMPTS.md](AI_SIMPLE_PROMPTS.md) | 💬 Natural language AI commands |
 | [BLUE_TEAM_GUIDE.md](BLUE_TEAM_GUIDE.md) | 🔵 Defensive security & threat hunting |
 | [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md) | 🔥 Maximum aggression for shell access |
 | [FAST_MODE.md](FAST_MODE.md) | ⚡ Speed optimizations (6x faster) |
@@ -40,6 +43,9 @@
 - ⚡ **Get started** → [GETTING_STARTED.md](GETTING_STARTED.md)
 - 💻 **Install** → [INSTALLATION.md](INSTALLATION.md)
 - 🤖 **AI pentest (Red Team)** → [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)
+- 🎯 **Use Nuclei templates** → [NUCLEI_TEMPLATES_GUIDE.md](NUCLEI_TEMPLATES_GUIDE.md)
+- 🛠️ **Use external tools** → [EXTERNAL_TOOLS_QUICK_REFERENCE.md](EXTERNAL_TOOLS_QUICK_REFERENCE.md)
+- 💬 **Simple AI commands** → [AI_SIMPLE_PROMPTS.md](AI_SIMPLE_PROMPTS.md)
 - 🔵 **Threat hunting (Blue Team)** → [BLUE_TEAM_GUIDE.md](BLUE_TEAM_GUIDE.md)
 - 🔥 **Gain shell access** → [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md)
 - ⚡ **Fast scanning (6x faster)** → [FAST_MODE.md](FAST_MODE.md)
