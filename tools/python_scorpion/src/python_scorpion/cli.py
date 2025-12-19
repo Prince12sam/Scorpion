@@ -2479,8 +2479,18 @@ def ai_pentest_command(
     # Validate API key format - just basic checks, let provider validate
     if api_key:
         api_key = api_key.strip()
+        # Debug: Show what we're working with
+        if api_key.startswith(("ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_")):
+            console.print(f"[dim]🔍 Detected GitHub token format: {api_key[:10]}...[/dim]")
+        elif api_key.startswith("sk-"):
+            console.print(f"[dim]🔍 Detected OpenAI key format: {api_key[:10]}...[/dim]")
+        elif api_key.startswith("sk-ant-"):
+            console.print(f"[dim]🔍 Detected Anthropic key format: {api_key[:15]}...[/dim]")
+        else:
+            console.print(f"[dim]🔍 Unknown API key format: {api_key[:10]}...[/dim]")
     
     # Auto-detect AI provider from API key format if not specified
+    original_provider = ai_provider  # Track if user explicitly set provider
     if api_key and ai_provider == "openai":  # Default value; will be overridden by detection
         # GitHub tokens: ghp_ (classic), gho_ (OAuth), ghu_ (user-to-server), 
         # ghs_ (server-to-server), ghr_ (refresh), github_pat_ (fine-grained)
@@ -2526,8 +2536,11 @@ def ai_pentest_command(
                 console.print("[yellow]  If this fails, specify provider explicitly:[/yellow]")
                 console.print("[yellow]    --ai-provider github  (for GitHub Models)[/yellow]")
                 console.print("[yellow]    --ai-provider openai  (for OpenAI)[/yellow]")
-    else:
-        # Provider was explicitly specified
+    elif ai_provider != original_provider:
+        # Provider was changed by auto-detection above
+        pass  # Already printed message
+    elif ai_provider != "openai":
+        # User explicitly specified a non-default provider
         console.print(f"[cyan]✓ Using provider:[/cyan] {ai_provider} (explicitly specified)")
         console.print(f"[cyan]✓ Using model:[/cyan] {model}")
     

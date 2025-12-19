@@ -34,13 +34,53 @@ class NucleiScanner:
     """
     
     def __init__(self):
-        self.nuclei_path = shutil.which("nuclei")
+        # Try multiple methods to find nuclei
+        self.nuclei_path = self._find_nuclei()
         if not self.nuclei_path:
             raise FileNotFoundError(
                 "Nuclei binary not found in PATH. Install from: https://github.com/projectdiscovery/nuclei\n"
                 "Linux/macOS: sudo apt install nuclei OR brew install nuclei\n"
                 "Windows: Download from https://github.com/projectdiscovery/nuclei/releases"
             )
+    
+    def _find_nuclei(self) -> Optional[str]:
+        """Find nuclei binary using multiple methods"""
+        # Method 1: Standard PATH search
+        nuclei_path = shutil.which("nuclei")
+        if nuclei_path:
+            return nuclei_path
+        
+        # Method 2: Common installation locations
+        common_paths = [
+            "/usr/bin/nuclei",              # Debian/Ubuntu apt
+            "/usr/local/bin/nuclei",        # Manual install
+            "/opt/nuclei/nuclei",           # Alternative install
+            os.path.expanduser("~/go/bin/nuclei"),  # Go install
+            os.path.expanduser("~/.local/bin/nuclei"),  # User install
+            "/snap/bin/nuclei",             # Snap install
+        ]
+        
+        for path in common_paths:
+            if os.path.isfile(path) and os.access(path, os.X_OK):
+                return path
+        
+        # Method 3: Try to find in full system PATH (bypass venv)
+        import subprocess
+        try:
+            result = subprocess.run(
+                ["which", "nuclei"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                found_path = result.stdout.strip()
+                if found_path and os.path.isfile(found_path):
+                    return found_path
+        except Exception:
+            pass
+        
+        return None
     
     def check_updates(self) -> bool:
         """Check for nuclei template updates"""
