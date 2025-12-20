@@ -1560,6 +1560,138 @@ def nuclei(
         raise typer.Exit(code=1)
 
 
+@app.command(name="web-scan")
+def web_scan(
+    target: str = typer.Argument(..., help="Target URL or host"),
+    ports: str = typer.Option("80,443,8000,8080,8443", "--ports", "-p", help="Web ports to scan"),
+    timeout: float = typer.Option(5.0, "--timeout", help="Request timeout in seconds"),
+    concurrency: int = typer.Option(50, "--concurrency", help="Concurrent requests"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="JSON output file"),
+):
+    """Fast web vulnerability scan (OWASP Top 10: SQLi, XSS, RCE, headers)."""
+    
+    async def run_web_scan():
+        console.print(Panel.fit("🌐 Web Vulnerability Scanner", border_style="cyan"))
+        console.print(f"\n[cyan]Target:[/cyan] {target}")
+        console.print(f"[cyan]Scanning:[/cyan] SQLi, XSS, RCE, Command Injection, Headers\n")
+        
+        # Auto-detect protocol
+        if not target.startswith("http"):
+            test_url = f"http://{target}"
+        else:
+            test_url = target
+        
+        tester = AdvancedWebTester(target=test_url, concurrency=concurrency, timeout=timeout)
+        vulnerabilities = await tester.run_full_scan()
+        
+        # Summary
+        console.print(f"\n[green]✓ Scan Complete[/green]")
+        console.print(f"[yellow]Found {len(vulnerabilities)} vulnerabilities[/yellow]\n")
+        
+        # Group by severity
+        by_severity = {}
+        for v in vulnerabilities:
+            sev = v.get("severity", "info")
+            by_severity.setdefault(sev, []).append(v)
+        
+        for sev in ["critical", "high", "medium", "low", "info"]:
+            if sev in by_severity:
+                console.print(f"[{'red' if sev=='critical' else 'yellow' if sev in ['high','medium'] else 'cyan'}]{sev.upper()}: {len(by_severity[sev])}[/]")
+                for v in by_severity[sev][:5]:
+                    console.print(f"  • {v.get('vuln_type', 'Unknown')}: {v.get('description', '')[:80]}")
+        
+        if output:
+            with open(output, "w", encoding="utf-8") as f:
+                json.dump(vulnerabilities, f, indent=2)
+            console.print(f"\n[green]✓ Saved to {output}[/green]")
+        
+        return vulnerabilities
+    
+    asyncio.run(run_web_scan())
+
+
+@app.command(name="api-scan")
+def api_scan(
+    target: str = typer.Argument(..., help="Target API URL or host"),
+    timeout: float = typer.Option(5.0, "--timeout", help="Request timeout in seconds"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="JSON output file"),
+):
+    """Fast API security scan (REST, GraphQL, JWT, IDOR, rate limiting)."""
+    
+    async def run_api_scan():
+        from .api import fetch_swagger, check_graphql, jwt_security_test, idor_comprehensive_test, improved_rate_limit
+        
+        console.print(Panel.fit("🔐 API Security Scanner", border_style="cyan"))
+        console.print(f"\n[cyan]Target:[/cyan] {target}")
+        console.print(f"[cyan]Testing:[/cyan] Swagger/OpenAPI, GraphQL, JWT, IDOR, Rate Limiting\n")
+        
+        # Auto-detect protocol
+        if target.startswith("http"):
+            protocol = "https" if target.startswith("https") else "http"
+            host = target.replace("https://", "").replace("http://", "").split("/")[0]
+        else:
+            host = target.split("/")[0]
+            protocol = "https"
+        
+        results = {}
+        
+        # Swagger/OpenAPI discovery
+        console.print("[cyan]→[/cyan] Checking for Swagger/OpenAPI docs...")
+        swagger = await fetch_swagger(host, protocol)
+        if swagger.get("exposed"):
+            console.print(f"  [green]✓ Found API docs at {swagger.get('url')}[/green]")
+            results["swagger"] = swagger
+        else:
+            console.print("  [yellow]• No API docs found[/yellow]")
+        
+        # GraphQL
+        console.print("[cyan]→[/cyan] Testing GraphQL endpoints...")
+        graphql = await check_graphql(host, protocol)
+        if graphql.get("vulnerabilities"):
+            console.print(f"  [red]✗ GraphQL vulnerabilities: {len(graphql['vulnerabilities'])}[/red]")
+            results["graphql"] = graphql
+        else:
+            console.print("  [green]✓ No GraphQL issues[/green]")
+        
+        # JWT testing
+        console.print("[cyan]→[/cyan] Testing JWT security...")
+        jwt_vulns = jwt_security_test(f"{protocol}://{host}")
+        if jwt_vulns:
+            console.print(f"  [red]✗ JWT issues: {len(jwt_vulns)}[/red]")
+            results["jwt"] = jwt_vulns
+        else:
+            console.print("  [green]✓ No JWT issues[/green]")
+        
+        # IDOR
+        console.print("[cyan]→[/cyan] Testing for IDOR vulnerabilities...")
+        idor = await idor_comprehensive_test(host, protocol)
+        if idor.get("vulnerabilities_found"):
+            console.print(f"  [red]✗ IDOR vulnerabilities: {len(idor['vulnerabilities_found'])}[/red]")
+            results["idor"] = idor
+        else:
+            console.print("  [green]✓ No IDOR detected[/green]")
+        
+        # Rate limiting
+        console.print("[cyan]→[/cyan] Checking rate limiting...")
+        rate_limit = await improved_rate_limit(host, 50, protocol)
+        if rate_limit.get("vulnerable"):
+            console.print("  [yellow]⚠ No rate limiting detected[/yellow]")
+            results["rate_limiting"] = rate_limit
+        else:
+            console.print("  [green]✓ Rate limiting enabled[/green]")
+        
+        console.print(f"\n[green]✓ API Scan Complete[/green]")
+        
+        if output:
+            with open(output, "w", encoding="utf-8") as f:
+                json.dump(results, f, indent=2)
+            console.print(f"[green]✓ Saved to {output}[/green]")
+        
+        return results
+    
+    asyncio.run(run_api_scan())
+
+
 @app.command()
 def bruteforce(
     target: str = typer.Argument(..., help="Target URL"),
