@@ -107,7 +107,8 @@ scorpion ai-pentest -t target.com -i "hack it"
 📖 **Guide:** [AI_SIMPLE_PROMPTS.md](AI_SIMPLE_PROMPTS.md) - 20+ simple commands
 
 #### 🎯 Port Scanning - 6x Faster than Nmap
-- **ALL 65535 ports** scanned by default
+- **ALL 65535 ports** scanned by default (CLI)
+- **Risk-based AI scanning** (HIGH: 1-1000, MEDIUM: 1-200, LOW: 1-100)
 - Shows only **open ports** (like `nmap --open`)
 - **500 concurrent probes** for fast scanning
 - Multiple scan types: TCP, SYN, FIN, XMAS, NULL, ACK, UDP
@@ -117,6 +118,9 @@ scorpion ai-pentest -t target.com -i "hack it"
 scorpion scan -t target.com --fast
 ```
 
+📊 **Performance:** Scans 1000 ports in 20-30 seconds
+📌 **Smart:** AI uses risk-based port selection (no wasted time on rarely-used ports)
+
 📖 **Guide:** [AGGRESSIVE_SCANNING.md](AGGRESSIVE_SCANNING.md)
 
 #### 🤖 AI Penetration Testing - 10x Faster than Metasploit
@@ -125,7 +129,21 @@ Autonomous vulnerability discovery using GPT-4, Claude, or GitHub Models (FREE!)
 - **5-10 minute** complete pentests
 - **OWASP Top 10** comprehensive testing
 - **API Security** (REST, GraphQL, JWT)
-- **Intelligent exploitation** with context-aware payloads
+- **10 Intelligent Exploitation Vectors:**
+  - SQLi (manual UNION/stacked queries + sqlmap)
+  - RCE (9 injection patterns + commix)
+  - File Upload (15+ evasion techniques)
+  - XSS (reflected/stored/DOM)
+  - Auth Bypass (default creds, SQLi)
+  - SMB (EternalBlue MS17-010)
+  - FTP (anonymous + weak creds)
+  - SSH (Hydra brute force)
+  - Database (web admin panels)
+  - RDP (BlueKeep + brute force)
+- **Manual exploitation FIRST** (no external tools required)
+- **URL encoding** for payload integrity
+- **Shell verification** before reporting success
+- **Auto-exploitation trigger** (immediate exploitation when critical vuln found)
 - **Autonomous testing** with minimal human intervention
 - **⚡ FAST MODE** - 6x faster exploitation (5-10 minutes)
 - **🔥 AGGRESSIVE MODE** - Maximum aggression for shell access
