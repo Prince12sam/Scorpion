@@ -8,7 +8,7 @@ import { ThreatIntel } from '../cli/lib/threat-intel.js';
 import { NetworkRecon } from '../cli/lib/recon.js';
 
 function parseArgs(argv){
-  const a={ target:'', ports:'1-1000', type:'quick', technique:'tcp-connect', doRecon:false, out:'reports' };
+  const a={ target:'', ports:'1-65535', type:'quick', technique:'tcp-connect', doRecon:false, out:'reports' };
   for(let i=2;i<argv.length;i++){
     const k=argv[i],n=argv[i+1];
     if((k==='--target'||k==='-t')&&n){a.target=n;i++;continue;}

@@ -14,7 +14,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 function parseArgs(argv) {
-  const args = { target: '', type: 'quick', ports: '1-1000', technique: 'tcp-connect', out: 'reports' };
+  const args = { target: '', type: 'quick', ports: '1-65535', technique: 'tcp-connect', out: 'reports' };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     const nxt = argv[i + 1];
@@ -30,8 +30,9 @@ function parseArgs(argv) {
 
 function printHelp() {
   console.log(`\nScorpion Local Scanner (No Hosting Required)\n\n` +
-    `Usage:\n  node tools/run-scan.js --target <host|ip> [--type quick|normal|deep] [--ports 1-1000] [--technique tcp-connect|syn] [--out reports]\n\n` +
-    `Examples:\n  node tools/run-scan.js --target 127.0.0.1\n  node tools/run-scan.js -t example.com -y deep -p 1-65535 -k tcp-connect -o reports\n`);
+    `Usage:\n  node tools/run-scan.js --target <host|ip> [--type quick|normal|deep] [--ports <range>] [--technique tcp-connect|syn] [--out reports]\n\n` +
+    `Port Ranges:\n  --ports 1-1000      Top 1000 ports (recommended for quick scan, ~30s)\n  --ports 1-65535     ALL ports (comprehensive, 10-30 min)\n  --ports 80,443,8080 Specific ports only\n\n` +
+    `Examples:\n  node tools/run-scan.js --target 127.0.0.1\n  node tools/run-scan.js -t example.com -y deep -p 1-65535 -k tcp-connect -o reports\n  node tools/run-scan.js -t example.com -p 1-1000 -o reports\n`);
 }
 
 function toMarkdown(result) {
