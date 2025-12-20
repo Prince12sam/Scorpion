@@ -27,6 +27,7 @@ if platform.system() == 'Windows':
 
 import typer
 import rich
+import httpx
 from rich.console import Console
 from rich.panel import Panel
 from rich import box
@@ -1578,9 +1579,18 @@ def web_scan(
         console.print(f"\n[cyan]Target:[/cyan] {target}")
         console.print(f"[cyan]Scanning:[/cyan] Page Discovery + SQLi + XSS + RCE + Headers\n")
         
-        # Auto-detect protocol
+        # Auto-detect protocol - try HTTPS first, fallback to HTTP
         if not target.startswith("http"):
-            test_url = f"http://{target}"
+            # Try HTTPS first (more secure, increasingly common)
+            for scheme in ["https", "http"]:
+                test_url = f"{scheme}://{target}"
+                try:
+                    async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
+                        await client.head(test_url, follow_redirects=True)
+                        break  # Success - use this scheme
+                except:
+                    if scheme == "http":  # Last option failed
+                        test_url = f"http://{target}"  # Default anyway
         else:
             test_url = target
         
@@ -1799,8 +1809,19 @@ def exploit_scan(
         # Step 1: Scan for vulnerabilities
         console.print("[cyan]→[/cyan] Scanning for exploitable vulnerabilities...")
         
+        # Auto-detect protocol - try HTTPS first, fallback to HTTP
         if not target.startswith("http"):
-            test_url = f"http://{target}"
+            # Try HTTPS first (APIs often use HTTPS)
+            for scheme in ["https", "http"]:
+                test_url = f"{scheme}://{target}"
+                try:
+                    async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
+                        await client.head(test_url, follow_redirects=True)
+                        console.print(f"[green]✓ Detected {scheme.upper()}[/green]")
+                        break  # Success
+                except:
+                    if scheme == "http":  # Last option
+                        test_url = f"http://{target}"
         else:
             test_url = target
         
