@@ -1591,18 +1591,41 @@ def web_scan(
         # Group by severity
         by_severity = {}
         for v in vulnerabilities:
-            sev = v.get("severity", "info")
-            by_severity.setdefault(sev, []).append(v)
+            # Handle both dict and WebVulnerability objects
+            if hasattr(v, 'severity'):
+                sev = v.severity
+                vuln_dict = {
+                    "vuln_type": v.vuln_type,
+                    "severity": v.severity,
+                    "url": v.url,
+                    "description": v.description,
+                    "remediation": v.remediation,
+                }
+            else:
+                sev = v.get("severity", "info")
+                vuln_dict = v
+            
+            by_severity.setdefault(sev, []).append(vuln_dict)
         
         for sev in ["critical", "high", "medium", "low", "info"]:
             if sev in by_severity:
                 console.print(f"[{'red' if sev=='critical' else 'yellow' if sev in ['high','medium'] else 'cyan'}]{sev.upper()}: {len(by_severity[sev])}[/]")
-                for v in by_severity[sev][:5]:
-                    console.print(f"  • {v.get('vuln_type', 'Unknown')}: {v.get('description', '')[:80]}")
+                for vuln_dict in by_severity[sev][:5]:
+                    vuln_type = vuln_dict.get("vuln_type", "Unknown") if isinstance(vuln_dict, dict) else getattr(vuln_dict, "vuln_type", "Unknown")
+                    description = vuln_dict.get("description", "") if isinstance(vuln_dict, dict) else getattr(vuln_dict, "description", "")
+                    console.print(f"  • {vuln_type}: {description[:80]}")
         
         if output:
+            # Convert WebVulnerability objects to dicts for JSON serialization
+            vuln_dicts = []
+            for v in vulnerabilities:
+                if hasattr(v, '__dict__'):
+                    vuln_dicts.append(v.__dict__)
+                else:
+                    vuln_dicts.append(v)
+            
             with open(output, "w", encoding="utf-8") as f:
-                json.dump(vulnerabilities, f, indent=2)
+                json.dump(vuln_dicts, f, indent=2)
             console.print(f"\n[green]✓ Saved to {output}[/green]")
         
         return vulnerabilities
