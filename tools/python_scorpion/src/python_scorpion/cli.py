@@ -1566,14 +1566,17 @@ def web_scan(
     ports: str = typer.Option("80,443,8000,8080,8443", "--ports", "-p", help="Web ports to scan"),
     timeout: float = typer.Option(5.0, "--timeout", help="Request timeout in seconds"),
     concurrency: int = typer.Option(50, "--concurrency", help="Concurrent requests"),
+    discover_pages: bool = typer.Option(True, "--discover/--no-discover", help="Discover hidden pages via dirbuster"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="JSON output file"),
 ):
-    """Fast web vulnerability scan (OWASP Top 10: SQLi, XSS, RCE, headers)."""
+    """Comprehensive web vulnerability scan (page discovery + OWASP Top 10: SQLi, XSS, RCE, headers)."""
     
     async def run_web_scan():
-        console.print(Panel.fit("🌐 Web Vulnerability Scanner", border_style="cyan"))
+        from .dirbuster import dirbust_scan
+        
+        console.print(Panel.fit("🌐 Comprehensive Web Vulnerability Scanner", border_style="cyan"))
         console.print(f"\n[cyan]Target:[/cyan] {target}")
-        console.print(f"[cyan]Scanning:[/cyan] SQLi, XSS, RCE, Command Injection, Headers\n")
+        console.print(f"[cyan]Scanning:[/cyan] Page Discovery + SQLi + XSS + RCE + Headers\n")
         
         # Auto-detect protocol
         if not target.startswith("http"):
@@ -1581,16 +1584,72 @@ def web_scan(
         else:
             test_url = target
         
+        all_vulnerabilities = []
+        discovered_pages = []
+        
+        # Step 1: Discover pages if enabled
+        if discover_pages:
+            console.print("[cyan]→[/cyan] Discovering hidden pages...")
+            https = test_url.startswith("https://")
+            dirbuster_result = await dirbust_scan(test_url, concurrency=50, https=https)
+            
+            discovered_items = dirbuster_result.get("results", [])
+            if discovered_items:
+                # Filter interesting status codes
+                interesting = [r for r in discovered_items if r.get("status") in [200, 201, 204, 301, 302]]
+                console.print(f"  [green]✓ Found {len(interesting)} pages[/green]")
+                
+                # Extract paths and build full URLs
+                base_url = dirbuster_result.get("base", test_url)
+                for item in interesting[:20]:  # Top 20
+                    url = item.get("url", "")
+                    path = url.replace(base_url, "") if url else ""
+                    
+                    # Only test .php/.asp/.jsp pages or pages with parameters
+                    if path.endswith((".php", ".asp", ".aspx", ".jsp")) or "?" in path:
+                        discovered_pages.append(url)
+                        
+                        # Auto-inject SQLi params for .php pages without params
+                        if "?" not in path and path.endswith((".php", ".asp", ".aspx", ".jsp")):
+                            for param in ["id", "cat", "artist", "product", "user", "page"]:
+                                discovered_pages.append(f"{url}?{param}=1")
+                
+                console.print(f"  [yellow]Testing {len(discovered_pages)} dynamic pages[/yellow]\n")
+            else:
+                console.print(f"  [yellow]• No pages found, testing base URL only[/yellow]\n")
+        
+        # Step 2: Test base URL
+        console.print("[cyan]→[/cyan] Testing base URL...")
         tester = AdvancedWebTester(target=test_url, concurrency=concurrency, timeout=timeout)
         vulnerabilities = await tester.run_full_scan()
+        all_vulnerabilities.extend(vulnerabilities)
+        console.print(f"  [yellow]Found {len(vulnerabilities)} issues on base URL[/yellow]")
+        
+        # Step 3: Test discovered pages
+        if discovered_pages:
+            console.print(f"\n[cyan]→[/cyan] Testing {len(discovered_pages)} discovered pages for vulnerabilities...")
+            for page_url in discovered_pages[:15]:  # Limit to 15 for speed
+                console.print(f"  [cyan]•[/cyan] {page_url[:70]}...")
+                try:
+                    page_tester = AdvancedWebTester(target=page_url, concurrency=concurrency, timeout=timeout)
+                    page_vulns = await page_tester.run_full_scan()
+                    
+                    if page_vulns:
+                        # Filter out duplicate header issues
+                        new_vulns = [v for v in page_vulns if not (hasattr(v, 'vuln_type') and 'header' in v.vuln_type.lower())]
+                        if new_vulns:
+                            all_vulnerabilities.extend(new_vulns)
+                            console.print(f"    [red]⚠ Found {len(new_vulns)} vulnerabilities![/red]")
+                except Exception as e:
+                    console.print(f"    [yellow]Skip: {str(e)[:50]}[/yellow]")
         
         # Summary
         console.print(f"\n[green]✓ Scan Complete[/green]")
-        console.print(f"[yellow]Found {len(vulnerabilities)} vulnerabilities[/yellow]\n")
+        console.print(f"[yellow]Total: {len(all_vulnerabilities)} vulnerabilities[/yellow]\n")
         
         # Group by severity
         by_severity = {}
-        for v in vulnerabilities:
+        for v in all_vulnerabilities:
             # Handle both dict and WebVulnerability objects
             if hasattr(v, 'severity'):
                 sev = v.severity
@@ -1600,6 +1659,8 @@ def web_scan(
                     "url": v.url,
                     "description": v.description,
                     "remediation": v.remediation,
+                    "payload": getattr(v, 'payload', None),
+                    "evidence": getattr(v, 'evidence', None),
                 }
             else:
                 sev = v.get("severity", "info")
@@ -1618,7 +1679,7 @@ def web_scan(
         if output:
             # Convert WebVulnerability objects to dicts for JSON serialization
             vuln_dicts = []
-            for v in vulnerabilities:
+            for v in all_vulnerabilities:
                 if hasattr(v, '__dict__'):
                     vuln_dicts.append(v.__dict__)
                 else:
@@ -1628,7 +1689,7 @@ def web_scan(
                 json.dump(vuln_dicts, f, indent=2)
             console.print(f"\n[green]✓ Saved to {output}[/green]")
         
-        return vulnerabilities
+        return all_vulnerabilities
     
     asyncio.run(run_web_scan())
 

@@ -36,8 +36,13 @@ async def _fetch(client: httpx.AsyncClient, url: str) -> Dict:
 
 
 async def dirbust_scan(host: str, wordlist_path: Optional[str] = None, concurrency: int = 50, https: bool = True) -> Dict:
-    scheme = "https" if https else "http"
-    base = f"{scheme}://{host}"
+    # Handle both full URLs and bare hostnames
+    if host.startswith("http://") or host.startswith("https://"):
+        base = host.rstrip("/")
+    else:
+        scheme = "https" if https else "http"
+        base = f"{scheme}://{host}"
+    
     paths = load_wordlist(wordlist_path)
 
     sem = asyncio.Semaphore(concurrency)
