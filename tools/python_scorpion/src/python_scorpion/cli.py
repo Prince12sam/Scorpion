@@ -1,10 +1,29 @@
 import asyncio
 import json
 import sys
+import platform
 from typing import List, Optional, cast
 import os
 import datetime
 from pathlib import Path
+
+# ⚠️ PLATFORM CHECK: Only Linux and Unix-like systems supported
+if platform.system() == 'Windows':
+    print("\n" + "="*70)
+    print("❌ ERROR: Windows is not supported")
+    print("="*70)
+    print("\n🐧 Scorpion Security Tool requires Linux or Unix-like systems.\n")
+    print("Supported platforms:")
+    print("  ✓ Linux (Ubuntu, Debian, Kali, Parrot OS, Arch, etc.)")
+    print("  ✓ macOS (Intel & Apple Silicon)")
+    print("  ✓ WSL (Windows Subsystem for Linux)")
+    print("  ✓ BSD variants")
+    print("\n💡 To use Scorpion on Windows:")
+    print("  1. Install WSL2: https://aka.ms/wsl")
+    print("  2. Install Ubuntu/Kali from Microsoft Store")
+    print("  3. Run Scorpion inside WSL")
+    print("\nExiting...\n")
+    sys.exit(1)
 
 import typer
 import rich

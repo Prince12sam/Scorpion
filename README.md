@@ -18,6 +18,9 @@
 
 ## 📋 Prerequisites
 
+⚠️ **Linux/Unix ONLY** - Windows is not supported (use WSL instead)
+
+- **Operating System**: Linux, macOS, WSL, or BSD
 - **Python 3.10 or higher**
 - pip (Python package manager)
 - Git
@@ -37,18 +40,20 @@ git --version
 git clone https://github.com/Prince12sam/Scorpion.git
 cd Scorpion
 
-# Install (Linux/macOS)
+# Install (Linux/macOS/WSL)
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -e tools/python_scorpion
 
-# Install (Windows)
-python -m venv .venv
-.venv\Scripts\activate
-pip install -e tools/python_scorpion
-
 # Verify
 scorpion --version
+```
+
+💡 **Windows Users**: Install WSL (Windows Subsystem for Linux) first:
+```powershell
+# In PowerShell (Administrator)
+wsl --install
+# Then run Scorpion inside WSL (Ubuntu/Kali)
 ```
 
 📖 **Detailed guides:**
