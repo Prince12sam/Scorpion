@@ -23,6 +23,7 @@
 | [AI_SIMPLE_PROMPTS.md](AI_SIMPLE_PROMPTS.md) | 💬 Natural language AI commands |
 | [BLUE_TEAM_GUIDE.md](BLUE_TEAM_GUIDE.md) | 🔵 Defensive security & threat hunting |
 | [AGGRESSIVE_EXPLOITATION.md](AGGRESSIVE_EXPLOITATION.md) | 🔥 Maximum aggression for shell access |
+| [PAYLOAD_DISPLAY_GUIDE.md](PAYLOAD_DISPLAY_GUIDE.md) | 🎯 Payload generation & shell handling for all targets |
 | [FAST_MODE.md](FAST_MODE.md) | ⚡ Speed optimizations (6x faster) |
 
 ---
@@ -43,6 +44,7 @@
 - ⚡ **Get started** → [GETTING_STARTED.md](GETTING_STARTED.md)
 - 💻 **Install** → [INSTALLATION.md](INSTALLATION.md)
 - 🤖 **AI pentest (Red Team)** → [AI_PENTEST_GUIDE.md](AI_PENTEST_GUIDE.md)
+- 🎯 **See payloads & shell handling** → [PAYLOAD_DISPLAY_GUIDE.md](PAYLOAD_DISPLAY_GUIDE.md)
 - 🎯 **Use Nuclei templates** → [NUCLEI_TEMPLATES_GUIDE.md](NUCLEI_TEMPLATES_GUIDE.md)
 - 🛠️ **Use external tools** → [EXTERNAL_TOOLS_QUICK_REFERENCE.md](EXTERNAL_TOOLS_QUICK_REFERENCE.md)
 - 💬 **Simple AI commands** → [AI_SIMPLE_PROMPTS.md](AI_SIMPLE_PROMPTS.md)
