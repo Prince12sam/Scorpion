@@ -667,7 +667,11 @@ def scan(
             161:"snmp", 389:"ldap", 443:"https", 445:"microsoft-ds", 465:"smtps", 587:"submission",
             636:"ldaps", 993:"imaps", 995:"pop3s", 1433:"ms-sql-s", 1521:"oracle", 2049:"nfs",
             3306:"mysql", 3389:"ms-wbt-server", 5000:"upnp", 5432:"postgresql", 5900:"vnc",
-            6379:"redis", 8000:"http-alt", 8080:"http-proxy", 8443:"https-alt", 8888:"http-alt",
+            6379:"redis",
+            # Common alternate HTTP/HTTPS ports used by CDNs/hosting panels
+            8000:"http-alt", 8080:"http-proxy", 8443:"https-alt", 8888:"http-alt",
+            2052:"http-alt", 2053:"https-alt", 2082:"http-alt", 2083:"https-alt",
+            2086:"http-alt", 2087:"https-alt", 2095:"http-alt", 2096:"https-alt", 8880:"http-alt",
             9000:"cslistener", 9200:"elasticsearch", 11211:"memcache", 27017:"mongodb"
         }
         

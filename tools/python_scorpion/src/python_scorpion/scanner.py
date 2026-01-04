@@ -369,11 +369,13 @@ async def _probe(host: str, port: int, timeout: float, no_write: bool = False, v
             
             # Service-specific probes (real protocols only)
             if not no_write:
-                if port in {80, 8080, 8000, 8888}:
+                # Common HTTP ports, including popular alternate web ports
+                if port in {80, 8080, 8000, 8888, 2052, 2082, 2086, 2095, 8880}:
                     # HTTP probe
                     writer.write(f"HEAD / HTTP/1.1\r\nHost: {host}\r\nUser-Agent: Scorpion/2.0\r\nConnection: close\r\n\r\n".encode())
                     service = "http"
-                elif port in {443, 8443}:
+                # Common HTTPS ports, including cPanel/alt HTTPS ports
+                elif port in {443, 8443, 2053, 2083, 2087, 2096}:
                     service = "https"
                     # Don't send data for HTTPS (TLS handshake required)
                 elif port == 21:
