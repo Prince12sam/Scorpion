@@ -693,11 +693,18 @@ def scan(
                     banner = r.get("reason", "")
                     if version_detect and banner:
                         # Extract service from banner (e.g., "SSH-2.0-OpenSSH_8.2" -> "ssh")
-                        service = banner.split()[0].split('-')[0].lower() if banner else ""
+                        inferred = banner.split()[0].split('-')[0].lower() if banner else ""
+                        # Treat generic "open" banners as unknown service
+                        if inferred != "open":
+                            service = inferred
                 
                 # 3) Fallback to nmap-style static port map
                 if not service:
                     service = port_map.get(port, "")
+
+                # 4) If still nothing, explicitly mark as unknown
+                if not service:
+                    service = "unknown"
             
             # Color-code states like nmap
             if state == "open":
@@ -793,7 +800,10 @@ def scan(
             rows_u = [r for r in results_udp if (r["state"]=="open" or not only_open_local)]
             for r in rows_u:
                 rsn = r.get("reason", "")
-                svc = "" if raw else port_map.get(r["port"], "")
+                if raw:
+                    svc = ""
+                else:
+                    svc = port_map.get(r["port"], "") or "unknown"
                 table_u.add_row(str(r["port"]), r["state"], svc, rsn)
             console.print(table_u)
             open_udp = [r['port'] for r in results_udp if r['state']=='open']
