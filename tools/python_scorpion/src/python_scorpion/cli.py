@@ -3010,7 +3010,6 @@ def ai_pentest_command(
         model=model,
         learning_mode=learning_mode,
         max_iterations=max_iterations,
-        custom_instructions=custom_instructions
         custom_instructions=custom_instructions,
         engagement_policy=engagement_policy_enum,
     )
