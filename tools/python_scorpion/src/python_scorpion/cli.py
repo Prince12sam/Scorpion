@@ -97,7 +97,8 @@ from .ai_pentest import (
     PrimaryGoal,
     AutonomyLevel,
     StealthLevel,
-    RiskTolerance
+    RiskTolerance,
+    EngagementPolicy,
 )
 # Blue Team imports
 from .threat_hunter import ThreatHunter, IOC, Anomaly
@@ -2676,6 +2677,11 @@ def ai_pentest_command(
         "--risk-tolerance", "-r",
         help="Risk tolerance: low (passive only), medium (active scanning), high (exploitation - requires authorization)"
     ),
+    engagement_policy: str = typer.Option(
+        "standard",
+        "--engagement-policy",
+        help="Engagement policy profile: safe (no exploitation even at high risk), standard (default), aggressive, extreme",
+    ),
     
     # Advanced Options
     learning_mode: bool = typer.Option(False, "--learning-mode", help="Enable AI learning mode (experimental)"),
@@ -2964,6 +2970,14 @@ def ai_pentest_command(
         console.print(f"[red]Invalid risk tolerance: {risk_tolerance}[/red]")
         console.print("[yellow]Valid options: low, medium, high[/yellow]")
         raise typer.Exit(1)
+
+    # Engagement policy
+    try:
+        engagement_policy_enum = EngagementPolicy(engagement_policy.lower())
+    except ValueError:
+        console.print(f"[red]Invalid engagement policy: {engagement_policy}[/red]")
+        console.print("[yellow]Valid options: safe, standard, aggressive, extreme[/yellow]")
+        raise typer.Exit(1)
     
     # Parse secondary goals
     secondary_goals_list = [g.strip() for g in secondary_goals.split(",") if g.strip()]
@@ -2997,6 +3011,8 @@ def ai_pentest_command(
         learning_mode=learning_mode,
         max_iterations=max_iterations,
         custom_instructions=custom_instructions
+        custom_instructions=custom_instructions,
+        engagement_policy=engagement_policy_enum,
     )
     
     # Display configuration
@@ -3006,6 +3022,7 @@ def ai_pentest_command(
         f"[cyan]AI Provider:[/cyan] {ai_provider} ({model})\n"
         f"[cyan]Stealth Level:[/cyan] {stealth_level}\n"
         f"[cyan]Risk Tolerance:[/cyan] {risk_tolerance}\n"
+            f"[cyan]Engagement Policy:[/cyan] {engagement_policy}\n"
         f"[cyan]Autonomy:[/cyan] {autonomy}\n"
         f"[cyan]Time Limit:[/cyan] {time_limit} minutes"
     )
