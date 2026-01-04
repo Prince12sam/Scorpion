@@ -682,15 +682,21 @@ def scan(
             # Port column: format as "PORT/tcp" (nmap style)
             port_display = f"{port}/tcp"
             
-            # Service detection (prefer version_detect banner, fallback to port map)
+            # Service detection (prefer scanner-detected service, then banner, then static map)
             service = ""
             if not raw:
-                # Check if we have version detection info
-                banner = r.get("reason", "")
-                if version_detect and banner:
-                    # Extract service from banner (e.g., "SSH-2.0-OpenSSH_8.2" -> "ssh")
-                    service = banner.split()[0].split('-')[0].lower() if banner else port_map.get(port, "")
-                else:
+                # 1) Prefer explicit service from scanner
+                service = r.get("service", "") or ""
+                
+                # 2) If no explicit service and we have version/banner info, try to infer
+                if not service:
+                    banner = r.get("reason", "")
+                    if version_detect and banner:
+                        # Extract service from banner (e.g., "SSH-2.0-OpenSSH_8.2" -> "ssh")
+                        service = banner.split()[0].split('-')[0].lower() if banner else ""
+                
+                # 3) Fallback to nmap-style static port map
+                if not service:
                     service = port_map.get(port, "")
             
             # Color-code states like nmap
@@ -1586,10 +1592,11 @@ def web_scan(
             for scheme in ["https", "http"]:
                 test_url = f"{scheme}://{target}"
                 try:
-                    async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
+                    # Use default certificate verification; if it fails, fall back to HTTP
+                    async with httpx.AsyncClient(timeout=5.0) as client:
                         await client.head(test_url, follow_redirects=True)
                         break  # Success - use this scheme
-                except:
+                except Exception:
                     if scheme == "http":  # Last option failed
                         test_url = f"http://{target}"  # Default anyway
         else:
@@ -1810,17 +1817,18 @@ def exploit_scan(
         # Step 1: Scan for vulnerabilities
         console.print("[cyan]→[/cyan] Scanning for exploitable vulnerabilities...")
         
-        # Auto-detect protocol - try HTTPS first, fallback to HTTP
+        # Auto-detect protocol - try HTTPS first, fallback to HTTP (with proper cert validation)
         if not target.startswith("http"):
             # Try HTTPS first (APIs often use HTTPS)
             for scheme in ["https", "http"]:
                 test_url = f"{scheme}://{target}"
                 try:
-                    async with httpx.AsyncClient(timeout=5.0, verify=False) as client:
+                    # Use default certificate verification for safety
+                    async with httpx.AsyncClient(timeout=5.0) as client:
                         await client.head(test_url, follow_redirects=True)
                         console.print(f"[green]✓ Detected {scheme.upper()}[/green]")
                         break  # Success
-                except:
+                except Exception:
                     if scheme == "http":  # Last option
                         test_url = f"http://{target}"
         else:

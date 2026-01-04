@@ -167,8 +167,12 @@ async def jwt_comprehensive_test(host: str, protocol: str = "https") -> Dict:
                 })
             
             # Test 3: Test common JWT vulnerabilities
-            # Try "none" algorithm attack
-            test_jwt = "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkFkbWluIiwiaWF0IjoxNTE2MjM5MDIyfQ."
+            # Try "none" algorithm attack with a generated test token (no real secret embedded)
+            header = {"alg": "none", "typ": "JWT"}
+            payload = {"sub": "1234567890", "name": "Admin", "iat": 1516239022}
+            def _b64url_no_pad(data: bytes) -> str:
+                return base64.urlsafe_b64encode(data).decode("utf-8").rstrip("=")
+            test_jwt = f"{_b64url_no_pad(json.dumps(header).encode('utf-8'))}.{_b64url_no_pad(json.dumps(payload).encode('utf-8'))}."
             r_none = await client.get(url, headers={"Authorization": f"Bearer {test_jwt}"})
             if r_none.status_code in [200, 301, 302]:
                 findings.append({

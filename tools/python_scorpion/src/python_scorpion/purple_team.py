@@ -681,15 +681,20 @@ async def main():
         sys.exit(1)
     
     target = sys.argv[1]
-    
+
+    # Sanitize target for filename usage to avoid path traversal
+    import re
+    safe_target = re.sub(r"[^a-zA-Z0-9_.-]", "_", target)
+
     simulator = PurpleTeamSimulator(target)
     report = await simulator.run_full_simulation(attack_profile="web")
     
-    # Save report
-    with open(f"purple_team_{target.replace('.', '_')}.json", "w") as f:
+    # Save report using sanitized filename
+    filename = f"purple_team_{safe_target.replace('.', '_')}.json"
+    with open(filename, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
-    
-    print(f"\n✅ Report saved to: purple_team_{target.replace('.', '_')}.json")
+
+    print(f"\n✅ Report saved to: {filename}")
 
 
 if __name__ == "__main__":
