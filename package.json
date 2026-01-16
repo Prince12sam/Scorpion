@@ -9,7 +9,7 @@
     "cli": "scorpion --help",
     "start": "scorpion --help",
     "scan": "scorpion scan",
-    "scan:local": "node tools/run-scan.js",
+    "scan:local": "echo Legacy Node scripts removed",
     "exploit:legacy": "echo Legacy Node CLI removed",
     "recon": "scorpion recon",
     "help": "scorpion --help",

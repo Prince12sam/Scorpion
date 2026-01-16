@@ -475,7 +475,13 @@ scorpion ai-pentest -t localhost:5000 -r medium -o prod_test.json
 # test_before_commit.sh
 
 # Start your app
-npm start &
+# Start your app (example)
+# Replace this with the command you use to start your service locally.
+# Examples:
+#   python app.py
+#   python manage.py runserver 3000
+#   docker compose up -d
+./start-app.sh &
 APP_PID=$!
 sleep 5
 

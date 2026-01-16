@@ -592,26 +592,19 @@ scorpion suite example.com --profile web --mode active --output-dir results
 
 ## 🔧 Helper Scripts
 
-Located in `tools/` directory:
+Legacy Node helper scripts in `tools/` have been removed (they depended on an old `cli/lib/*` Node implementation).
+
+Use the supported `scorpion` CLI instead:
 
 ```bash
 # Comprehensive security suite
-node tools/run-suite.js --target example.com --recon
+scorpion suite example.com --profile web --mode active --output-dir results
 
 # Quick vulnerability scan
-node tools/run-scan.js -t example.com --ports 1-1000
+scorpion scan example.com --ports 1-1000 --output results/scan.json
 
 # Network reconnaissance
-node tools/run-recon.js -t example.com
-
-# Threat intelligence lookup
-node tools/run-intel.js -i 8.8.8.8
-
-# Password security
-node tools/run-password.js breach user@example.com
-node tools/run-password.js generate
-node tools/run-password.js crack hashes.txt wordlist.txt
-node tools/run-password.js strength "MyPassword123"
+scorpion recon example.com --output results/recon.json
 ```
 
 ## 🔍 Subdomain Takeover Command
