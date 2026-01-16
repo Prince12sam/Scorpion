@@ -30,16 +30,12 @@ def _windows_block_message() -> str:
     )
 
 import typer
-import rich
 import httpx
 from rich.console import Console
 from rich.panel import Panel
 from rich import box
-PILImage = None  # Optional, if Pillow is installed
 console = Console()
-from rich.console import Console
 from rich.table import Table
-from rich import box
 
 # Load .env file if it exists (for API keys)
 try:
@@ -111,6 +107,8 @@ from .purple_team import PurpleTeamSimulator
 from .remote_access import SSHRemoteAccess, is_ssh_url, fetch_remote_log, fetch_multiple_servers
 import re
 from .code_scan import build_code_scan_report, build_sarif_report
+from .control_validation import run_control_validation_sync
+from .baseline_diff import diff_reports_from_files
 
 # Helper function for target validation in CLI
 def _validate_cli_target(target: str) -> bool:
@@ -184,7 +182,8 @@ def _banner_callback(
     """"""
     # Allow help/version/code-scan on Windows, block active scanning/exploitation.
     if _IS_WINDOWS:
-        allowed = {"code-scan"}
+        # Allow passive and local-only commands on Windows.
+        allowed = {"code-scan", "ssl-analyze", "control-validate", "baseline-diff"}
         if ctx.invoked_subcommand is not None and ctx.invoked_subcommand not in allowed:
             # Still allow printing version without a subcommand.
             console.print(_windows_block_message(), style="red")
@@ -250,7 +249,7 @@ def _banner_callback(
         "- Tip: suppress banner in scripts with --no-banner"
     )
     console.print(Panel.fit(quickstart, title="Getting Started", border_style="cyan", box=box.ROUNDED))
-console = Console()
+
 
 
 @app.command("code-scan")
@@ -1061,6 +1060,60 @@ def ssl_analyze(
     if output:
         with open(output, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
+        console.print(f"Saved: {output}")
+
+
+@app.command()
+def control_validate(
+    host: Optional[str] = typer.Argument(None, help="Target host (positional)"),
+    target: Optional[str] = typer.Option(None, "--target", "-t", help="Alias for host (supports -t)"),
+    pack: str = typer.Option("web-basic", "--pack", "-p", help="Pack: web-basic, tls-only, headers-only, recon-passive"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Write JSON report to file"),
+):
+    """Validate defensive controls (passive checks) and emit a CI-friendly JSON report."""
+    tgt = target or host
+    if not tgt:
+        console.print("Provide a host (positional) or --target/-t", style="red")
+        raise typer.Exit(code=2)
+    try:
+        _validate_cli_target(tgt)
+    except Exception as e:
+        console.print(f"Invalid target: {e}", style="red")
+        raise typer.Exit(code=2)
+
+    try:
+        report = run_control_validation_sync(tgt, pack)
+    except Exception as e:
+        console.print(f"Control validation failed: {e}", style="red")
+        raise typer.Exit(code=1)
+
+    console.print_json(data=report)
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump(report, f, indent=2)
+        console.print(f"Saved: {output}")
+
+
+@app.command()
+def baseline_diff(
+    baseline: str = typer.Argument(..., help="Baseline JSON report path"),
+    current: str = typer.Argument(..., help="Current JSON report path"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Write diff JSON to file"),
+):
+    """Compare two JSON reports (baseline vs current) and summarize added/removed findings + metric changes."""
+    try:
+        _, _, diff = diff_reports_from_files(baseline, current)
+    except FileNotFoundError as e:
+        console.print(f"File not found: {e}", style="red")
+        raise typer.Exit(code=2)
+    except Exception as e:
+        console.print(f"Baseline diff failed: {e}", style="red")
+        raise typer.Exit(code=1)
+
+    console.print_json(data=diff)
+    if output:
+        with open(output, "w", encoding="utf-8") as f:
+            json.dump(diff, f, indent=2)
         console.print(f"Saved: {output}")
 
 @app.command()
@@ -2697,10 +2750,10 @@ def ai_pentest_command(
     \b
     🔑 API Key Setup:
       # Linux/macOS
-            export SCORPION_AI_API_KEY='<YOUR_AI_API_KEY>'
+            export SCORPION_AI_API_KEY='SETME'
       
       # Windows PowerShell
-            $env:SCORPION_AI_API_KEY='<YOUR_AI_API_KEY>'
+            $env:SCORPION_AI_API_KEY='SETME'
       
       # Or use --api-key flag
             scorpion ai-pentest -t <TARGET_HOST> --api-key <YOUR_AI_API_KEY>
