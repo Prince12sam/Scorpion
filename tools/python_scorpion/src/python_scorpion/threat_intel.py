@@ -497,17 +497,3 @@ async def check_threat_intel(indicator: str, config: Optional[Dict] = None) -> D
     aggregated = ti.aggregate_results(results)
     return aggregated
 
-
-# CLI usage example
-if __name__ == "__main__":
-    import sys
-    
-    if len(sys.argv) < 2:
-        print("Usage: python threat_intel.py <indicator>")
-        print("Example: python threat_intel.py 8.8.8.8")
-        sys.exit(1)
-    
-    indicator = sys.argv[1]
-    result = asyncio.run(check_threat_intel(indicator))
-    
-    print(json.dumps(result, indent=2))

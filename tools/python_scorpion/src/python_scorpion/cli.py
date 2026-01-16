@@ -183,7 +183,7 @@ def _banner_callback(
     # Allow help/version/code-scan on Windows, block active scanning/exploitation.
     if _IS_WINDOWS:
         # Allow passive and local-only commands on Windows.
-        allowed = {"code-scan", "ssl-analyze", "control-validate", "baseline-diff"}
+        allowed = {"code-scan", "ssl-analyze", "control-validate", "baseline-diff", "ai-pentest"}
         if ctx.invoked_subcommand is not None and ctx.invoked_subcommand not in allowed:
             # Still allow printing version without a subcommand.
             console.print(_windows_block_message(), style="red")
@@ -2750,10 +2750,10 @@ def ai_pentest_command(
     \b
     🔑 API Key Setup:
       # Linux/macOS
-            export SCORPION_AI_API_KEY='SETME'
+        export SCORPION_AI_API_KEY='<YOUR_AI_API_KEY>'
       
       # Windows PowerShell
-            $env:SCORPION_AI_API_KEY='SETME'
+        $env:SCORPION_AI_API_KEY='<YOUR_AI_API_KEY>'
       
       # Or use --api-key flag
             scorpion ai-pentest -t <TARGET_HOST> --api-key <YOUR_AI_API_KEY>
@@ -2812,11 +2812,8 @@ def ai_pentest_command(
         api_key_source = "--api-key flag"
     
     if not api_key:
-        console.print("[red]ERROR: AI API key required.[/red]")
-        console.print("Provide --api-key or set SCORPION_AI_API_KEY in your environment/.env\n")
-        console.print("[cyan]Example (.env):[/cyan]")
-        console.print("  [cyan]SCORPION_AI_API_KEY=<YOUR_AI_API_KEY>[/cyan]")
-        raise typer.Exit(1)
+        console.print("[yellow]⚠ No AI API key provided; running ai-pentest in non-AI mode.[/yellow]")
+        console.print("[dim]Set SCORPION_AI_API_KEY (or use --api-key) to enable LLM prioritization and summaries.[/dim]\n")
 
     # Show success message if API key was found from environment
     if api_key and api_key_source and api_key_source != "--api-key flag":
@@ -2918,6 +2915,13 @@ def ai_pentest_command(
     except ValueError:
         console.print(f"[red]Invalid risk tolerance: {risk_tolerance}[/red]")
         console.print("[yellow]Valid options: low, medium, high[/yellow]")
+        raise typer.Exit(1)
+
+    # Windows safety gate: allow only passive mode.
+    if _IS_WINDOWS and risk_enum != RiskTolerance.LOW:
+        console.print("[red]Windows limitation: ai-pentest active modes require WSL/Linux.[/red]")
+        console.print("[yellow]On Windows, run:[/yellow] scorpion ai-pentest -t <TARGET> -r low")
+        console.print("[yellow]For active scanning (risk=medium/high), use WSL2 or Linux.[/yellow]")
         raise typer.Exit(1)
 
     # Engagement policy
@@ -3329,66 +3333,50 @@ def incident_response_command(
                 console.print(f"  [green]✓[/green] Analyzed remote system logs")
                 console.print(f"  [green]✓[/green] Detected {len(iocs)} IOCs")
             else:
-                console.print(f"  [yellow]→[/yellow] Running threat hunt on {target}...")
-                
-                hunter = ThreatHunter()
-                # Simulate forensic data collection
-                console.print(f"  [green]✓[/green] Collected system logs")
-                console.print(f"  [green]✓[/green] Captured memory dump")
-                console.print(f"  [green]✓[/green] Network traffic snapshot")
-            
-            console.print(f"\n[cyan]🔍 Analyzing evidence with AI...[/cyan]")
-            
-            # Simulate IOC detection
-            sample_iocs = [
-                {"type": "Reverse Shell", "severity": "CRITICAL", "confidence": 95},
-                {"type": "Lateral Movement", "severity": "HIGH", "confidence": 85},
-                {"type": "Credential Dumping", "severity": "HIGH", "confidence": 80}
-            ]
-            
-            console.print(f"\n[bold red]🚨 FINDINGS:[/bold red]")
-            for ioc in sample_iocs:
-                severity_color = "red" if ioc['severity'] == "CRITICAL" else "yellow"
-                console.print(f"  [{severity_color}]•[/{severity_color}] {ioc['type']} ({ioc['severity']}, {ioc['confidence']}% confidence)")
-            
-            console.print(f"\n[cyan]📊 IMPACT ASSESSMENT:[/cyan]")
-            console.print(f"  • Systems Affected: 1 confirmed, 3 suspected")
-            console.print(f"  • Data at Risk: User credentials, session tokens")
-            console.print(f"  • Attack Vector: Exploited web vulnerability")
-            console.print(f"  • Dwell Time: ~2 hours (estimated)")
-            
-            console.print(f"\n[bold yellow]⚡ RECOMMENDED ACTIONS:[/bold yellow]")
-            console.print(f"  1. Isolate compromised system immediately")
-            console.print(f"  2. Reset all user credentials")
-            console.print(f"  3. Patch vulnerable web application")
-            console.print(f"  4. Hunt for lateral movement IOCs")
-            console.print(f"  5. Deploy EDR on all endpoints")
+                console.print(f"  [yellow]→[/yellow] Local investigation requires evidence input (logs).")
+                console.print("  [yellow]→[/yellow] Use: scorpion threat-hunt --logs <LOG_FILE_OR_DIR> (or provide an SSH URL target)")
+                raise typer.Exit(1)
+
+            console.print(f"\n[cyan]🔍 Evidence analysis complete[/cyan]")
+            console.print(f"  [green]✓[/green] Detected {len(iocs)} IOCs from provided evidence")
+            if iocs:
+                console.print(f"\n[bold red]🚨 FINDINGS (Top 10):[/bold red]")
+                for ioc in iocs[:10]:
+                    console.print(f"  • [{ioc.severity}] {ioc.ioc_type}: {ioc.description}")
+            else:
+                console.print(f"\n[green]✅ No IOCs detected in the provided evidence[/green]")
+
+            console.print(f"\n[bold yellow]⚡ RECOMMENDED NEXT STEPS:[/bold yellow]")
+            console.print("  1. Validate IOC context (host/user/time) and scope")
+            console.print("  2. Contain affected assets (network isolation) if confirmed")
+            console.print("  3. Preserve evidence (logs, process list, network connections)")
+            console.print("  4. Patch root cause and rotate potentially exposed credentials")
+            console.print("  5. Add detections for identified TTPs")
             
         elif action == "contain":
             console.print(f"\n[yellow]🔒 Phase 2: CONTAINMENT[/yellow]")
-            console.print(f"  [yellow]→[/yellow] Isolating {target} from network...")
-            console.print(f"  [green]✓[/green] Firewall rules updated (block all traffic)")
-            console.print(f"  [green]✓[/green] Active sessions terminated")
-            console.print(f"  [green]✓[/green] System removed from domain")
-            console.print(f"\n[green]✅ System successfully contained[/green]")
+            console.print(f"  Target: {target}")
+            console.print("  This command provides guidance only; it does not change your environment.")
+            console.print("  Suggested actions:")
+            console.print("   - Isolate host via firewall / EDR network containment")
+            console.print("   - Disable suspected compromised accounts / tokens")
+            console.print("   - Block known-bad IPs/domains and apply WAF rules if relevant")
             
         elif action == "eradicate":
             console.print(f"\n[red]🗑️  Phase 3: ERADICATION[/red]")
-            console.print(f"  [yellow]→[/yellow] Removing attacker persistence...")
-            console.print(f"  [green]✓[/green] Deleted web shells")
-            console.print(f"  [green]✓[/green] Removed backdoor accounts")
-            console.print(f"  [green]✓[/green] Cleared scheduled tasks")
-            console.print(f"  [green]✓[/green] Patched vulnerabilities")
-            console.print(f"\n[green]✅ Threat eradicated[/green]")
+            console.print("  This command provides guidance only; it does not change your environment.")
+            console.print("  Suggested actions:")
+            console.print("   - Remove persistence mechanisms confirmed by evidence")
+            console.print("   - Patch exploited vulnerabilities and update exposed components")
+            console.print("   - Rotate secrets and re-issue credentials/tokens")
             
         elif action == "recover":
             console.print(f"\n[green]🔄 Phase 4: RECOVERY[/green]")
-            console.print(f"  [yellow]→[/yellow] Restoring system to production...")
-            console.print(f"  [green]✓[/green] System hardened with security controls")
-            console.print(f"  [green]✓[/green] Enhanced monitoring deployed")
-            console.print(f"  [green]✓[/green] Vulnerability scan: PASS")
-            console.print(f"  [green]✓[/green] System restored to production")
-            console.print(f"\n[green]✅ Recovery complete[/green]")
+            console.print("  This command provides guidance only; it does not change your environment.")
+            console.print("  Suggested actions:")
+            console.print("   - Validate services with a fresh vulnerability scan and config review")
+            console.print("   - Re-enable access gradually with monitoring and alerting")
+            console.print("   - Run post-incident review and add detections/playbooks")
         
         elapsed = (datetime.now() - start_time).total_seconds()
         console.print(f"\n[cyan]⚡ Incident response completed in {elapsed:.1f}s[/cyan]")
@@ -3529,7 +3517,7 @@ def log_analyze_command(
         if output:
             import json
             report = {
-                'file': str(log_path),
+                'file': str(file),
                 'total_lines': total_lines,
                 'analysis_time_seconds': elapsed,
                 'threats_detected': len(iocs) if detect_threats else 0,
@@ -3692,9 +3680,13 @@ def monitor_command(
         
         console.print(f"\n[cyan]🚀 Starting continuous monitoring...[/cyan]")
         console.print(f"[yellow]Press Ctrl+C to stop[/yellow]\n")
-        
-        hunter = ThreatHunter()
+
+        from .scanner import async_port_scan
         iteration = 0
+        last_open_ports: set[int] = set()
+
+        # Minimal, real checks only (no simulated alerts).
+        ports_to_check = [22, 80, 443, 445, 3389, 8080, 8443]
         
         try:
             while True:
@@ -3706,35 +3698,33 @@ def monitor_command(
                     break
                 
                 console.print(f"[cyan]🔍 Check #{iteration} - {check_time.strftime('%H:%M:%S')}[/cyan]")
-                
-                # Simulate monitoring checks (in real impl, would gather live data)
-                # For demo, show what would be monitored
-                
-                checks = [
-                    ("Port Scan Detection", "✓ No port scans detected", "green"),
-                    ("Brute Force Detection", "✓ No brute force attempts", "green"),
-                    ("Process Monitoring", "✓ All processes normal", "green"),
-                    ("Network Connections", "✓ No suspicious connections", "green"),
-                ]
-                
-                # Randomly simulate an alert every 5 iterations
-                if iteration % 5 == 0:
-                    checks.append(("⚠️  Anomaly Detected", "Unusual login from 203.0.113.42", "yellow"))
-                    
-                    if alert_webhook:
-                        console.print(f"  [yellow]📢 Sending alert to webhook...[/yellow]")
-                    if siem_endpoint:
-                        console.print(f"  [yellow]📡 Forwarding to SIEM...[/yellow]")
-                
-                for check_name, status, color in checks:
-                    console.print(f"  [{color}]{status}[/{color}]")
+
+                # Real check: snapshot of open TCP ports on a small, high-signal set.
+                try:
+                    results = asyncio.run(async_port_scan(target, ports_to_check, concurrency=200, timeout=1.0))
+                    open_ports = {int(r['port']) for r in results if r.get('state') == 'open'}
+                    newly_open = sorted(list(open_ports - last_open_ports))
+                    newly_closed = sorted(list(last_open_ports - open_ports))
+                    last_open_ports = open_ports
+
+                    console.print(f"  [green]✓[/green] Open ports: {sorted(list(open_ports)) if open_ports else 'none'}")
+                    if newly_open:
+                        console.print(f"  [yellow]⚠[/yellow] Newly open ports: {newly_open}")
+                        if alert_webhook:
+                            console.print(f"  [yellow]📢 Alert webhook configured (send in your integration layer)[/yellow]")
+                        if siem_endpoint:
+                            console.print(f"  [yellow]📡 SIEM endpoint configured (send in your integration layer)[/yellow]")
+                    if newly_closed:
+                        console.print(f"  [cyan]ℹ[/cyan] Newly closed ports: {newly_closed}")
+                except Exception as exc:
+                    console.print(f"  [red]✗[/red] Port snapshot failed: {exc}")
                 
                 # Wait for next interval
                 if end_time and check_time + timedelta(seconds=interval) >= end_time:
                     break
                 
                 console.print(f"[dim]  Sleeping {interval}s until next check...[/dim]\n")
-                time.sleep(min(interval, 5))  # Sleep max 5s for demo
+                time.sleep(interval)
                 
         except KeyboardInterrupt:
             console.print(f"\n[yellow]⚠️  Monitoring stopped by user[/yellow]")
@@ -3743,7 +3733,7 @@ def monitor_command(
         console.print(f"\n[bold]📊 Monitoring Summary[/bold]")
         console.print(f"  Duration: {elapsed / 60:.1f} minutes")
         console.print(f"  Checks Performed: {iteration}")
-        console.print(f"  Alerts Generated: {iteration // 5}")
+        console.print(f"  Alerts Generated: 0 (no simulated alerts)")
         console.print(f"\n[green]✅ Monitoring completed[/green]")
     
     except Exception as e:

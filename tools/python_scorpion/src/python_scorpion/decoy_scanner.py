@@ -481,20 +481,3 @@ def parse_decoy_option(decoy_str: str, target_ip: str, count: int = 5) -> DecoyC
     
     return config
 
-
-# Example usage
-if __name__ == "__main__":
-    async def test_decoy():
-        scanner = DecoyScanner()
-        
-        # Test random decoys
-        config = parse_decoy_option("RND:5", "192.168.1.1")
-        print(f"Decoy Config: {config}")
-        
-        # Test manual decoys
-        config2 = parse_decoy_option("10.0.0.1,10.0.0.2,ME,10.0.0.3", "192.168.1.1")
-        print(f"Manual Config: {config2}")
-        
-        scanner.close()
-    
-    asyncio.run(test_decoy())

@@ -373,30 +373,3 @@ async def fetch_multiple_servers(
     
     return await accessor.fetch_from_multiple_servers(servers, output_dir)
 
-
-# Example usage
-if __name__ == "__main__":
-    import sys
-    
-    async def test():
-        # Test single server
-        accessor = SSHRemoteAccess()
-        
-        # Parse URL
-        server = accessor.parse_ssh_url("user@192.168.1.100:/var/log/auth.log")
-        print(f"Parsed: {server}")
-        
-        # Test connectivity
-        connected = await accessor.check_connectivity(server)
-        print(f"Connected: {connected}")
-        
-        if connected:
-            # List logs
-            logs = await accessor.list_remote_logs(server)
-            print(f"Found {len(logs)} log files")
-            
-            # Read log
-            lines = await accessor.read_remote_file(server)
-            print(f"Read {len(lines)} lines")
-    
-    asyncio.run(test())

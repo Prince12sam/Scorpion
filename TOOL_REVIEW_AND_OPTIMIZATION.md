@@ -2,6 +2,8 @@
 
 **Purpose:** Simplify and strengthen Scorpion for Red Team (offensive) and Blue Team (defensive) operations
 
+> **Update (2026-01-16):** Several modules previously listed in this inventory were removed from the codebase because they were unreferenced by the current CLI/tooling surface (cleanup of unused files). If you are looking for the current authoritative module list, see `tools/python_scorpion/src/python_scorpion/`.
+
 ---
 
 ## 📊 Current Tool Inventory Analysis

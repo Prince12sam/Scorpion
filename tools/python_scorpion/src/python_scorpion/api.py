@@ -336,6 +336,8 @@ async def idor_comprehensive_test(host: str, protocol: str = "https") -> Dict:
 
 async def test_mass_assignment(host: str, protocol: str = "https") -> Dict:
     """Test for mass assignment vulnerabilities"""
+    import secrets
+
     base = f"{protocol}://{host}"
     endpoints = [
         "/api/users", "/api/user",
@@ -348,12 +350,20 @@ async def test_mass_assignment(host: str, protocol: str = "https") -> Dict:
     async with httpx.AsyncClient(timeout=5.0) as client:
         for endpoint in endpoints:
             url = base + endpoint
+
+            # Generate per-run synthetic values to avoid hardcoded dummy credentials.
+            token = secrets.token_hex(6)
+            base_identity = {
+                "email": f"user_{token}@invalid",
+                "username": f"user_{token}",
+                "password": secrets.token_urlsafe(12),
+            }
             
             # Test with admin/role injection
             payloads = [
-                {"email": "test@test.com", "password": "test123", "role": "admin", "isAdmin": True},
-                {"email": "test@test.com", "password": "test123", "is_admin": 1, "admin": True},
-                {"email": "test@test.com", "password": "test123", "privileges": ["admin", "superuser"]},
+                {**base_identity, "role": "admin", "isAdmin": True},
+                {**base_identity, "is_admin": 1, "admin": True},
+                {**base_identity, "privileges": ["admin", "superuser"]},
             ]
             
             for payload in payloads:

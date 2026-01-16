@@ -18,13 +18,10 @@ def load_wordlist(path: Optional[str] = None, limit: Optional[int] = None) -> Li
         if limit:
             return items[:limit]
         return items
-    except Exception:
-        # minimal fallback list
-        base = [
-            "robots.txt", "sitemap.xml", "admin", "login", "api", "graphql",
-            ".git/HEAD", ".env", "wp-admin", "wp-login.php", "server-status",
-        ]
-        return base[:limit] if limit else base
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(f"Wordlist file not found: {p}") from exc
+    except Exception as exc:
+        raise RuntimeError(f"Failed to load wordlist: {p}: {exc}") from exc
 
 
 async def _fetch(client: httpx.AsyncClient, url: str) -> Dict:
@@ -35,7 +32,13 @@ async def _fetch(client: httpx.AsyncClient, url: str) -> Dict:
         return {"url": url, "status": 0, "length": 0}
 
 
-async def dirbust_scan(host: str, wordlist_path: Optional[str] = None, concurrency: int = 50, https: bool = True) -> Dict:
+async def dirbust_scan(
+    host: str,
+    wordlist_path: Optional[str] = None,
+    concurrency: int = 50,
+    https: bool = True,
+    limit: Optional[int] = None,
+) -> Dict:
     # Handle both full URLs and bare hostnames
     if host.startswith("http://") or host.startswith("https://"):
         base = host.rstrip("/")
@@ -43,7 +46,7 @@ async def dirbust_scan(host: str, wordlist_path: Optional[str] = None, concurren
         scheme = "https" if https else "http"
         base = f"{scheme}://{host}"
     
-    paths = load_wordlist(wordlist_path)
+    paths = load_wordlist(wordlist_path, limit=limit)
 
     sem = asyncio.Semaphore(concurrency)
     results: List[Dict] = []
