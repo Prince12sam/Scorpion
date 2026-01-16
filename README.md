@@ -18,7 +18,9 @@
 
 ## 📋 Prerequisites
 
-⚠️ **Linux/Unix ONLY** - Windows is not supported (use WSL instead)
+⚠️ **Linux/Unix recommended** - For active scanning/exploitation use Linux/macOS/WSL.
+
+✅ **Windows**: `scorpion code-scan` (static code scanning) is supported.
 
 - **Operating System**: Linux, macOS, WSL, or BSD
 - **Python 3.10 or higher**
@@ -29,6 +31,41 @@
 python --version    # Must be 3.10+
 pip --version
 git --version
+```
+
+---
+
+## 🧩 Code Security Scanning (SAST)
+
+Scan a local codebase to identify common vulnerabilities and get remediation recommendations.
+
+```bash
+# Built-in checks (fast) + Bandit if installed
+scorpion code-scan . --output results/code_scan.json
+
+# Multi-language web/app SAST (Semgrep)
+scorpion code-scan . --semgrep --output results/code_scan_semgrep.json
+
+# Secrets scanning (Gitleaks)
+scorpion code-scan . --gitleaks --output results/code_scan_secrets.json
+
+# Dependency vulns across ecosystems (OSV-Scanner)
+scorpion code-scan . --osv --output results/code_scan_osv.json
+
+# Filesystem vuln + misconfig scanning (Trivy)
+scorpion code-scan . --trivy --output results/code_scan_trivy.json
+
+# API spec linting (OpenAPI/Swagger/AsyncAPI) (Spectral)
+scorpion code-scan . --spectral --output results/code_scan_spectral.json
+
+# IaC misconfiguration scanning (Terraform/K8s/etc) (Checkov)
+scorpion code-scan . --checkov --output results/code_scan_checkov.json
+
+# CI-friendly SARIF output (GitHub Code Scanning)
+scorpion code-scan . --semgrep --sarif results/code_scan.sarif
+
+# Optional AI remediation summary (does not send source code)
+scorpion code-scan . --ai-summary --ai-provider github --api-key $SCORPION_AI_API_KEY
 ```
 
 ---

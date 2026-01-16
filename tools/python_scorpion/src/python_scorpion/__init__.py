@@ -1,1 +1,1 @@
-__all__ = ["cli", "scanner", "ssl_analyzer"]
+__all__ = ["cli", "scanner", "ssl_analyzer", "code_scan"]

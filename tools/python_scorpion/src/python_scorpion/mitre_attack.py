@@ -578,25 +578,8 @@ class MITREAttackMapper:
         }
 
 
-# CLI usage example
 if __name__ == "__main__":
-    import sys
-    
-    mapper = MITREAttackMapper()
-    
-    # Example findings
-    findings = [
-        {"type": "sql_injection", "severity": "critical", "target": "https://example.com/login"},
-        {"type": "open_port", "severity": "medium", "port": 22},
-        {"type": "default_credentials", "severity": "high", "service": "SSH"},
-        {"type": "weak_tls", "severity": "medium", "target": "example.com"},
-    ]
-    
-    # Generate matrix
-    matrix = mapper.generate_attack_matrix(findings)
-    print(json.dumps(matrix, indent=2, default=str))
-    
-    # Get defense recommendations
-    defenses = mapper.suggest_defenses(findings)
-    print("\n=== DEFENSE RECOMMENDATIONS ===")
-    print(json.dumps(defenses, indent=2))
+    raise SystemExit(
+        "This module is intended to be imported. "
+        "Use the Scorpion CLI to run scans and generate MITRE mappings."
+    )

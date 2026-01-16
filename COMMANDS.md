@@ -590,6 +590,54 @@ scorpion recon -t example.com --dns -o recon.json
 scorpion suite example.com --profile web --mode active --output-dir results
 ```
 
+## 🧩 Code Security Scanning (SAST)
+
+Scan a local codebase to identify common vulnerabilities and get remediation recommendations.
+
+```bash
+# Fast local scan (built-in checks + Bandit if installed)
+scorpion code-scan . --output results/code_scan.json
+
+# Disable Bandit (builtin-only)
+scorpion code-scan . --no-bandit
+
+# Use Snyk Code (requires `snyk` CLI + auth)
+scorpion code-scan . --snyk --output results/code_scan_snyk.json
+
+# Dependency vulnerability audit (requires pip-audit)
+scorpion code-scan . --pip-audit --output results/code_scan_deps.json
+
+# Multi-language web/app SAST (requires Semgrep)
+scorpion code-scan . --semgrep --output results/code_scan_semgrep.json
+
+# Optional: choose Semgrep rule packs (repeatable)
+scorpion code-scan . --semgrep --semgrep-config p/owasp-top-ten --semgrep-config p/security-audit
+
+# Secrets scanning (requires Gitleaks)
+scorpion code-scan . --gitleaks --output results/code_scan_secrets.json
+
+# JS dependency audit (only if a package.json exists; requires npm)
+scorpion code-scan . --npm-audit --output results/code_scan_npm.json
+
+# Dependency vulnerabilities across ecosystems (requires OSV-Scanner)
+scorpion code-scan . --osv --output results/code_scan_osv.json
+
+# Filesystem vuln + misconfig scanning (requires Trivy)
+scorpion code-scan . --trivy --output results/code_scan_trivy.json
+
+# API spec linting (OpenAPI/Swagger/AsyncAPI) (requires Spectral)
+scorpion code-scan . --spectral --output results/code_scan_spectral.json
+
+# IaC misconfiguration scanning (Terraform/K8s/etc) (requires Checkov)
+scorpion code-scan . --checkov --output results/code_scan_checkov.json
+
+# CI-friendly output (GitHub Code Scanning / SARIF)
+scorpion code-scan . --semgrep --sarif results/code_scan.sarif
+
+# Optional AI remediation summary (does not send source code, only findings metadata)
+scorpion code-scan . --ai-summary --ai-provider github --api-key $SCORPION_AI_API_KEY
+```
+
 ## 🔧 Helper Scripts
 
 Legacy Node helper scripts in `tools/` have been removed (they depended on an old `cli/lib/*` Node implementation).

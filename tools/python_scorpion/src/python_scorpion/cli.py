@@ -7,23 +7,27 @@ import os
 import datetime
 from pathlib import Path
 
-# ⚠️ PLATFORM CHECK: Only Linux and Unix-like systems supported
-if platform.system() == 'Windows':
-    print("\n" + "="*70)
-    print("❌ ERROR: Windows is not supported")
-    print("="*70)
-    print("\n🐧 Scorpion Security Tool requires Linux or Unix-like systems.\n")
-    print("Supported platforms:")
-    print("  ✓ Linux (Ubuntu, Debian, Kali, Parrot OS, Arch, etc.)")
-    print("  ✓ macOS (Intel & Apple Silicon)")
-    print("  ✓ WSL (Windows Subsystem for Linux)")
-    print("  ✓ BSD variants")
-    print("\n💡 To use Scorpion on Windows:")
-    print("  1. Install WSL2: https://aka.ms/wsl")
-    print("  2. Install Ubuntu/Kali from Microsoft Store")
-    print("  3. Run Scorpion inside WSL")
-    print("\nExiting...\n")
-    sys.exit(1)
+_IS_WINDOWS = platform.system() == "Windows"
+
+def _windows_block_message() -> str:
+    return "\n".join(
+        [
+            "\n" + "=" * 70,
+            "❌ ERROR: Windows is not supported for this command",
+            "=" * 70,
+            "\n🐧 Scorpion Security Tool requires Linux or Unix-like systems for active scanning/exploitation.\n",
+            "Supported platforms:",
+            "  ✓ Linux (Ubuntu, Debian, Kali, Parrot OS, Arch, etc.)",
+            "  ✓ macOS (Intel & Apple Silicon)",
+            "  ✓ WSL (Windows Subsystem for Linux)",
+            "  ✓ BSD variants",
+            "\n💡 To use Scorpion on Windows:",
+            "  1. Install WSL2: https://aka.ms/wsl",
+            "  2. Install Ubuntu/Kali from Microsoft Store",
+            "  3. Run Scorpion inside WSL",
+            "",
+        ]
+    )
 
 import typer
 import rich
@@ -94,6 +98,7 @@ from .decoy_scanner import DecoyScanner, parse_decoy_option, DecoyConfig
 from .ai_pentest import (
     AIPentestAgent,
     AIPentestConfig,
+    AIProvider,
     PrimaryGoal,
     AutonomyLevel,
     StealthLevel,
@@ -105,6 +110,7 @@ from .threat_hunter import ThreatHunter, IOC, Anomaly
 from .purple_team import PurpleTeamSimulator
 from .remote_access import SSHRemoteAccess, is_ssh_url, fetch_remote_log, fetch_multiple_servers
 import re
+from .code_scan import build_code_scan_report, build_sarif_report
 
 # Helper function for target validation in CLI
 def _validate_cli_target(target: str) -> bool:
@@ -176,6 +182,14 @@ def _banner_callback(
     version: bool = typer.Option(False, "--version", is_flag=True, help="Show version and exit"),
 ):
     """"""
+    # Allow help/version/code-scan on Windows, block active scanning/exploitation.
+    if _IS_WINDOWS:
+        allowed = {"code-scan"}
+        if ctx.invoked_subcommand is not None and ctx.invoked_subcommand not in allowed:
+            # Still allow printing version without a subcommand.
+            console.print(_windows_block_message(), style="red")
+            raise typer.Exit(code=1)
+
     # Only show banner when no subcommand is invoked and banner not suppressed
     if version:
         try:
@@ -237,6 +251,216 @@ def _banner_callback(
     )
     console.print(Panel.fit(quickstart, title="Getting Started", border_style="cyan", box=box.ROUNDED))
 console = Console()
+
+
+@app.command("code-scan")
+def code_scan_command(
+    path: str = typer.Argument(..., help="Path to a codebase (file or directory)"),
+    output: Optional[str] = typer.Option(None, "--output", "-o", help="Write JSON report to file"),
+    bandit: bool = typer.Option(True, "--bandit/--no-bandit", help="Run Bandit (if installed) for Python SAST"),
+    pip_audit: bool = typer.Option(False, "--pip-audit/--no-pip-audit", help="Run pip-audit (if installed) for dependency vulnerabilities"),
+    snyk: bool = typer.Option(False, "--snyk/--no-snyk", help="Run `snyk code test` (requires Snyk CLI + auth)"),
+    semgrep: bool = typer.Option(False, "--semgrep/--no-semgrep", help="Run Semgrep (if installed) for multi-language web/app SAST"),
+    semgrep_config: List[str] = typer.Option(
+        [],
+        "--semgrep-config",
+        help="Semgrep config to use (repeatable). Defaults: p/security-audit + p/owasp-top-ten",
+    ),
+    gitleaks: bool = typer.Option(False, "--gitleaks/--no-gitleaks", help="Run Gitleaks (if installed) for secrets scanning"),
+    npm_audit: bool = typer.Option(False, "--npm-audit/--no-npm-audit", help="Run npm audit (if applicable) for JS dependency vulnerabilities"),
+    osv_scanner: bool = typer.Option(False, "--osv/--no-osv", help="Run OSV-Scanner (if installed) for dependency vulnerabilities across ecosystems"),
+    trivy: bool = typer.Option(False, "--trivy/--no-trivy", help="Run Trivy (if installed) for filesystem dependency + misconfig scanning"),
+    spectral: bool = typer.Option(False, "--spectral/--no-spectral", help="Run Spectral (if installed) to lint OpenAPI/Swagger/AsyncAPI specs"),
+    spectral_ruleset: Optional[str] = typer.Option(None, "--spectral-ruleset", help="Custom Spectral ruleset path/URL (optional)"),
+    checkov: bool = typer.Option(False, "--checkov/--no-checkov", help="Run Checkov (if installed) for IaC misconfiguration scanning (Terraform/K8s/etc)"),
+    checkov_framework: List[str] = typer.Option(
+        [],
+        "--checkov-framework",
+        help="Restrict Checkov frameworks (repeatable). Example: --checkov-framework terraform --checkov-framework kubernetes",
+    ),
+    sarif_output: Optional[str] = typer.Option(None, "--sarif", help="Write SARIF report (for CI/code scanning dashboards)"),
+    ai_summary: bool = typer.Option(False, "--ai-summary", help="Use an LLM to generate a prioritized remediation plan from the findings (no source code is sent)"),
+    ai_provider: str = typer.Option("github", "--ai-provider", help="AI provider: github, openai, anthropic, custom"),
+    ai_model: str = typer.Option("gpt-4o-mini", "--ai-model", help="Model name (provider-specific)"),
+    api_key: Optional[str] = typer.Option(None, "--api-key", help="AI API key (or set SCORPION_AI_API_KEY)"),
+    api_endpoint: Optional[str] = typer.Option(None, "--api-endpoint", help="Custom chat-completions endpoint (for provider=custom)"),
+):
+    """Static code security scan with recommendations (safe, local).
+
+    - Built-in checks (secrets patterns, eval/exec, pickle, yaml.load, subprocess shell=True)
+    - Optional Bandit integration (Python SAST)
+    - Optional Snyk Code integration (if CLI installed)
+    """
+    # Use the current interpreter for consistent module execution
+    python_exe = sys.executable
+    report = build_code_scan_report(
+        target_path=path,
+        python_exe=python_exe,
+        enable_bandit=bandit,
+        enable_pip_audit=pip_audit,
+        enable_snyk=snyk,
+        enable_semgrep=semgrep,
+        semgrep_configs=semgrep_config or None,
+        enable_gitleaks=gitleaks,
+        enable_npm_audit=npm_audit,
+        enable_osv_scanner=osv_scanner,
+        enable_trivy=trivy,
+        enable_spectral=spectral,
+        spectral_ruleset=spectral_ruleset,
+        enable_checkov=checkov,
+        checkov_frameworks=checkov_framework or None,
+    )
+
+    # Pretty summary
+    summary = report.get("summary", {})
+    by_sev = (summary.get("by_severity") or {})
+    console.print(
+        Panel.fit(
+            "\n".join(
+                [
+                    f"Target: {report.get('target_path')}",
+                    f"Findings: {summary.get('total_findings', 0)}",
+                    f"Critical: {by_sev.get('critical', 0)} | High: {by_sev.get('high', 0)} | Medium: {by_sev.get('medium', 0)} | Low: {by_sev.get('low', 0)} | Info: {by_sev.get('info', 0)}",
+                ]
+            ),
+            title="🧩 Code Scan",
+            border_style="cyan",
+            box=box.ROUNDED,
+        )
+    )
+
+    # Top findings table (cap for readability)
+    findings = report.get("findings", []) or []
+    if findings:
+        table = Table(title="Findings (top 50)", box=box.MINIMAL)
+        table.add_column("Severity", style="bold")
+        table.add_column("Rule", style="dim")
+        table.add_column("File", overflow="fold")
+        table.add_column("Line", justify="right")
+        table.add_column("Title", overflow="fold")
+        for f in findings[:50]:
+            table.add_row(
+                str(f.get("severity", "info")),
+                str(f.get("rule_id") or ""),
+                str(f.get("file") or ""),
+                str(f.get("line") or ""),
+                str(f.get("title") or ""),
+            )
+        console.print(table)
+    else:
+        console.print("[green]✓ No findings from enabled checks[/green]")
+
+    notes = report.get("notes", []) or []
+    if notes:
+        console.print(Panel.fit("\n".join(notes), title="Notes", border_style="yellow"))
+
+    if output:
+        try:
+            Path(output).parent.mkdir(parents=True, exist_ok=True)
+            with open(output, "w", encoding="utf-8") as f:
+                json.dump(report, f, indent=2, ensure_ascii=False)
+            console.print(f"[green]✓ Saved report to: {output}[/green]")
+        except Exception as e:
+            console.print(f"[red]Failed to write output: {e}[/red]")
+
+    if sarif_output:
+        try:
+            target_root = Path(report.get("target_path") or path).resolve()
+            findings_raw = report.get("findings", []) or []
+            # Convert dict findings back into dataclass-like inputs.
+            from .code_scan import CodeScanFinding  # local import to avoid clutter at top
+
+            findings_dc = [
+                CodeScanFinding(
+                    tool=str(f.get("tool") or "builtin"),
+                    severity=str(f.get("severity") or "info"),
+                    title=str(f.get("title") or "Finding"),
+                    description=str(f.get("description") or ""),
+                    recommendation=str(f.get("recommendation") or ""),
+                    file=f.get("file"),
+                    line=f.get("line"),
+                    column=f.get("column"),
+                    rule_id=f.get("rule_id"),
+                    references=f.get("references"),
+                )
+                for f in findings_raw
+                if isinstance(f, dict)
+            ]
+            sarif = build_sarif_report(target_root=target_root, findings=findings_dc)
+            Path(sarif_output).parent.mkdir(parents=True, exist_ok=True)
+            with open(sarif_output, "w", encoding="utf-8") as f:
+                json.dump(sarif, f, indent=2, ensure_ascii=False)
+            console.print(f"[green]✓ Saved SARIF to: {sarif_output}[/green]")
+        except Exception as e:
+            console.print(f"[red]Failed to write SARIF: {e}[/red]")
+
+    if ai_summary:
+        # Pull key from env if not explicitly provided
+        api_key_effective = api_key or os.getenv("SCORPION_AI_API_KEY")
+        if not api_key_effective:
+            console.print(
+                "[red]Missing API key.[/red] Provide --api-key or set SCORPION_AI_API_KEY in your environment/.env",
+            )
+            raise typer.Exit(code=2)
+
+        # Summarize findings without sending source code.
+        # Prioritize by severity first, then keep a cap for prompt size.
+        findings = report.get("findings", []) or []
+        sev_rank = {"critical": 5, "high": 4, "medium": 3, "low": 2, "info": 1}
+        findings_sorted = sorted(
+            findings,
+            key=lambda f: (
+                -sev_rank.get(str(f.get("severity") or "info").lower(), 0),
+                str(f.get("file") or ""),
+                int(f.get("line") or 0),
+                str(f.get("tool") or ""),
+                str(f.get("rule_id") or ""),
+            ),
+        )
+        top = findings_sorted[:40]
+        condensed = [
+            {
+                "severity": f.get("severity"),
+                "rule_id": f.get("rule_id"),
+                "file": f.get("file"),
+                "line": f.get("line"),
+                "title": f.get("title"),
+                "recommendation": f.get("recommendation"),
+            }
+            for f in top
+        ]
+
+        system_prompt = (
+            "You are a secure code reviewer. Your job is to produce a defensive remediation plan. "
+            "Do not provide exploit steps, payloads, or offensive guidance. "
+            "Focus on: root cause, safe patterns, concrete refactors, and prioritization."
+        )
+        user_prompt = (
+            "Given these static-analysis findings (no source code provided), produce:\n"
+            "1) A prioritized fix plan (top 5)\n"
+            "2) Common root causes\n"
+            "3) Safe replacement patterns (brief examples allowed)\n"
+            "4) Suggested CI guardrails (linters/SAST/dep audit)\n\n"
+            f"Scan target: {report.get('target_path')}\n"
+            f"Counts: {report.get('summary', {}).get('by_severity')}\n\n"
+            f"Findings (summaries):\n{json.dumps(condensed, indent=2)}"
+        )
+
+        async def _run_ai() -> str:
+            provider = AIProvider(provider=ai_provider, api_key=api_key_effective, model=ai_model, endpoint=api_endpoint)
+            try:
+                return await provider.query(system_prompt, user_prompt, temperature=0.2)
+            finally:
+                try:
+                    await provider.client.aclose()
+                except Exception:
+                    pass
+
+        try:
+            advice = asyncio.run(_run_ai())
+            console.print(Panel.fit(advice.strip(), title="AI Remediation Summary", border_style="green"))
+        except Exception as e:
+            console.print(f"[red]AI summary failed: {e}[/red]")
 
 @app.command()
 def scan(
@@ -851,7 +1075,7 @@ def takeover(host: str, output: Optional[str] = None, timeout: float = 5.0):
 
 @app.command()
 def subdomain(
-    domain: str = typer.Argument(..., help="Target domain (e.g., example.com)"),
+    domain: str = typer.Argument(..., help="Target domain (e.g., <DOMAIN>)"),
     wordlist: Optional[str] = typer.Option(None, "--wordlist", "-w", help="Path to custom subdomain wordlist file"),
     ct_logs: bool = typer.Option(True, "--ct-logs/--no-ct-logs", help="Query Certificate Transparency logs"),
     check_http: bool = typer.Option(False, "--http", help="Check HTTP/HTTPS accessibility of found subdomains"),
@@ -867,10 +1091,10 @@ def subdomain(
     - Certificate Transparency log queries (crt.sh)
     - Optional HTTP/HTTPS accessibility checks
     
-    Examples:
-      scorpion subdomain example.com
-      scorpion subdomain example.com --wordlist custom.txt --http
-      scorpion subdomain example.com --no-ct-logs -c 100
+        Examples:
+            scorpion subdomain <DOMAIN>
+            scorpion subdomain <DOMAIN> --wordlist custom.txt --http
+            scorpion subdomain <DOMAIN> --no-ct-logs -c 100
     """
     async def run():
         console.print(f"\n[cyan]═══ Subdomain Enumeration: {domain} ═══[/cyan]\n")
@@ -1054,7 +1278,7 @@ def k8s(
         console.print(f"Saved: {output}")
 @app.command()
 def container(
-    registry: str = typer.Argument(..., help="Container registry host (e.g., registry.example.com)"),
+    registry: str = typer.Argument(..., help="Container registry host (e.g., registry.<DOMAIN>)"),
     output: Optional[str] = None,
 ):
     """Audit container registries for anonymous catalog/API exposure (Docker/Harbor)."""
@@ -1812,148 +2036,16 @@ def api_scan(
 def exploit_scan(
     target: str = typer.Argument(..., help="Target URL or host"),
     ports: str = typer.Option("80,443,8080", "--ports", "-p", help="Ports to scan for web services"),
-    payload_type: str = typer.Option("python", "--payload", help="Shell payload type: python, bash, php, powershell"),
-    lhost: str = typer.Option("ATTACKER_IP", "--lhost", help="Your listening IP for reverse shell"),
-    lport: int = typer.Option(4444, "--lport", help="Your listening port for reverse shell"),
-    aggressive: bool = typer.Option(True, "--aggressive", help="Use aggressive exploitation (10 attempts per vuln)"),
+    payload_type: str = typer.Option("python", "--payload", help="Deprecated option (disabled in this build)"),
+    lhost: str = typer.Option("DISABLED", "--lhost", help="Deprecated option (disabled in this build)"),
+    lport: int = typer.Option(0, "--lport", help="Deprecated option (disabled in this build)"),
+    aggressive: bool = typer.Option(False, "--aggressive", help="Deprecated option (disabled in this build)"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="JSON output file"),
 ):
-    """Scan for vulnerabilities and attempt exploitation to gain shell access (SQLi, RCE, Upload)."""
-    
-    async def run_exploit():
-        console.print(Panel.fit("⚡ Vulnerability Exploitation Scanner", border_style="red"))
-        console.print(f"\n[red]⚠️  EXPLOITATION MODE - Use only with authorization![/red]")
-        console.print(f"[cyan]Target:[/cyan] {target}")
-        console.print(f"[cyan]Goal:[/cyan] Find and exploit SQLi/RCE/Upload to gain shell\n")
-        
-        results = {"target": target, "vulnerabilities": [], "exploitation_attempts": [], "shells_obtained": []}
-        
-        # Step 1: Scan for vulnerabilities
-        console.print("[cyan]→[/cyan] Scanning for exploitable vulnerabilities...")
-        
-        # Auto-detect protocol - try HTTPS first, fallback to HTTP (with proper cert validation)
-        if not target.startswith("http"):
-            # Try HTTPS first (APIs often use HTTPS)
-            for scheme in ["https", "http"]:
-                test_url = f"{scheme}://{target}"
-                try:
-                    # Use default certificate verification for safety
-                    async with httpx.AsyncClient(timeout=5.0) as client:
-                        await client.head(test_url, follow_redirects=True)
-                        console.print(f"[green]✓ Detected {scheme.upper()}[/green]")
-                        break  # Success
-                except Exception:
-                    if scheme == "http":  # Last option
-                        test_url = f"http://{target}"
-        else:
-            test_url = target
-        
-        tester = AdvancedWebTester(target=test_url, concurrency=50, timeout=5.0)
-        vulnerabilities = await tester.run_full_scan()
-        
-        # Filter exploitable vulns
-        exploitable = [v for v in vulnerabilities if v.get("severity") in ["critical", "high"]]
-        results["vulnerabilities"] = vulnerabilities
-        
-        console.print(f"  [yellow]Found {len(vulnerabilities)} total vulnerabilities[/yellow]")
-        console.print(f"  [red]Found {len(exploitable)} exploitable (CRITICAL/HIGH)[/red]\n")
-        
-        # Step 2: Generate payloads
-        console.print("[cyan]→[/cyan] Generating exploitation payloads...")
-        
-        if PayloadGenerator:
-            gen = PayloadGenerator()
-            
-            # Generate reverse shell
-            if payload_type == "python":
-                payload = gen.generate_reverse_shell(lhost, lport, shell_type="python")
-            elif payload_type == "bash":
-                payload = gen.generate_reverse_shell(lhost, lport, shell_type="bash")
-            elif payload_type == "php":
-                payload = gen.generate_reverse_shell(lhost, lport, shell_type="php")
-            elif payload_type == "powershell":
-                payload = gen.generate_reverse_shell(lhost, lport, shell_type="powershell")
-            else:
-                payload = gen.generate_reverse_shell(lhost, lport, shell_type="python")
-            
-            console.print(f"  [green]✓ Generated {payload_type} reverse shell[/green]")
-            console.print(f"  [cyan]Payload:[/cyan] {payload['payload'][:80]}...")
-            results["payload"] = payload
-        
-        # Step 3: Attempt exploitation
-        console.print("\n[cyan]→[/cyan] Attempting exploitation...")
-        
-        exploitation_results = []
-        
-        # SQLi exploitation attempts
-        sqli_vulns = [v for v in exploitable if "sql" in v.get("vuln_type", "").lower()]
-        if sqli_vulns:
-            console.print(f"  [red]⚡ Attempting SQLi exploitation ({len(sqli_vulns)} targets)[/red]")
-            for vuln in sqli_vulns[:3]:  # Top 3 SQLi vulns
-                url = vuln.get("url", test_url)
-                console.print(f"    • Testing {url[:60]}...")
-                
-                # Try manual SQLi payloads
-                sqli_payloads = [
-                    "' UNION SELECT NULL,NULL,NULL--",
-                    "' OR '1'='1' --",
-                    "1' AND 1=1--",
-                ]
-                
-                for sqli_payload in sqli_payloads:
-                    exploitation_results.append({
-                        "vuln_type": "SQLi",
-                        "url": url,
-                        "payload": sqli_payload,
-                        "status": "attempted"
-                    })
-        
-        # RCE exploitation attempts
-        rce_vulns = [v for v in exploitable if "command" in v.get("vuln_type", "").lower() or "rce" in v.get("vuln_type", "").lower()]
-        if rce_vulns:
-            console.print(f"  [red]⚡ Attempting RCE exploitation ({len(rce_vulns)} targets)[/red]")
-            for vuln in rce_vulns[:3]:
-                url = vuln.get("url", test_url)
-                console.print(f"    • Testing {url[:60]}...")
-                
-                # Try command injection payloads
-                rce_payloads = [
-                    f"; {payload.get('payload', 'whoami')} #" if payload else "; whoami #",
-                    f"| {payload.get('payload', 'id')} #" if payload else "| id #",
-                ]
-                
-                for rce_payload in rce_payloads:
-                    exploitation_results.append({
-                        "vuln_type": "RCE",
-                        "url": url,
-                        "payload": rce_payload[:80] + "..." if len(rce_payload) > 80 else rce_payload,
-                        "status": "attempted"
-                    })
-        
-        results["exploitation_attempts"] = exploitation_results
-        
-        # Summary
-        console.print(f"\n[yellow]═══ Exploitation Summary ═══[/yellow]")
-        console.print(f"[cyan]Vulnerabilities found:[/cyan] {len(vulnerabilities)}")
-        console.print(f"[red]Exploitable targets:[/red] {len(exploitable)}")
-        console.print(f"[yellow]Exploitation attempts:[/yellow] {len(exploitation_results)}")
-        
-        if len(exploitable) > 0:
-            console.print(f"\n[green]⚡ Manual exploitation steps:[/green]")
-            console.print(f"  1. Start listener: nc -lvnp {lport}")
-            console.print(f"  2. Inject payload via vulnerable parameter")
-            console.print(f"  3. Check for reverse shell connection")
-        else:
-            console.print(f"\n[yellow]⚠  No exploitable vulnerabilities found[/yellow]")
-        
-        if output:
-            with open(output, "w", encoding="utf-8") as f:
-                json.dump(results, f, indent=2)
-            console.print(f"\n[green]✓ Saved to {output}[/green]")
-        
-        return results
-    
-    asyncio.run(run_exploit())
+    """Deprecated: exploitation workflows are disabled in this defensive build."""
+    console.print("[red]Error:[/red] Exploitation workflows are disabled in this defensive build.")
+    console.print("[yellow]Use 'scorpion webscan' or 'scorpion code-scan' for authorized defensive testing.[/yellow]")
+    raise typer.Exit(2)
 
 
 @app.command()
@@ -2128,7 +2220,7 @@ def bruteforce(
 
 @app.command()
 def webscan(
-    target: str = typer.Argument(..., help="Target URL to scan (e.g., https://example.com)"),
+    target: str = typer.Argument(..., help="Target URL to scan (e.g., https://<HOST>)"),
     concurrency: int = typer.Option(10, "--concurrency", "-c", help="Number of concurrent requests"),
     timeout: float = typer.Option(15.0, "--timeout", "-t", help="Request timeout in seconds"),
     no_ssl_verify: bool = typer.Option(False, "--no-ssl-verify", help="Disable SSL certificate verification"),
@@ -2154,16 +2246,16 @@ def webscan(
     
     Examples:
         # Full scan
-        scorpion webscan https://example.com/page?id=1
+        scorpion webscan https://<HOST>/page?id=1
         
         # Only scan for SQLi and XSS
-        scorpion webscan https://example.com --no-cmdi --no-ssrf --no-headers --no-cors
+        scorpion webscan https://<HOST> --no-cmdi --no-ssrf --no-headers --no-cors
         
         # Filter critical vulnerabilities only
-        scorpion webscan https://example.com -s critical
+        scorpion webscan https://<HOST> -s critical
         
         # Custom concurrency and timeout
-        scorpion webscan https://example.com -c 20 -t 30
+        scorpion webscan https://<HOST> -c 20 -t 30
     
     WARNING: Only scan applications you have permission to scan!
     Unauthorized scanning is illegal and unethical.
@@ -2314,170 +2406,22 @@ def webscan(
 
 @app.command()
 def payload(
-    lhost: str = typer.Option(..., "--lhost", "-l", help="Listener host IP (attacker machine)"),
-    lport: int = typer.Option(4444, "--lport", "-p", help="Listener port"),
-    payload_type: str = typer.Option("reverse_tcp", "--type", "-t", help="Payload type: reverse_tcp, bind_tcp, web_shell, powershell"),
-    shell: str = typer.Option("bash", "--shell", "-s", help="Shell type: bash, python, powershell, netcat, php, perl, ruby"),
-    platform: str = typer.Option("linux", "--platform", help="Target platform: linux, windows, unix, macos, web"),
-    encoder: Optional[str] = typer.Option(None, "--encode", "-e", help="Encoder: base64, hex, url, ps_base64, all"),
-    format: str = typer.Option("raw", "--format", "-f", help="Output format: raw, base64, hex, url, ps_base64"),
-    obfuscate: bool = typer.Option(False, "--obfuscate", "-o", help="Obfuscate payload"),
-    list_payloads: bool = typer.Option(False, "--list", help="List available payloads and exit"),
-    msfvenom: bool = typer.Option(False, "--msfvenom", help="Generate msfvenom command instead of raw payload"),
-    output: Optional[str] = typer.Option(None, "--output", help="Save payload to file"),
+    output: Optional[str] = typer.Option(None, "--output", help="Optional output file (unused)"),
 ):
     """
-    Generate exploitation payloads for penetration testing.
-    Creates reverse shells, bind shells, web shells, and encoded payloads.
-    """
-    # Defer helpful guidance if optional module wasn't importable
-    if PayloadGenerator is None:
-        console.print("[red]Payload module not available in current environment.[/red]")
-        console.print("[yellow]Fix on Parrot OS:[/yellow]")
-        console.print("  1. Activate your venv: source .venv/bin/activate")
-        console.print("  2. Refresh editable install: python -m pip install -e tools/python_scorpion")
-        console.print("  3. Verify import:")
-        console.print("     python -c \"from python_scorpion.payload_generator import PayloadGenerator; print('OK')\"")
-        raise typer.Exit(1)
+    Payload generation is disabled.
 
-    generator = PayloadGenerator()
-    
-    # List available payloads
-    if list_payloads:
-        available = generator.list_available_payloads()
-        
-        console.print("[cyan]=== Available Payloads ===[/cyan]\n")
-        
-        for category, items in available.items():
-            table = Table(title=category.replace("_", " ").title(), box=box.MINIMAL)
-            table.add_column("Payload", style="green")
-            for item in items:
-                table.add_row(item)
-            console.print(table)
-            console.print()
-        
-        return
-    
-    # Generate msfvenom command
-    if msfvenom:
-        result = generator.generate_msfvenom_command(
-            payload_type=payload_type,
-            lhost=lhost,
-            lport=lport,
-            platform=platform,
-            arch="x64",
-            format=format if format != "raw" else "exe"
-        )
-        
-        console.print("[cyan]=== Msfvenom Payload Generator ===[/cyan]\n")
-        console.print(f"[yellow]Platform:[/yellow] {result['platform']}")
-        console.print(f"[yellow]Architecture:[/yellow] {result['arch']}")
-        console.print(f"[yellow]Payload:[/yellow] {result['payload']}")
-        console.print(f"[yellow]Format:[/yellow] {result['format']}\n")
-        
-        console.print("[cyan]=== Generation Command ===[/cyan]")
-        console.print(f"[green]{result['command']}[/green]\n")
-        
-        console.print("[cyan]=== Listener Setup ===[/cyan]")
-        console.print(f"[yellow]{result['listener']}[/yellow]\n")
-        
-        if output:
-            with open(output, "w") as f:
-                f.write(f"# {result['description']}\n\n")
-                f.write(f"# Generation Command:\n{result['command']}\n\n")
-                f.write(f"# Listener:\n{result['listener']}\n")
-            console.print(f"[green]Commands saved to: {output}[/green]")
-        
-        return
-    
-    # Generate payload based on type
-    try:
-        if payload_type in ["reverse_tcp", "reverse_shell"]:
-            payload_obj = generator.generate_reverse_shell(
-                lhost=lhost,
-                lport=lport,
-                shell_type=shell,
-                encoder=encoder
-            )
-        
-        elif payload_type == "bind_tcp":
-            payload_obj = generator.generate_bind_shell(
-                lport=lport,
-                shell_type=shell
-            )
-        
-        elif payload_type == "web_shell":
-            payload_obj = generator.generate_web_shell(
-                shell_type=shell,
-                obfuscate=obfuscate
-            )
-        
-        elif payload_type == "powershell":
-            payload_obj = generator.generate_powershell_payload(
-                lhost=lhost,
-                lport=lport,
-                encoder="base64"
-            )
-        
-        else:
-            console.print(f"[red]Unknown payload type: {payload_type}[/red]")
-            console.print("[yellow]Available types: reverse_tcp, bind_tcp, web_shell, powershell[/yellow]")
-            raise typer.Exit(1)
-        
-        # Display payload information
-        console.print("[cyan]=== Payload Generated ===[/cyan]\n")
-        console.print(f"[yellow]Type:[/yellow] {payload_obj.type}")
-        console.print(f"[yellow]Platform:[/yellow] {payload_obj.platform}")
-        console.print(f"[yellow]Description:[/yellow] {payload_obj.description}\n")
-        
-        console.print("[cyan]=== Payload Code ===[/cyan]")
-        console.print(Panel(payload_obj.code, border_style="green", box=box.ROUNDED))
-        console.print()
-        
-        # Show encoded versions if available
-        if payload_obj.encoded:
-            console.print("[cyan]=== Encoded Versions ===[/cyan]")
-            for enc_type, enc_value in payload_obj.encoded.items():
-                if len(enc_value) > 200:
-                    enc_display = enc_value[:200] + "..."
-                else:
-                    enc_display = enc_value
-                console.print(f"\n[yellow]{enc_type.upper()}:[/yellow]")
-                console.print(f"[dim]{enc_display}[/dim]")
-            console.print()
-        
-        console.print("[cyan]=== Usage Instructions ===[/cyan]")
-        console.print(f"[yellow]{payload_obj.usage}[/yellow]\n")
-        
-        # Save to file if requested
-        if output:
-            with open(output, "w") as f:
-                f.write(f"# {payload_obj.description}\n")
-                f.write(f"# Platform: {payload_obj.platform}\n")
-                f.write(f"# Type: {payload_obj.type}\n\n")
-                f.write(f"# Usage:\n# {payload_obj.usage}\n\n")
-                f.write(f"# Payload:\n{payload_obj.code}\n")
-                
-                if payload_obj.encoded:
-                    f.write(f"\n# Encoded versions:\n")
-                    for enc_type, enc_value in payload_obj.encoded.items():
-                        f.write(f"\n# {enc_type.upper()}:\n")
-                        f.write(f"{enc_value}\n")
-            
-            console.print(f"[green]Payload saved to: {output}[/green]")
-        
-        # Security warning
-        console.print("[red]WARNING:[/red] Only use payloads on systems you own or have explicit permission to test.")
-        console.print("[yellow]Unauthorized use may violate computer fraud laws.[/yellow]")
-    
-    except Exception as e:
-        console.print(f"[red]Error generating payload: {e}[/red]")
-        raise typer.Exit(1)
+    This project is intended to be defensive by default and does not ship
+    tooling intended to generate exploit payloads.
+    """
+    console.print("[red]Error:[/red] Payload generation is disabled in this build.")
+    console.print("[yellow]Use 'scorpion code-scan' or defensive scanning commands instead.[/yellow]")
+    raise typer.Exit(2)
 
 
 # @app.command()  # Disabled - api_security module removed in Phase 1 optimization
 def api_security(
-    target: str = typer.Option(..., "--target", "-t", help="API base URL (e.g., https://api.example.com)"),
+    target: str = typer.Option(..., "--target", "-t", help="API base URL (e.g., https://api.<DOMAIN>)"),
     openapi_spec: Optional[str] = typer.Option(None, "--spec", help="OpenAPI/Swagger spec URL"),
     jwt_token: Optional[str] = typer.Option(None, "--jwt", help="JWT token to test"),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Save results to JSON file"),
@@ -2651,7 +2595,7 @@ def ai_pentest_command(
     primary_goal: str = typer.Option(
         "comprehensive_assessment",
         "--primary-goal", "-g",
-        help="Primary objective (comprehensive_assessment, privilege_escalation, data_access, network_mapping, web_exploitation, gain_shell_access, vulnerability_discovery, infrastructure_assessment, cloud_security_audit, api_security_testing)"
+        help="Primary objective (comprehensive_assessment, vulnerability_discovery, infrastructure_assessment, cloud_security_audit, api_security_testing, compliance_review)"
     ),
     secondary_goals: str = typer.Option(
         "",
@@ -2659,7 +2603,7 @@ def ai_pentest_command(
         help="Comma-separated secondary goals (e.g., 'data_access,network_mapping')"
     ),
     time_limit: int = typer.Option(120, "--time-limit", help="Maximum test duration in minutes"),
-    max_iterations: int = typer.Option(20, "--max-iterations", help="Maximum testing iterations (default: 20 for thorough exploitation)"),
+    max_iterations: int = typer.Option(20, "--max-iterations", help="Maximum assessment iterations (default: 20)"),
     
     # AI Configuration
     ai_provider: str = typer.Option(
@@ -2697,12 +2641,12 @@ def ai_pentest_command(
     risk_tolerance: str = typer.Option(
         "medium",
         "--risk-tolerance", "-r",
-        help="Risk tolerance: low (passive only), medium (active scanning), high (exploitation - requires authorization)"
+        help="Risk tolerance: low (passive only), medium (active scanning), high (most active scanning)"
     ),
     engagement_policy: str = typer.Option(
         "standard",
         "--engagement-policy",
-        help="Engagement policy profile: safe (no exploitation even at high risk), standard (default), aggressive, extreme",
+        help="Engagement policy profile: safe, standard (default), aggressive, extreme",
     ),
     
     # Advanced Options
@@ -2710,16 +2654,15 @@ def ai_pentest_command(
     custom_instructions: Optional[str] = typer.Option(
         None,
         "--instructions", "-i",
-        help="Natural language prompt to guide AI (e.g., 'exploit this', 'find SQLi', 'hack login page', 'get shell access')"
+        help="Natural language prompt to guide AI (e.g., 'focus on risks and remediation', 'enumerate API endpoints and auth risks')"
     ),
     output: Optional[str] = typer.Option(None, "--output", "-o", help="Output JSON file for detailed results"),
 ):
     """
-    🤖 AI-Powered Autonomous Penetration Testing
+    🤖 AI-Assisted Defensive Security Assessment
     
-    Uses Large Language Models (LLMs) to intelligently orchestrate security testing.
-    The AI analyzes findings in real-time and autonomously determines the optimal
-    next actions to achieve your security testing goals.
+    Uses Large Language Models (LLMs) to help orchestrate authorized, defensive
+    assessment tasks (discovery, analysis, reporting).
     
     \b
     ⚠️  CRITICAL WARNING:
@@ -2731,71 +2674,36 @@ def ai_pentest_command(
     
     \b
     🎯 Primary Goals:
-    • comprehensive_assessment  - Full security assessment (default)
-    • privilege_escalation      - Find privilege escalation paths
-    • data_access              - Identify data access vulnerabilities
-    • network_mapping          - Map network topology and services
-    • web_exploitation         - Focus on web application vulnerabilities
-    • gain_shell_access        - Attempt to gain shell access
-    • vulnerability_discovery  - Discover as many vulnerabilities as possible
+    • comprehensive_assessment   - Full defensive assessment (default)
+    • vulnerability_discovery   - Discover as many issues as possible
     • infrastructure_assessment - Assess infrastructure security
-    • cloud_security_audit     - Cloud security assessment
-    • api_security_testing     - API security testing
+    • cloud_security_audit      - Cloud security assessment
+    • api_security_testing      - API security testing
+    • compliance_review         - Map findings to common controls
     
     \b
     📖 Examples:
     
-      # Basic AI pentest with OpenAI GPT-4
-      scorpion ai-pentest -t example.com --api-key sk-...
+            # Run an authorized security assessment (safe defaults)
+            scorpion ai-pentest -t <TARGET_HOST>
       
-      # Using GitHub Models (FREE) with GPT-4o-mini
-      scorpion ai-pentest -t example.com --ai-provider github \\
-        --api-key ghp_... --model gpt-4o-mini
+            # Specify provider/model explicitly
+            scorpion ai-pentest -t <TARGET_HOST> --ai-provider github --model gpt-4o-mini
       
-      # Simplified - just set API key and run (auto-detects provider!)
-      export SCORPION_AI_API_KEY=ghp_...
-      scorpion ai-pentest -t example.com
-      
-      # Comprehensive assessment with high stealth
-      scorpion ai-pentest -t example.com --api-key sk-... -g comprehensive_assessment -s high
-      
-      # Web exploitation focus with Anthropic Claude
-      scorpion ai-pentest -t example.com --ai-provider anthropic --api-key sk-ant-... \\
-        --model claude-3-opus-20240229 -g web_exploitation
-      
-      # Custom OpenAI-compatible endpoint (local LLM)
-      scorpion ai-pentest -t example.com --ai-provider custom \\
-        --api-endpoint http://localhost:1234/v1/chat/completions --api-key local
-      
-      # High-risk exploitation mode (requires written authorization!)
-      scorpion ai-pentest -t example.com --api-key sk-... -r high -a fully_autonomous \\
-        -g gain_shell_access --time-limit 60
-      
-      # 🚀 SIMPLE PROMPTS - Just tell AI what to do!
-      scorpion ai-pentest -t example.com -i "exploit this"
-      scorpion ai-pentest -t example.com -i "hack it"
-      scorpion ai-pentest -t example.com -i "find SQLi"
-      scorpion ai-pentest -t example.com -i "get shell access"
-      scorpion ai-pentest -t example.com -i "bypass login"
-      scorpion ai-pentest -t example.com -i "find RCE"
-      scorpion ai-pentest -t example.com -i "test XSS"
-      
-      # Detailed custom instructions
-      scorpion ai-pentest -t example.com -i "Focus on API endpoints and test for IDOR vulnerabilities"
-      scorpion ai-pentest -t example.com -i "Test GraphQL endpoints for injection attacks"
-      scorpion ai-pentest -t example.com -i "Look for SSRF in file upload features"
-      scorpion ai-pentest -t example.com -i "Focus on subdomain enumeration and takeover"
+            # Provide specific defensive instructions
+            scorpion ai-pentest -t <TARGET_HOST> -i "Focus on identifying risks and remediation steps"
+            scorpion ai-pentest -t <TARGET_HOST> -i "Enumerate API endpoints and report auth/IDOR risks"
     
     \b
     🔑 API Key Setup:
       # Linux/macOS
-      export SCORPION_AI_API_KEY='your-api-key-here'
+            export SCORPION_AI_API_KEY='<YOUR_AI_API_KEY>'
       
       # Windows PowerShell
-      $env:SCORPION_AI_API_KEY='your-api-key-here'
+            $env:SCORPION_AI_API_KEY='<YOUR_AI_API_KEY>'
       
       # Or use --api-key flag
-      scorpion ai-pentest -t example.com --api-key your-api-key-here
+            scorpion ai-pentest -t <TARGET_HOST> --api-key <YOUR_AI_API_KEY>
     
     \b
     📊 How It Works:
@@ -2809,7 +2717,7 @@ def ai_pentest_command(
     🛡️  Safety Features:
     • Supervised mode: Confirms each action before execution
     • Semi-autonomous mode: Confirms high-risk actions only (default)
-    • Risk tolerance controls: Prevents exploitation without authorization
+    • Risk tolerance controls: Controls how active scans are
     • Time limits: Prevents runaway testing
     • Detailed logging: Full audit trail of AI decisions and actions
     """
@@ -2850,51 +2758,17 @@ def ai_pentest_command(
     else:
         api_key_source = "--api-key flag"
     
+    if not api_key:
+        console.print("[red]ERROR: AI API key required.[/red]")
+        console.print("Provide --api-key or set SCORPION_AI_API_KEY in your environment/.env\n")
+        console.print("[cyan]Example (.env):[/cyan]")
+        console.print("  [cyan]SCORPION_AI_API_KEY=<YOUR_AI_API_KEY>[/cyan]")
+        raise typer.Exit(1)
+
     # Show success message if API key was found from environment
     if api_key and api_key_source and api_key_source != "--api-key flag":
         console.print(f"[green]✓ API key loaded from {api_key_source}[/green]")
-        console.print(f"[dim]  Key preview: {api_key[:15]}...{api_key[-4:]} ({len(api_key)} chars)[/dim]\n")
-        if not api_key:
-            console.print("[red]ERROR: AI API key required.[/red]")
-            console.print("[yellow]✨ Setup your API key ONCE, then use AI commands anytime![/yellow]\n")
-            
-            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
-            console.print("[green bold]📖 ONE-TIME SETUP (Recommended)[/green bold]")
-            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
-            
-            console.print("[white]1. Get a REAL token from GitHub (starts with ghp_):[/white]")
-            console.print("   [cyan]https://github.com/settings/tokens[/cyan]")
-            
-            console.print("\n[white]2. Create .env file with YOUR REAL token:[/white]")
-            console.print('   [cyan]echo "SCORPION_AI_API_KEY=ghp_YOUR_ACTUAL_TOKEN_HERE" >> .env[/cyan]')
-            console.print("   [yellow]⚠️  Replace ghp_YOUR_ACTUAL_TOKEN_HERE with your real token![/yellow]")
-            
-            console.print("\n[white]3. Then use AI commands WITHOUT --api-key:[/white]")
-            console.print("   [cyan]scorpion ai-pentest -t example.com[/cyan]")
-            
-            console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
-            console.print("[green bold]⚡ ALTERNATIVE: Set Environment Variable[/green bold]")
-            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
-            
-            console.print("[white]Linux/Mac/Kali:[/white]")
-            console.print("  [cyan]export SCORPION_AI_API_KEY='ghp_YOUR_ACTUAL_TOKEN_HERE'[/cyan]")
-            console.print("  [yellow]⚠️  Use YOUR real token, not 'ghp_...'[/yellow]")
-            
-            console.print("\n[white]Windows PowerShell:[/white]")
-            console.print("  [cyan]$env:SCORPION_AI_API_KEY='ghp_YOUR_ACTUAL_TOKEN_HERE'[/cyan]")
-            console.print("  [yellow]⚠️  Use YOUR real token, not 'ghp_...'[/yellow]")
-            
-            console.print("\n[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]")
-            console.print("[green bold]🔑 Get FREE API Key[/green bold]")
-            console.print("[cyan]━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[/cyan]\n")
-            
-            console.print("[white]GitHub Models (FREE & Recommended):[/white]")
-            console.print("  1. Visit: [cyan]https://github.com/marketplace/models[/cyan]")
-            console.print("  2. Generate token: [cyan]https://github.com/settings/tokens[/cyan]")
-            console.print("  3. Select scopes: [yellow]codespace, read:user, user:email[/yellow]")
-            
-            console.print("\n[dim]📚 Full guides: API_KEY_SETUP.md | GITHUB_MODELS_SETUP.md | AI_PENTEST_GUIDE.md[/dim]")
-            raise typer.Exit(1)
+        console.print(f"[dim]  Key preview: {api_key[:8]}...{api_key[-4:]} ({len(api_key)} chars)[/dim]\n")
     
     # Validate API key format - just basic checks, let provider validate
     if api_key:
@@ -2969,7 +2843,7 @@ def ai_pentest_command(
         primary_goal_enum = PrimaryGoal(primary_goal)
     except ValueError:
         console.print(f"[red]Invalid primary goal: {primary_goal}[/red]")
-        console.print("[yellow]Valid options: comprehensive_assessment, privilege_escalation, data_access, network_mapping, web_exploitation[/yellow]")
+        console.print("[yellow]Valid options: comprehensive_assessment, vulnerability_discovery, infrastructure_assessment, cloud_security_audit, api_security_testing, compliance_review[/yellow]")
         raise typer.Exit(1)
     
     try:
@@ -3010,11 +2884,11 @@ def ai_pentest_command(
     except ValueError as e:
         console.print(f"[red]Invalid target: {e}[/red]")
         console.print("[yellow]Examples of valid targets:[/yellow]")
-        console.print("  [cyan]example.com[/cyan]")
-        console.print("  [cyan]subdomain.example.com[/cyan]")
+        console.print("  [cyan]<DOMAIN>[/cyan]")
+        console.print("  [cyan]subdomain.<DOMAIN>[/cyan]")
         console.print("  [cyan]192.168.1.100[/cyan]")
         console.print("  [cyan]localhost[/cyan]")
-        console.print("  [cyan]example.com:8080[/cyan]")
+        console.print("  [cyan]<DOMAIN>:8080[/cyan]")
         raise typer.Exit(1)
     
     # Create configuration
@@ -3057,10 +2931,10 @@ def ai_pentest_command(
         border_style="green"
     ))
     
-    # Confirmation for high-risk configurations
-    if risk_enum == RiskTolerance.HIGH or autonomy_enum == AutonomyLevel.FULLY_AUTONOMOUS:
+    # Confirmation for fully autonomous mode
+    if autonomy_enum == AutonomyLevel.FULLY_AUTONOMOUS:
         console.print("\n[red]⚠️  HIGH-RISK CONFIGURATION DETECTED[/red]")
-        console.print("[yellow]This configuration may perform exploitation attempts.[/yellow]")
+        console.print("[yellow]This configuration may run active scans without per-step prompts.[/yellow]")
         console.print("[yellow]Ensure you have explicit written authorization.[/yellow]\n")
         
         confirm = typer.confirm("Do you have written authorization to test this target?")
@@ -3741,9 +3615,9 @@ def monitor_command(
     - Email notifications
     
     Example:
-        scorpion monitor prod-server.com --interval 60
-        scorpion monitor 192.168.1.0/24 --alert-webhook https://hooks.slack.com/...
-        scorpion monitor localhost --siem-endpoint https://splunk.company.com:8088
+        scorpion monitor <TARGET_HOST> --interval 60
+        scorpion monitor <TARGET_HOST> --alert-webhook <ALERT_WEBHOOK_URL>
+        scorpion monitor <TARGET_HOST> --siem-endpoint <SIEM_INGEST_ENDPOINT>
     """
     import asyncio
     import time

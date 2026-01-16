@@ -34,7 +34,7 @@ async def resolve_subdomain(subdomain: str, domain: str, timeout: float = 2.0) -
     
     Args:
         subdomain: Subdomain prefix (e.g., 'www')
-        domain: Base domain (e.g., 'example.com')
+        domain: Base domain (e.g., '<DOMAIN>')
         timeout: DNS resolution timeout
     
     Returns:
@@ -83,7 +83,7 @@ async def check_http_status(subdomain: str, timeout: float = 5.0) -> Optional[Di
     Check if subdomain responds to HTTP/HTTPS.
     
     Args:
-        subdomain: Full subdomain (e.g., 'www.example.com')
+        subdomain: Full subdomain (e.g., 'www.<DOMAIN>')
         timeout: HTTP request timeout
     
     Returns:

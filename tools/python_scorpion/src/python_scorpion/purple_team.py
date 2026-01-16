@@ -677,7 +677,7 @@ async def main():
     
     if len(sys.argv) < 2:
         print("Usage: python purple_team.py <target>")
-        print("Example: python purple_team.py example.com")
+        print("Example: python purple_team.py <DOMAIN>")
         sys.exit(1)
     
     target = sys.argv[1]

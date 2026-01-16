@@ -483,7 +483,7 @@ async def _probe(host: str, port: int, timeout: float, no_write: bool = False, v
                         reason = "ftp"
                 
                 elif service == "smtp" and banner_text:
-                    # SMTP banner: 220 mail.example.com ESMTP Postfix
+                    # SMTP banner: 220 mail.<DOMAIN> ESMTP Postfix
                     smtp_banner = banner_text.splitlines()[0] if banner_text else ""
                     if smtp_banner:
                         version = smtp_banner.replace("220 ", "").strip()
@@ -645,7 +645,7 @@ def _udp_probe_sync(host: str, port: int, timeout: float) -> Dict:
         try:
             # Service-aware safe payloads
             payload = b"\x00"
-            # DNS (53): standard query for A record of example.com
+            # DNS (53): standard query for A record of <DOMAIN>
             if port == 53:
                 payload = bytes.fromhex(
                     """
